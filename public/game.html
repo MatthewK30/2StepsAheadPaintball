@@ -816,7 +816,7 @@
       <div class="overlayActions">
         <button id="resumeBtn">Resume</button>
         <button id="pauseLobbyBtn">Back to Lobby</button>
-        <button id="pauseMenuBtn">Main Menu</button>
+        <button id="pauseMenuBtn">Leave Game</button>
       </div>
     </div>
   </div>
@@ -830,7 +830,7 @@
     </div>
     <div id="teamBadge">Red Team</div>
     <div id="cooldownWrap"></div>
-    <div id="ammoHud"><div id="ammoText">HOPPER 50 | PODS 5</div><div id="podIcons"></div></div>
+    <div id="ammoHud"><div id="ammoText">HOPPER 50 | PODS 3</div><div id="podIcons"></div></div>
     <div id="crosshair"></div>
     <div id="centerMessage"></div>
     <div id="hint">Pointer lock may release on Esc. Click the field to re-lock. AI uses cover, line-of-sight checks, and a balanced firing cadence.</div>
@@ -869,11 +869,11 @@
     const SPRINT_MULTIPLIER = 1.5;
     const CROUCH_SPEED = 3.6;
     const CRAWL_SPEED = 2.0;
-    const LEAN_DISTANCE = 1.5;
-    const LEAN_ANGLE = Math.PI / 12;
+    const LEAN_DISTANCE = 0.6;
+    const LEAN_ANGLE = Math.PI * 8 / 180;
     const HOPPER_CAPACITY = 50;
-    const POD_CAPACITY = 200;
-    const STARTING_PODS = 5;
+    const POD_CAPACITY = 50;
+    const STARTING_PODS = 3;
     const STAND_HEIGHT = 1.68;
     const CROUCH_HEIGHT = 0.84;
     const CRAWL_HEIGHT = 0.34;
@@ -885,10 +885,14 @@
     const PAINTBALL_SPEED = 70;
     const PAINTBALL_GRAVITY = 2.0;
     const PAINTBALL_LIFE = 2.2;
-    const DIVE_DISTANCE = 3;
-    const DIVE_DURATION = 0.6;
+    const DIVE_DISTANCE = 4;
+    const DIVE_DURATION = 0.5;
     const DIVE_COOLDOWN = 2;
     const DIVE_CAMERA_TILT = 0.34;
+    const SLIDE_DISTANCE = 5;
+    const SLIDE_DURATION = 0.7;
+    const SLIDE_COOLDOWN = 1.5;
+    const SLIDE_HEIGHT = 0.58;
     const ROUND_TIME = 60;
     const COUNTDOWN_TIME = 3;
     const READY_DELAY = 2;
@@ -1022,7 +1026,7 @@
 
     const ammo = {
       hopper: HOPPER_CAPACITY,
-      pods: [POD_CAPACITY, POD_CAPACITY, POD_CAPACITY, POD_CAPACITY, POD_CAPACITY]
+      pods: Array.from({ length: STARTING_PODS }, () => POD_CAPACITY)
     };
 
     const reload = {
@@ -1078,9 +1082,13 @@
       moving: false,
       sprinting: false,
       diving: false,
+      sliding: false,
       diveElapsed: 0,
       diveCooldown: 0,
       diveDir: new THREE.Vector3(),
+      slideElapsed: 0,
+      slideCooldown: 0,
+      slideDir: new THREE.Vector3(),
       radius: PLAYER_RADIUS,
       spawn: new THREE.Vector3(-24, 0, 0),
       bodyCenter: new THREE.Vector3()
@@ -1112,7 +1120,6 @@
       group: ai.group,
       position: ai.position,
       lastPosition: new THREE.Vector3(24, 0, 0),
-      nameTag: null,
       visible: false,
       crouching: false,
       prone: false
@@ -1516,8 +1523,6 @@
       addSpawnMark(group, player.spawn.x, 0, RED, false);
       addSpawnMark(group, ai.spawn.x, 0, BLUE, false);
 
-      addScrapyardIndustrialBackground(group);
-      addOvercastCloudDeck(group);
       addPerimeterFence(group, colliders, 0x8c918d);
 
       addConcreteRoom(group, colliders, coverPoints, -16, -9, 8, 7, 0.04, true);
@@ -1547,8 +1552,6 @@
       addTireStack(group, colliders, coverPoints, 18, 16, 4, 0.75);
       addMetalSheet(group, colliders, coverPoints, -5, 0, 0.35);
       addMetalSheet(group, colliders, coverPoints, 6, -2, -0.35);
-      addScrapyardVenueDetails(group);
-      addScrapyardAtmosphere(group);
       finalizeMapShadows(group);
       return { group, colliders, shootables, coverPoints, sky: 0xbfd7ee, ambient: 'scrapyard' };
     }
@@ -2879,7 +2882,6 @@
       splat2.castShadow = false;
       splat2.receiveShadow = false;
       ai.group.position.copy(ai.position);
-      if (MULTIPLAYER) updateRemoteNameTag();
     }
 
     function createPlayerShadowModel() {
@@ -2945,7 +2947,7 @@
       ui.leaveGameBtn.addEventListener('click', showPauseMenu);
       ui.resumeBtn.addEventListener('click', hidePauseMenu);
       ui.pauseLobbyBtn.addEventListener('click', goBackToLobby);
-      ui.pauseMenuBtn.addEventListener('click', goMainMenu);
+      ui.pauseMenuBtn.addEventListener('click', leaveGame);
       if (MULTIPLAYER) {
         ui.menu.style.display = 'none';
         return;
@@ -3007,6 +3009,10 @@
       if (state.running && state.phase !== 'matchOver') renderer.domElement.requestPointerLock?.();
     }
 
+    function isPaused() {
+      return ui.pauseScreen.style.display === 'grid';
+    }
+
     function goBackToLobby() {
       if (!MULTIPLAYER || !ROOM_CODE) {
         window.location.href = '/';
@@ -3028,6 +3034,11 @@
         return;
       }
       navigate();
+    }
+
+    function leaveGame() {
+      window.close();
+      goMainMenu();
     }
 
     function goMainMenu() {
@@ -3120,26 +3131,8 @@
       remotePlayer.username = playerInfo.username || remotePlayer.username || 'Opponent';
       remotePlayer.team = playerInfo.team === 'red' || playerInfo.team === 'blue' ? playerInfo.team : remotePlayer.team;
       applyRemoteTeamMaterials(remotePlayer.team);
-      updateRemoteNameTag();
       remotePlayer.visible = true;
       if (!state.aiEliminated) ai.group.visible = true;
-    }
-
-    function createNameTag(username, team) {
-      const canvas = document.createElement('canvas');
-      canvas.width = 256;
-      canvas.height = 64;
-      const texture = new THREE.CanvasTexture(canvas);
-      texture.colorSpace = THREE.SRGBColorSpace;
-      const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false });
-      const sprite = new THREE.Sprite(material);
-      sprite.position.set(0, 2.34, 0);
-      sprite.scale.set(2.4, 0.6, 1);
-      sprite.userData.canvas = canvas;
-      sprite.userData.texture = texture;
-      sprite.userData.coverCull = false;
-      drawNameTag(sprite, username, team);
-      return sprite;
     }
 
     function applyRemoteTeamMaterials(team) {
@@ -3149,48 +3142,6 @@
         if (child.material === materials.red || child.material === materials.blue) child.material = teamMats.primary;
         else if (child.material === materials.redDark || child.material === materials.blueDark) child.material = teamMats.dark;
       });
-    }
-
-    function updateRemoteNameTag() {
-      if (!remotePlayer.nameTag) {
-        remotePlayer.nameTag = createNameTag(remotePlayer.username, remotePlayer.team);
-        ai.group.add(remotePlayer.nameTag);
-        return;
-      }
-      drawNameTag(remotePlayer.nameTag, remotePlayer.username, remotePlayer.team);
-    }
-
-    function drawNameTag(sprite, username, team) {
-      const canvas = sprite.userData.canvas;
-      const ctx = canvas.getContext('2d');
-      const color = team === 'blue' ? '#2f87ff' : '#ff3442';
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = 'rgba(4, 6, 10, 0.72)';
-      roundRect(ctx, 10, 8, canvas.width - 20, canvas.height - 16, 18);
-      ctx.fill();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 4;
-      ctx.stroke();
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '700 24px Rajdhani, Arial, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(String(username || 'Opponent').toUpperCase().slice(0, 14), canvas.width / 2, 32);
-      sprite.userData.texture.needsUpdate = true;
-    }
-
-    function roundRect(ctx, x, y, w, h, r) {
-      ctx.beginPath();
-      ctx.moveTo(x + r, y);
-      ctx.lineTo(x + w - r, y);
-      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-      ctx.lineTo(x + w, y + h - r);
-      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-      ctx.lineTo(x + r, y + h);
-      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-      ctx.lineTo(x, y + r);
-      ctx.quadraticCurveTo(x, y, x + r, y);
-      ctx.closePath();
     }
 
     function updateRemotePlayerFromNetwork({ id, position, rotation, crouching, prone }) {
@@ -3332,19 +3283,19 @@
         input.pointerLocked = document.pointerLockElement === renderer.domElement;
       });
       renderer.domElement.addEventListener('click', () => {
-        if (state.phase !== 'menu' && state.phase !== 'matchOver' && ui.pauseScreen.style.display !== 'grid') {
+        if (state.phase !== 'menu' && state.phase !== 'matchOver' && !isPaused()) {
           unlockAudio();
           renderer.domElement.requestPointerLock?.();
         }
       });
       document.addEventListener('mousemove', (e) => {
-        if (!input.pointerLocked || state.phase === 'menu' || state.phase === 'matchOver' || (state.phase === 'roundOver' && state.playerEliminated)) return;
+        if (!input.pointerLocked || isPaused() || state.phase === 'menu' || state.phase === 'matchOver' || (state.phase === 'roundOver' && state.playerEliminated)) return;
         player.yaw -= e.movementX * 0.0022;
         player.pitch -= e.movementY * 0.0019;
         player.pitch = clamp(player.pitch, -1.36, 1.34);
       });
       document.addEventListener('mousedown', (e) => {
-        if (e.button === 0 && input.pointerLocked) input.shotRequests = Math.min(input.shotRequests + 1, 3);
+        if (e.button === 0 && input.pointerLocked && !isPaused() && !player.sliding) input.shotRequests = Math.min(input.shotRequests + 1, 3);
       });
       document.addEventListener('contextmenu', (e) => e.preventDefault());
       document.addEventListener('keydown', (e) => setKey(e, true));
@@ -3365,7 +3316,13 @@
       else if (code === 'KeyA') input.left = down;
       else if (code === 'KeyD') input.right = down;
       else if (code === 'ShiftLeft' || code === 'ShiftRight') input.sprint = down;
-      else if (code === 'KeyC') input.crouch = down;
+      else if (code === 'KeyC') {
+        if (down && !e.repeat && tryStartSlide()) {
+          e.preventDefault();
+          return;
+        }
+        input.crouch = down;
+      }
       else if (code === 'KeyX' && down && !e.repeat) {
         if (!tryStartDive() && !input.crawl) {
           input.crawl = true;
@@ -3402,16 +3359,30 @@
     }
 
     function tryStartDive() {
-      if (state.phase !== 'active' || state.playerEliminated || player.diving || player.diveCooldown > 0) return false;
+      if (state.phase !== 'active' || state.playerEliminated || player.diving || player.sliding || player.diveCooldown > 0) return false;
       if (!input.sprint || !input.forward || input.crouch || input.crawl) return false;
       player.diving = true;
       player.diveElapsed = 0;
       player.diveCooldown = DIVE_COOLDOWN;
-      player.diveDir.set(-Math.sin(player.yaw), 0, -Math.cos(player.yaw)).normalize();
+      player.diveDir.set(Math.sin(player.yaw) * -1, 0, Math.cos(player.yaw) * -1).normalize();
       player.velocity.copy(player.diveDir).multiplyScalar(DIVE_DISTANCE / DIVE_DURATION);
       input.crawl = true;
       input.crouch = false;
       audio.slide();
+      return true;
+    }
+
+    function tryStartSlide() {
+      if (state.phase !== 'active' || state.playerEliminated || player.diving || player.sliding || player.slideCooldown > 0) return false;
+      if (!input.sprint || !input.forward || input.crawl) return false;
+      player.sliding = true;
+      player.slideElapsed = 0;
+      player.slideDir.set(Math.sin(player.yaw) * -1, 0, Math.cos(player.yaw) * -1).normalize();
+      player.velocity.copy(player.slideDir).multiplyScalar(SLIDE_DISTANCE / SLIDE_DURATION);
+      input.crouch = false;
+      input.crawl = false;
+      input.shotRequests = 0;
+      audio.whoosh();
       return true;
     }
 
@@ -3423,7 +3394,7 @@
       setVenueSky();
       ambientLight.color.setHex(0xd8e0e8);
       ambientLight.intensity = 0.8;
-      keyLight.intensity = 0.6;
+      keyLight.intensity = active.ambient === 'scrapyard' ? 2.0 : 0.6;
       keyLight.color.setHex(0xe8eef0);
       keyLight.castShadow = false;
       keyLight.position.set(36, 52, 34);
@@ -3431,7 +3402,7 @@
       keyLight.target.updateMatrixWorld();
       hemiLight.color.setHex(0xd0dce8);
       hemiLight.groundColor.setHex(0x8a9a7a);
-      hemiLight.intensity = 1.2;
+      hemiLight.intensity = active.ambient === 'scrapyard' ? 1.5 : 1.2;
       activeColliders.length = 0;
       activeCoverMeshes.length = 0;
       activeCoverPoints.length = 0;
@@ -3486,9 +3457,13 @@
       player.hitLeanZ = 0;
       player.sprintBlend = 0;
       player.diving = false;
+      player.sliding = false;
       player.diveElapsed = 0;
+      player.slideElapsed = 0;
       player.diveCooldown = 0;
+      player.slideCooldown = 0;
       player.diveDir.set(0, 0, 0);
+      player.slideDir.set(0, 0, 0);
       player.bobTime = 0;
       player.bobOffset = 0;
       player.moving = false;
@@ -3529,6 +3504,12 @@
     function tick(now) {
       const rawDt = (now - lastTime) / 1000;
       lastTime = now;
+      if (isPaused()) {
+        if (postEnabled && composer) composer.render();
+        else renderer.render(scene, camera);
+        requestAnimationFrame(tick);
+        return;
+      }
       const dt = Math.min(rawDt, 0.05);
       state.elapsed += dt;
       updateFps(dt);
@@ -3612,15 +3593,18 @@
 
     function updatePlayer(dt) {
       player.diveCooldown = Math.max(0, player.diveCooldown - dt);
+      if (!player.sliding) player.slideCooldown = Math.max(0, player.slideCooldown - dt);
       const diveProgress = player.diving ? clamp(player.diveElapsed / DIVE_DURATION, 0, 1) : 0;
       const diveTilt = player.diving ? Math.sin(diveProgress * Math.PI) * DIVE_CAMERA_TILT : 0;
       player.root.rotation.y = player.yaw;
       camera.rotation.x = player.pitch + diveTilt;
-      player.targetHeight = input.crawl || player.diving ? CRAWL_HEIGHT : input.crouch ? CROUCH_HEIGHT : STAND_HEIGHT;
+      player.targetHeight = input.crawl || player.diving ? CRAWL_HEIGHT : player.sliding ? SLIDE_HEIGHT : input.crouch ? CROUCH_HEIGHT : STAND_HEIGHT;
       player.height += (player.targetHeight - player.height) * Math.min(1, dt * (player.diving ? 18 : 12));
-      player.radius = input.crawl || player.diving ? CRAWL_RADIUS : input.crouch ? CROUCH_RADIUS : PLAYER_RADIUS;
-      player.targetPeek = (input.peekLeft ? -LEAN_DISTANCE : 0) + (input.peekRight ? LEAN_DISTANCE : 0);
+      player.radius = input.crawl || player.diving ? CRAWL_RADIUS : player.sliding || input.crouch ? CROUCH_RADIUS : PLAYER_RADIUS;
+      const rawPeek = (input.peekLeft ? -LEAN_DISTANCE : 0) + (input.peekRight ? LEAN_DISTANCE : 0);
+      player.targetPeek = clampLeanOffset(rawPeek);
       player.peek += (player.targetPeek - player.peek) * Math.min(1, dt / 0.15);
+      player.peek = clampLeanOffset(player.peek);
       const yaw = player.yaw;
       const sin = Math.sin(yaw);
       const cos = Math.cos(yaw);
@@ -3633,7 +3617,9 @@
 
       if (state.phase !== 'active' || state.playerEliminated) {
         player.diving = false;
+        player.sliding = false;
         player.diveElapsed = 0;
+        player.slideElapsed = 0;
         player.moving = false;
         player.sprinting = false;
         player.bobOffset = 0;
@@ -3648,6 +3634,32 @@
       const moving = tmpVecA.lengthSq() > 0.0001;
       if (moving) tmpVecA.normalize();
       tmpVecB.set(tmpVecA.x * cos + tmpVecA.z * sin, 0, -tmpVecA.x * sin + tmpVecA.z * cos);
+      if (player.sliding) {
+        const prevProgress = clamp(player.slideElapsed / SLIDE_DURATION, 0, 1);
+        const slideDt = Math.min(dt, Math.max(0, SLIDE_DURATION - player.slideElapsed));
+        player.slideElapsed += dt;
+        const nextProgress = clamp(player.slideElapsed / SLIDE_DURATION, 0, 1);
+        const easePrev = 1 - Math.pow(1 - prevProgress, 2);
+        const easeNext = 1 - Math.pow(1 - nextProgress, 2);
+        const travel = SLIDE_DISTANCE * Math.max(0, easeNext - easePrev);
+        player.velocity.copy(player.slideDir).multiplyScalar(slideDt > 0 ? travel / Math.max(slideDt, 0.0001) : 0);
+        if (travel > 0) moveWithCollision(player.root.position, player.slideDir.x * travel, player.slideDir.z * travel, player.radius);
+        player.sprintBlend += (0 - player.sprintBlend) * Math.min(1, dt / 0.2);
+        player.moving = true;
+        player.sprinting = false;
+        player.bobOffset = 0;
+        if (player.slideElapsed >= SLIDE_DURATION) {
+          player.sliding = false;
+          player.slideElapsed = 0;
+          player.slideCooldown = SLIDE_COOLDOWN;
+          player.velocity.set(0, 0, 0);
+          input.crouch = true;
+        }
+        player.bodyCenter.set(player.root.position.x + player.hitLeanX, player.height * 0.5, player.root.position.z + player.hitLeanZ);
+        camera.position.set(player.peek, player.height, 0);
+        audio.updateRattle(false, false);
+        return;
+      }
       if (player.diving) {
         const remaining = Math.max(0, DIVE_DURATION - player.diveElapsed);
         const diveDt = Math.min(dt, remaining);
@@ -3701,15 +3713,24 @@
     }
 
     function moveWithCollision(pos, dx, dz, radius) {
+      moveWithCollisionFor(pos, dx, dz, radius, player.velocity, player.height);
+    }
+
+    function moveAiWithCollision(dx, dz) {
+      moveWithCollisionFor(ai.position, dx, dz, ai.radius, null, ai.tacticalHeight || ai.height);
+      ai.group.position.copy(ai.position);
+    }
+
+    function moveWithCollisionFor(pos, dx, dz, radius, velocity, height) {
       if (dx !== 0) {
         pos.x += dx;
         constrainBounds(pos, radius);
-        resolveCoverCollision(pos, radius, true);
+        resolveCoverCollision(pos, radius, true, velocity, height);
       }
       if (dz !== 0) {
         pos.z += dz;
         constrainBounds(pos, radius);
-        resolveCoverCollision(pos, radius, false);
+        resolveCoverCollision(pos, radius, false, velocity, height);
       }
     }
 
@@ -3718,11 +3739,11 @@
       pos.z = clamp(pos.z, -ARENA_HALF_Z + radius + 0.18, ARENA_HALF_Z - radius - 0.18);
     }
 
-    function resolveCoverCollision(pos, radius, xAxis) {
+    function resolveCoverCollision(pos, radius, xAxis, velocity, height) {
       for (let i = 0; i < activeColliders.length; i++) {
         const c = activeColliders[i];
         updateMeshCollider(c);
-        if (c.y - c.halfY > player.height || c.y + c.halfY < 0) continue;
+        if (c.y - c.halfY > height || c.y + c.halfY < 0) continue;
         if (c.type === 'box') {
           const lx = (pos.x - c.x) * c.cos - (pos.z - c.z) * c.sin;
           const lz = (pos.x - c.x) * c.sin + (pos.z - c.z) * c.cos;
@@ -3733,12 +3754,12 @@
               const push = lx < 0 ? -overlapX : overlapX;
               pos.x += push * c.cos;
               pos.z -= push * c.sin;
-              player.velocity.x = 0;
+              if (velocity) velocity.x = 0;
             } else {
               const push = lz < 0 ? -overlapZ : overlapZ;
               pos.x += push * c.sin;
               pos.z += push * c.cos;
-              player.velocity.z = 0;
+              if (velocity) velocity.z = 0;
             }
           }
         } else if (c.type === 'vcylinder') {
@@ -3751,8 +3772,10 @@
             const push = minDist - dist;
             pos.x += dx / dist * push;
             pos.z += dz / dist * push;
-            if (Math.abs(dx) > Math.abs(dz)) player.velocity.x = 0;
-            else player.velocity.z = 0;
+            if (velocity) {
+              if (Math.abs(dx) > Math.abs(dz)) velocity.x = 0;
+              else velocity.z = 0;
+            }
           }
         } else if (c.type === 'capsule') {
           const abx = c.bx - c.ax;
@@ -3770,11 +3793,61 @@
             const push = minDist - dist;
             pos.x += dx / dist * push;
             pos.z += dz / dist * push;
-            if (Math.abs(dx) > Math.abs(dz)) player.velocity.x = 0;
-            else player.velocity.z = 0;
+            if (velocity) {
+              if (Math.abs(dx) > Math.abs(dz)) velocity.x = 0;
+              else velocity.z = 0;
+            }
           }
         }
       }
+    }
+
+    function clampLeanOffset(offset) {
+      if (offset === 0 || activeColliders.length === 0) return offset;
+      if (!leanIntersectsCollider(offset)) return offset;
+      const sign = Math.sign(offset);
+      let low = 0;
+      let high = Math.abs(offset);
+      for (let i = 0; i < 8; i++) {
+        const mid = (low + high) * 0.5;
+        if (leanIntersectsCollider(sign * mid)) high = mid;
+        else low = mid;
+      }
+      return sign * low;
+    }
+
+    function leanIntersectsCollider(offset) {
+      const yaw = player.yaw;
+      const x = player.root.position.x + offset * Math.cos(yaw);
+      const z = player.root.position.z - offset * Math.sin(yaw);
+      const y = player.height;
+      for (let i = 0; i < activeColliders.length; i++) {
+        const c = activeColliders[i];
+        updateMeshCollider(c);
+        if (y < c.y - c.halfY || y > c.y + c.halfY) continue;
+        if (c.type === 'box') {
+          const lx = (x - c.x) * c.cos - (z - c.z) * c.sin;
+          const lz = (x - c.x) * c.sin + (z - c.z) * c.cos;
+          if (Math.abs(lx) <= c.halfX + 0.04 && Math.abs(lz) <= c.halfZ + 0.04) return true;
+        } else if (c.type === 'vcylinder') {
+          const dx = x - c.x;
+          const dz = z - c.z;
+          const minDist = c.radius + player.radius;
+          if (dx * dx + dz * dz < minDist * minDist) return true;
+        } else if (c.type === 'capsule') {
+          const abx = c.bx - c.ax;
+          const abz = c.bz - c.az;
+          const lenSq = abx * abx + abz * abz;
+          const t = lenSq > 0.000001 ? clamp(((x - c.ax) * abx + (z - c.az) * abz) / lenSq, 0, 1) : 0;
+          const cx = c.ax + abx * t;
+          const cz = c.az + abz * t;
+          const dx = x - cx;
+          const dz = z - cz;
+          const minDist = c.radius + player.radius;
+          if (dx * dx + dz * dz < minDist * minDist) return true;
+        }
+      }
+      return false;
     }
 
     function updateGun(dt, canMove) {
@@ -3800,7 +3873,7 @@
 
     function tryShootPlayer() {
       const now = performance.now() / 1000;
-      if (state.phase !== 'active' || state.playerEliminated || state.readyClock > 0 || now < state.nextShotTime) return false;
+      if (state.phase !== 'active' || state.playerEliminated || player.sliding || state.readyClock > 0 || now < state.nextShotTime) return false;
       if (ammo.hopper <= 0) {
         ammo.hopper = 0;
         state.nextShotTime = now + SHOT_COOLDOWN;
@@ -4355,8 +4428,7 @@
       if (dist > 0.08) {
         tmpVecA.multiplyScalar(1 / dist);
         const speed = ai.reactClock > 0 ? 3.35 : 2.85;
-        ai.position.addScaledVector(tmpVecA, speed * dt);
-        ai.group.position.copy(ai.position);
+        moveAiWithCollision(tmpVecA.x * speed * dt, tmpVecA.z * speed * dt);
       }
       tmpVecB.subVectors(player.root.position, ai.position);
       tmpVecB.y = 0;
@@ -5195,6 +5267,7 @@
         reloadOpen() { tone(520, 0.035, 'triangle', 0.03, 1.22); noise(0.025, 0.035, 2400, 'highpass'); },
         reloadClose() { tone(300, 0.04, 'triangle', 0.035, 0.72); noise(0.018, 0.04, 1800, 'highpass'); stopPour(); },
         slide() { noise(0.42, 0.08, 720); tone(95, 0.18, 'triangle', 0.025, 0.72); },
+        whoosh() { noise(0.18, 0.075, 1050, 'bandpass'); tone(120, 0.12, 'triangle', 0.018, 0.65); },
         startPour,
         stopPour,
         updateRattle,
