@@ -715,6 +715,9 @@
       'use strict'
 
       const $ = (selector) => document.querySelector(selector)
+      const SOCKET_URL = window.location.hostname === 'localhost'
+        ? 'http://localhost:3000'
+        : window.location.origin
       const state = {
         socket: null,
         username: '',
@@ -807,7 +810,9 @@
           setStatus('Socket unavailable')
           return
         }
-        state.socket = io()
+        state.socket = io(SOCKET_URL, {
+          transports: ['websocket', 'polling']
+        })
         state.socket.on('connect', () => setStatus('Connected'))
         state.socket.on('disconnect', () => setStatus('Disconnected'))
         state.socket.on('room_created', ({ code, room }) => enterRoom(code, room))

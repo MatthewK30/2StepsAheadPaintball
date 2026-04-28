@@ -804,6 +804,7 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/shaders/SMAAShader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/postprocessing/SMAAPass.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/environments/RoomEnvironment.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
   <script>
   (() => {
     'use strict';
@@ -864,6 +865,18 @@
     const colliderLocalSize = new THREE.Vector3();
     const colliderAxis = new THREE.Vector3();
     let segmentHitT = 0;
+    const URL_PARAMS = new URLSearchParams(window.location.search);
+    const SOCKET_URL = window.location.hostname === 'localhost'
+      ? 'http://localhost:3000'
+      : window.location.origin;
+    const multiplayer = {
+      socket: null,
+      room: URL_PARAMS.get('room') || '',
+      team: URL_PARAMS.get('team') || '',
+      username: URL_PARAMS.get('username') || '',
+      mode: URL_PARAMS.get('mode') || 'singleplayer',
+      connected: false
+    };
 
     const REAL_TEXTURE_URLS = {
       grass: 'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/terrain/grasslight-big.jpg',
@@ -1088,6 +1101,7 @@
     createPlayerShadowModel();
     setupMenu();
     setupInput();
+    setupMultiplayerSocket();
     setupPostProcessing();
     loadPostProcessingModules();
     loadHdrEnvironment();
@@ -2871,6 +2885,19 @@
       state.selectedMap = mapName;
       document.querySelectorAll('[data-map]').forEach((card) => card.classList.toggle('selected', card.dataset.map === mapName));
       updateDronePreviewSelection();
+    }
+
+    function setupMultiplayerSocket() {
+      if (!multiplayer.room || typeof io !== 'function') return;
+      multiplayer.socket = io(SOCKET_URL, {
+        transports: ['websocket', 'polling']
+      });
+      multiplayer.socket.on('connect', () => {
+        multiplayer.connected = true;
+      });
+      multiplayer.socket.on('disconnect', () => {
+        multiplayer.connected = false;
+      });
     }
 
     function setupDronePreviews() {
