@@ -868,7 +868,7 @@
     const URL_PARAMS = new URLSearchParams(window.location.search);
     const SOCKET_URL = window.location.hostname === 'localhost'
       ? 'http://localhost:3000'
-      : window.location.origin;
+      : 'https://two-steps-ahead-paintball.onrender.com';
     const multiplayer = {
       socket: null,
       room: URL_PARAMS.get('room') || '',
