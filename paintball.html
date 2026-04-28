@@ -6,7 +6,7 @@
   <title>2 Steps Ahead Paintball</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     html, body {
       width: 100%;
@@ -15,7 +15,7 @@
       overflow: hidden;
       background: #050608;
       color: #f8f8f2;
-      font-family: Arial, Helvetica, sans-serif;
+      font-family: 'Rajdhani', Arial, Helvetica, sans-serif;
       user-select: none;
     }
 
@@ -359,13 +359,56 @@
     #matchScreen {
       position: fixed;
       inset: 0;
-      display: grid;
-      place-items: center;
-      background:
-        radial-gradient(circle at 30% 15%, rgba(190, 31, 38, 0.28), transparent 34%),
-        radial-gradient(circle at 70% 20%, rgba(29, 85, 218, 0.25), transparent 34%),
-        linear-gradient(135deg, #090b0f 0%, #171a1f 46%, #08090c 100%);
       z-index: 5;
+    }
+
+    #menu {
+      display: block;
+      overflow: auto;
+      background:
+        radial-gradient(circle at 50% -8%, rgba(204, 21, 21, 0.24), transparent 31%),
+        radial-gradient(circle at 12% 22%, rgba(255, 255, 255, 0.06), transparent 21%),
+        radial-gradient(circle at 88% 34%, rgba(204, 21, 21, 0.13), transparent 28%),
+        linear-gradient(135deg, #050505 0%, #0a0a0a 43%, #111113 100%);
+      color: #ffffff;
+    }
+
+    #menu::before,
+    #menu::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    #menu::before {
+      background:
+        repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 4px),
+        linear-gradient(105deg, transparent 0 18%, rgba(255, 255, 255, 0.07) 19%, transparent 29%, transparent 61%, rgba(204, 21, 21, 0.09) 63%, transparent 75%);
+      mix-blend-mode: screen;
+      opacity: 0.55;
+      animation: menuScan 7s linear infinite;
+    }
+
+    #menu::after {
+      background:
+        radial-gradient(circle at 17% 26%, rgba(255, 255, 255, 0.28) 0 1px, transparent 2px),
+        radial-gradient(circle at 31% 72%, rgba(204, 21, 21, 0.42) 0 1px, transparent 2px),
+        radial-gradient(circle at 68% 18%, rgba(255, 255, 255, 0.22) 0 1px, transparent 2px),
+        radial-gradient(circle at 82% 66%, rgba(204, 21, 21, 0.32) 0 1px, transparent 2px);
+      background-size: 240px 180px, 320px 230px, 280px 210px, 360px 270px;
+      opacity: 0.5;
+      animation: menuParticles 12s linear infinite;
+    }
+
+    @keyframes menuScan {
+      from { transform: translateY(-20px); }
+      to { transform: translateY(20px); }
+    }
+
+    @keyframes menuParticles {
+      from { background-position: 0 0, 0 0, 0 0, 0 0; }
+      to { background-position: 120px -180px, -160px -230px, 140px -210px, -180px -270px; }
     }
 
     #matchScreen {
@@ -403,112 +446,184 @@
       overflow: hidden;
     }
 
-    .hero {
-      padding: 28px 30px 22px;
-      background:
-        linear-gradient(90deg, rgba(219, 30, 42, 0.22), rgba(255, 255, 255, 0.03), rgba(35, 91, 222, 0.22)),
-        linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    .menuShell {
+      position: relative;
+      z-index: 1;
+      width: min(1180px, calc(100vw - 40px));
+      min-height: 100%;
+      margin: 0 auto;
+      padding: clamp(28px, 4vw, 54px) 0 34px;
+      display: grid;
+      align-content: center;
+      gap: 24px;
     }
 
-    h1 {
+    .menuHeader {
+      text-align: center;
+    }
+
+    h1,
+    h2,
+    .menuTitle,
+    .cardTitle,
+    .optionLabel,
+    button {
+      font-family: 'Bebas Neue', Impact, sans-serif;
+    }
+
+    h1,
+    .menuTitle {
       margin: 0;
-      font-size: clamp(36px, 6vw, 68px);
-      line-height: 0.95;
-      letter-spacing: -2px;
+      color: #ffffff;
+      font-size: clamp(72px, 13vw, 164px);
+      line-height: 0.82;
+      letter-spacing: 0.045em;
+      text-align: center;
+      text-shadow: 0 0 22px rgba(204, 21, 21, 0.36), 0 16px 42px rgba(0, 0, 0, 0.95);
     }
 
     .subtitle {
-      margin-top: 10px;
-      color: rgba(255, 255, 255, 0.74);
-      font-size: 15px;
-      font-weight: 700;
-      letter-spacing: 0.3px;
-    }
-
-    .menuBody {
-      display: grid;
-      grid-template-columns: 1.3fr 0.7fr;
-      gap: 18px;
-      padding: 22px;
+      margin-top: 12px;
+      color: rgba(255, 255, 255, 0.72);
+      font-size: clamp(15px, 2vw, 23px);
+      font-weight: 600;
+      letter-spacing: 0.36em;
+      text-transform: uppercase;
     }
 
     .cards {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: clamp(16px, 2.4vw, 26px);
     }
 
-    .card,
-    .choice {
+    .card {
+      position: relative;
       cursor: pointer;
-      border-radius: 18px;
-      border: 1px solid rgba(255, 255, 255, 0.13);
-      background: rgba(255, 255, 255, 0.055);
+      min-height: 380px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.025));
+      clip-path: polygon(0 0, calc(100% - 24px) 0, 100% 24px, 100% 100%, 24px 100%, 0 calc(100% - 24px));
       overflow: hidden;
-      transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
+      transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
     }
 
     .card:hover,
-    .choice:hover {
-      transform: translateY(-1px);
-      border-color: rgba(255, 255, 255, 0.32);
-      background: rgba(255, 255, 255, 0.085);
+    .card.previewing,
+    .card.selected {
+      transform: translateY(-3px);
+      border-color: rgba(204, 21, 21, 0.86);
+      box-shadow: 0 0 0 1px rgba(204, 21, 21, 0.38), 0 0 34px rgba(204, 21, 21, 0.34), 0 26px 60px rgba(0, 0, 0, 0.55);
+      background: linear-gradient(180deg, rgba(204, 21, 21, 0.13), rgba(255, 255, 255, 0.028));
     }
 
-    .card.selected,
-    .choice.selected {
-      border-color: #ffffff;
-      box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.2), 0 8px 26px rgba(0, 0, 0, 0.3);
+    .previewWindow {
+      position: relative;
+      height: clamp(220px, 27vw, 310px);
+      background: #030303;
+      overflow: hidden;
     }
 
-    .thumb {
-      height: 118px;
+    .previewWindow::after {
+      content: "DRONE FEED";
+      position: absolute;
+      left: 16px;
+      top: 14px;
+      padding: 4px 8px;
+      color: rgba(255, 255, 255, 0.74);
+      background: rgba(0, 0, 0, 0.48);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
     }
 
-    .scrapThumb {
-      background:
-        linear-gradient(120deg, transparent 44%, rgba(85, 64, 39, 0.85) 45% 56%, transparent 57%),
-        radial-gradient(circle at 23% 72%, #b15a21 0 14%, transparent 15%),
-        radial-gradient(circle at 74% 68%, #3e5c33 0 18%, transparent 19%),
-        linear-gradient(#8f989c, #5b5e55 50%, #4b3928 51%, #2d251c);
+    .previewCanvas {
+      width: 100%;
+      height: 100%;
+      opacity: 0.74;
+      transition: opacity 180ms ease, filter 180ms ease;
+      filter: saturate(0.85) contrast(1.06);
     }
 
-    .speedThumb {
-      background:
-        radial-gradient(circle at 24% 66%, #d21e2d 0 14%, transparent 15%),
-        radial-gradient(circle at 76% 66%, #1e57d6 0 14%, transparent 15%),
-        linear-gradient(90deg, transparent 48%, rgba(255, 255, 255, 0.85) 49% 51%, transparent 52%),
-        linear-gradient(#61b8ff 0 48%, #68a846 49% 100%);
+    .card:hover .previewCanvas,
+    .card.previewing .previewCanvas,
+    .card.selected .previewCanvas {
+      opacity: 1;
+      filter: saturate(1.08) contrast(1.08);
     }
 
     .cardText {
-      padding: 14px;
+      padding: 18px 20px 22px;
     }
 
     .cardTitle,
-    .choiceTitle {
-      margin: 0 0 7px;
-      font-size: 18px;
-      font-weight: 950;
-    }
-
-    .cardCopy,
-    .choiceCopy {
+    .optionLabel {
       margin: 0;
-      color: rgba(255, 255, 255, 0.68);
-      font-size: 13px;
-      line-height: 1.42;
+      color: #ffffff;
+      font-size: clamp(26px, 3vw, 38px);
+      line-height: 0.95;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
     }
 
-    .sideBox {
+    .cardCopy {
+      margin: 8px 0 0;
+      color: rgba(255, 255, 255, 0.68);
+      font-size: 16px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+    }
+
+    .menuOptions {
       display: grid;
-      gap: 12px;
-      align-content: start;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px;
+      padding: 2px 0 0;
+    }
+
+    .optionGroup {
+      display: grid;
+      gap: 10px;
+      padding: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.045);
+      clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%);
+    }
+
+    .optionButtons {
+      display: flex;
+      gap: 10px;
     }
 
     .choice {
-      padding: 16px;
+      flex: 1;
+      cursor: pointer;
+      padding: 11px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.055);
+      color: rgba(255, 255, 255, 0.82);
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-align: center;
+      text-transform: uppercase;
+      transition: border-color 160ms ease, color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+    }
+
+    .choice:hover,
+    .choice.selected {
+      border-color: rgba(204, 21, 21, 0.88);
+      color: #ffffff;
+      background: rgba(204, 21, 21, 0.18);
+      box-shadow: 0 0 18px rgba(204, 21, 21, 0.18);
+    }
+
+    .deployRow {
+      display: grid;
+      gap: 12px;
+      justify-items: center;
+      padding-top: 2px;
     }
 
     button {
@@ -525,14 +640,38 @@
       box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
     }
 
+    #deployBtn {
+      width: min(430px, 100%);
+      padding: 18px 28px 17px;
+      color: #ffffff;
+      background: linear-gradient(135deg, #7d0808 0%, #cc1515 48%, #ff3333 100%);
+      clip-path: polygon(18px 0, 100% 0, calc(100% - 18px) 100%, 0 100%);
+      font-size: clamp(30px, 4vw, 48px);
+      line-height: 0.9;
+      letter-spacing: 0.18em;
+      text-shadow: 0 3px 10px rgba(0, 0, 0, 0.55);
+      box-shadow: 0 16px 44px rgba(0, 0, 0, 0.55), 0 0 28px rgba(204, 21, 21, 0.32);
+      transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease;
+    }
+
+    #deployBtn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.08);
+      box-shadow: 0 20px 58px rgba(0, 0, 0, 0.66), 0 0 42px rgba(204, 21, 21, 0.58);
+    }
+
     button:active {
       transform: translateY(1px);
     }
 
     .controls {
+      width: min(740px, 100%);
       color: rgba(255, 255, 255, 0.68);
       font-size: 12px;
       line-height: 1.55;
+      text-align: center;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
 
     #matchTitle {
@@ -551,13 +690,17 @@
     }
 
     @media (max-width: 720px) {
-      .menuBody,
-      .cards {
+      .cards,
+      .menuOptions {
         grid-template-columns: 1fr;
       }
 
-      .thumb {
-        height: 92px;
+      .card {
+        min-height: 0;
+      }
+
+      .previewWindow {
+        height: 210px;
       }
 
       #hint {
@@ -568,40 +711,50 @@
 </head>
 <body>
   <div id="menu">
-    <div class="panel">
-      <div class="hero">
-        <h1>2 Steps Ahead Paintball</h1>
-        <div class="subtitle">Single-player competitive paintball prototype. One shot elimination. Built for clean 60 FPS mechanics.</div>
+    <div class="menuShell">
+      <div class="menuHeader">
+        <h1 class="menuTitle">2 STEPS AHEAD</h1>
+        <div class="subtitle">COMPETITIVE PAINTBALL</div>
       </div>
-      <div class="menuBody">
-        <div class="cards">
-          <div class="card selected" data-map="scrapyard">
-            <div class="thumb scrapThumb"></div>
-            <div class="cardText">
-              <p class="cardTitle">Map 1: Scrapyard</p>
-              <p class="cardCopy">Asymmetric cars, crates, containers, tires, chain-link boundary, grey overcast light.</p>
-            </div>
+      <div class="cards" aria-label="Map selection">
+        <div class="card" data-map="speedball" tabindex="0">
+          <div class="previewWindow">
+            <canvas class="previewCanvas" data-preview="speedball"></canvas>
           </div>
-          <div class="card" data-map="speedball">
-            <div class="thumb speedThumb"></div>
-            <div class="cardText">
-              <p class="cardTitle">Map 2: Speedball</p>
-              <p class="cardCopy">Mirrored tournament layout with inflatable bunkers, grass lines, stands, blue sky.</p>
-            </div>
+          <div class="cardText">
+            <p class="cardTitle">SPEEDBALL</p>
+            <p class="cardCopy">NXL Tournament Field</p>
           </div>
         </div>
-        <div class="sideBox">
-          <div class="choice selected" data-best="3">
-            <p class="choiceTitle">Best of 3</p>
-            <p class="choiceCopy">First team to 2 round wins takes the match.</p>
+        <div class="card selected" data-map="scrapyard" tabindex="0">
+          <div class="previewWindow">
+            <canvas class="previewCanvas" data-preview="scrapyard"></canvas>
           </div>
-          <div class="choice" data-best="5">
-            <p class="choiceTitle">Best of 5</p>
-            <p class="choiceCopy">Longer match. First team to 3 round wins.</p>
+          <div class="cardText">
+            <p class="cardTitle">SCRAPYARD</p>
+            <p class="cardCopy">Desert Combat Zone</p>
           </div>
-          <button id="deployBtn">Deploy</button>
-          <div class="controls">Click to lock pointer. WASD move. Mouse aim. Left click shoot. Shift sprint. X dive or crawl. Space stands from prone. C crouch. Q/E peek. One paintball hit eliminates.</div>
         </div>
+      </div>
+      <div class="menuOptions">
+        <div class="optionGroup">
+          <div class="optionLabel">Match Length</div>
+          <div class="optionButtons">
+            <div class="choice selected" data-best="3" tabindex="0">Best of 3</div>
+            <div class="choice" data-best="5" tabindex="0">Best of 5</div>
+          </div>
+        </div>
+        <div class="optionGroup">
+          <div class="optionLabel">Round Time</div>
+          <div class="optionButtons">
+            <div class="choice selected" data-time="60" tabindex="0">60s</div>
+            <div class="choice" data-time="90" tabindex="0">90s</div>
+          </div>
+        </div>
+      </div>
+      <div class="deployRow">
+        <button id="deployBtn">DEPLOY</button>
+        <div class="controls">WASD move. Mouse aim. Left click shoot. Shift sprint. X dive or crawl. Space stands from prone. C crouch. Q/E peek.</div>
       </div>
     </div>
   </div>
@@ -647,11 +800,7 @@
   </script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/postprocessing/Pass.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/shaders/CopyShader.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/postprocessing/ShaderPass.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/postprocessing/RenderPass.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/shaders/SMAAShader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/postprocessing/SMAAPass.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/environments/RoomEnvironment.js"></script>
@@ -691,6 +840,9 @@
     const ROUND_OVER_TIME = 2;
     const PROJECTILE_POOL_SIZE = 96;
     const SPLAT_POOL_SIZE = 180;
+    const OVERCAST_SKY_COLOR = 0xc8d4dc;
+    const OVERCAST_FOG_NEAR = 40;
+    const OVERCAST_FOG_FAR = 120;
     const HDR_ENV_URL = 'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/venice_sunset_1k.hdr';
     const RED = 0xc0151a;
     const BLUE = 0x2364de;
@@ -758,6 +910,7 @@
     const state = {
       selectedMap: 'scrapyard',
       bestOf: 3,
+      roundDuration: ROUND_TIME,
       phase: 'menu',
       round: 1,
       scoreRed: 0,
@@ -871,11 +1024,13 @@
     };
 
     const scene = new THREE.Scene();
+    scene.background = new THREE.Color(OVERCAST_SKY_COLOR);
+    scene.fog = new THREE.Fog(OVERCAST_SKY_COLOR, OVERCAST_FOG_NEAR, OVERCAST_FOG_FAR);
     const camera = new THREE.PerspectiveCamera(64, window.innerWidth / window.innerHeight, 0.05, 2200);
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance', logarithmicDepthBuffer: true });
     renderer.setPixelRatio(window.devicePixelRatio || 1);
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.enabled = false;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -885,19 +1040,17 @@
     let environmentMap = createEnvironmentMap();
     const postModules = {};
     let composer = null;
-    let bloomPass = null;
-    let codColorPass = null;
     let postEnabled = false;
-    const visualQuality = { shadow2048: false, bloom: true, grassMode: 'medium', crowdMode: 'medium', lastCheck: performance.now() / 1000 };
+    const visualQuality = { grassMode: 'medium', crowdMode: 'medium', lastCheck: performance.now() / 1000 };
     let hdrStatus = 'room-fallback';
-    let skyStatus = 'loading';
+    let skyStatus = 'overcast-color';
     const eliminatedSplat = { active: false, start: 0, color: '#0055cc', seed: 1, drips: [], drops: [], satellites: [], edgeDots: [] };
     const eliminatedCtx = ui.eliminatedCanvas ? ui.eliminatedCanvas.getContext('2d') : null;
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.15);
-    const keyLight = new THREE.DirectionalLight(0xfff5e0, 1.5);
+    const ambientLight = new THREE.AmbientLight(0xd8e0e8, 0.8);
+    const keyLight = new THREE.DirectionalLight(0xe8eef0, 0.6);
     keyLight.position.set(50, 80, 30);
-    keyLight.castShadow = true;
+    keyLight.castShadow = false;
     keyLight.shadow.mapSize.set(4096, 4096);
     keyLight.shadow.camera.left = -60;
     keyLight.shadow.camera.right = 60;
@@ -907,7 +1060,7 @@
     keyLight.shadow.camera.far = 200;
     keyLight.shadow.bias = -0.0001;
     keyLight.shadow.normalBias = 0.02;
-    const hemiLight = new THREE.HemisphereLight(0x87ceeb, 0x4a7c4a, 0.5);
+    const hemiLight = new THREE.HemisphereLight(0xd0dce8, 0x8a9a7a, 1.2);
     keyLight.target.position.set(0, 0, 0);
     scene.add(ambientLight, keyLight, keyLight.target, hemiLight);
 
@@ -919,8 +1072,6 @@
     const geometries = createGeometries();
     const cloudMeshes = [];
     const spectatorGroups = [];
-    let venueSky = null;
-    const venueSun = new THREE.Vector3();
     const grassMeshes = [];
     const maps = createMaps();
     const activeColliders = [];
@@ -928,6 +1079,8 @@
     const activeCoverPoints = [];
     const projectiles = createProjectilePool();
     const splats = createSplatPool();
+    const dronePreviews = [];
+    let hoveredPreviewMap = null;
     const gun = createGunModel();
     const audio = createAudio();
     camera.add(gun.group);
@@ -937,7 +1090,6 @@
     setupInput();
     setupPostProcessing();
     loadPostProcessingModules();
-    loadVenueSky();
     loadHdrEnvironment();
     updateHud();
     hideAllMaps();
@@ -1072,7 +1224,7 @@
         lightGrey: mat(0xc4c7c8, { roughness: 0.55, metalness: 0.15 }),
         concrete: mat(0xffffff, { roughness: 0.9, metalness: 0, envMapIntensity: 0.3 }),
         concreteDark: mat(0xb8b2a5, { roughness: 0.92, metalness: 0, envMapIntensity: 0.3 }),
-        sand: mat(0xffffff, { roughness: 0.95, metalness: 0, vertexColors: true, envMapIntensity: 0.22 }),
+        sand: mat(0xc8a870, { roughness: 0.95, metalness: 0, vertexColors: true, envMapIntensity: 0.22 }),
         glass: mat(0x10212e, { roughness: 0.08, metalness: 0, transparent: true, opacity: 0.48, envMapIntensity: 0.4 }),
         wood: mat(0xffffff, { roughness: 0.85, metalness: 0, envMapIntensity: 0.35 }),
         woodDark: mat(0xd0b083, { roughness: 0.88, metalness: 0, envMapIntensity: 0.3 }),
@@ -1127,7 +1279,7 @@
       textureLibrary.apply(m.grass, 'grass', 25, 25);
       textureLibrary.apply(m.grass, 'grassNormal', 25, 25, 'normalMap', THREE.NoColorSpace || THREE.LinearSRGBColorSpace);
       m.grass.normalScale = new THREE.Vector2(0.22, 0.22);
-      textureLibrary.apply(m.sand, 'dirt', 40, 40);
+      textureLibrary.apply(m.sand, 'grass', 30, 30);
       textureLibrary.apply(m.dirt, 'dirt', 9, 7);
       textureLibrary.apply(m.dustPatch, 'dirt', 4, 3);
       textureLibrary.apply(m.asphalt, 'dirt', 10, 6);
@@ -1250,6 +1402,8 @@
     function createScrapyardMap() {
       const group = new THREE.Group();
       const colliders = [];
+      const shootables = [];
+      colliders.shootables = shootables;
       const coverPoints = [];
       const ground = makeGround(0xc8b27f, materials.sand, true);
       group.add(ground);
@@ -1260,7 +1414,6 @@
 
       addScrapyardIndustrialBackground(group);
       addOvercastCloudDeck(group);
-      addSunAtmospherics(group, false);
       addPerimeterFence(group, colliders, 0x8c918d);
 
       addConcreteRoom(group, colliders, coverPoints, -16, -9, 8, 7, 0.04, true);
@@ -1293,7 +1446,7 @@
       addScrapyardVenueDetails(group);
       addScrapyardAtmosphere(group);
       finalizeMapShadows(group);
-      return { group, colliders, coverPoints, sky: 0xbfd7ee, ambient: 'scrapyard' };
+      return { group, colliders, shootables, coverPoints, sky: 0xbfd7ee, ambient: 'scrapyard' };
     }
 
     function createSpeedballMap() {
@@ -1382,7 +1535,12 @@
           child.receiveShadow = true;
           return;
         }
-        child.castShadow = true;
+        child.geometry.computeBoundingBox?.();
+        const box = child.geometry.boundingBox;
+        const sizeX = box ? Math.abs((box.max.x - box.min.x) * child.scale.x) : 0;
+        const sizeY = box ? Math.abs((box.max.y - box.min.y) * child.scale.y) : 0;
+        const sizeZ = box ? Math.abs((box.max.z - box.min.z) * child.scale.z) : 0;
+        child.castShadow = Math.max(sizeX, sizeY, sizeZ) >= 1.35 && sizeY >= 0.18;
         child.receiveShadow = true;
       });
     }
@@ -1390,30 +1548,6 @@
     function addTournamentTurfDetails(group) {
       for (let z = -ARENA_HALF_Z + 1.5, i = 0; z < ARENA_HALF_Z - 1.5; z += 4, i++) {
         addBox(group, 0, 0.018, z, ARENA_HALF_X * 2 - 1.4, 0.012, 2.0, i % 2 ? materials.turfLight : materials.turfDark, null, 0);
-      }
-    }
-
-    function addSunAtmospherics(group, speedball) {
-      const sx = speedball ? 34 : 24;
-      const sy = speedball ? 30 : 24;
-      const sz = speedball ? -30 : -34;
-      for (let i = 0; i < 10; i++) {
-        const ray = new THREE.Mesh(geometries.plane, materials.godRay);
-        ray.position.set(sx - i * 0.4, sy - i * 0.6, sz + i * 0.25);
-        ray.scale.set(7 + i * 2.1, 1, 1.8 + i * 0.35);
-        ray.rotation.set(-0.9, 0.28, 0.65);
-        ray.material = materials.godRay;
-        ray.castShadow = false;
-        ray.receiveShadow = false;
-        group.add(ray);
-      }
-      for (let i = 0; i < 5; i++) {
-        const flare = new THREE.Mesh(geometries.splat, materials.lensFlare);
-        flare.position.set(sx * (1 - i * 0.18), sy * (1 - i * 0.16), sz * (1 - i * 0.2));
-        flare.scale.setScalar(2.2 - i * 0.28);
-        flare.castShadow = false;
-        flare.receiveShadow = false;
-        group.add(flare);
       }
     }
 
@@ -1695,6 +1829,7 @@
       const c = { type: type || 'box', mesh, localBox };
       updateMeshCollider(c);
       colliders.push(c);
+      if (colliders.shootables && colliders.shootables.indexOf(mesh) === -1) colliders.shootables.push(mesh);
       return c;
     }
 
@@ -1826,6 +1961,7 @@
         if (child.isMesh) shadowMesh(child, true, true);
       });
       group.add(car);
+      if (colliders && colliders.shootables && colliders.shootables.indexOf(car) === -1) colliders.shootables.push(car);
       car.updateMatrixWorld(true);
       coverParts.forEach((part) => addMeshCollider(colliders, part, part.geometry === geometries.cylinderLow ? 'vcylinder' : 'box'));
       addCoverPoints(points, x, z, sx, sz, redSide ? 'red' : 'blue', isTruck || isVan ? 2.3 : 1.8);
@@ -1939,8 +2075,6 @@
 
     function addInflatableBunker(group, colliders, points, x, z, type, color, size, height, yaw) {
       const mat = color === RED ? materials.vinylRed : color === BLUE ? materials.vinylBlue : color === WHITE ? materials.white : color === 0xf1c94c ? materials.yellow : materials.lightGrey;
-      const highlightMat = color === RED ? materials.vinylRedLight : mat;
-      const sideMat = color === RED ? materials.vinylRedSide : materials.vinylDark;
       if (type === 'upright' || type === 'small') {
         const cyl = new THREE.Mesh(new THREE.CylinderGeometry(size * 0.5, size * 0.54, height, 32, 3), mat);
         cyl.position.set(x, height / 2, z);
@@ -1953,18 +2087,6 @@
         cap.scale.set(size / 2, 0.38, size / 2);
         shadowMesh(cap, true, true);
         group.add(cap);
-        addSeamRing(group, x, 0.18, z, size * 0.5, yaw);
-        addSeamRing(group, x, height * 0.52, z, size * 0.505, yaw);
-        addSeamRing(group, x, height * 0.86, z, size * 0.48, yaw);
-        addLocalBox(group, x, 0, z, yaw, 0, height * 0.74, -size * 0.515, size * 0.52, height * 0.18, 0.028, highlightMat);
-        addLocalBox(group, x, 0, z, yaw, -size * 0.52, height * 0.48, 0, 0.026, height * 0.76, size * 0.22, sideMat);
-        addLocalBox(group, x, 0, z, yaw, size * 0.52, height * 0.48, 0, 0.026, height * 0.76, size * 0.22, sideMat);
-        addBox(group, x, height * 0.58, z - size * 0.505, size * 0.46, height * 0.16, 0.035, materials.white, null, yaw);
-        addBox(group, x, height * 0.58, z - size * 0.525, size * 0.32, height * 0.035, 0.038, materials.black, null, yaw);
-        addNxlLogo(group, x, z, yaw || 0, height * 0.62, -size * 0.545, size * 0.55);
-        addBox(group, x - size * 0.48, height * 0.52, z, 0.035, height * 0.82, 0.05, materials.vinylDark, null, yaw);
-        addBox(group, x + size * 0.48, height * 0.52, z, 0.035, height * 0.82, 0.05, materials.vinylDark, null, yaw);
-        addCylinder(group, x + size * 0.22, height * 0.22, z - size * 0.48, 0.08, 0.05, materials.black, null, 0, false, 1);
         addCoverPoints(points, x, z, size, size, x < 0 ? 'red' : x > 0 ? 'blue' : 'any', height);
       } else if (type === 'snake') {
         addCylinder(group, x, height / 2, z, height / 2, size, mat, colliders, yaw, true, 1);
@@ -1978,14 +2100,6 @@
           shadowMesh(cap, true, true);
           group.add(cap);
         }
-        addCylinder(group, x + Math.cos(yaw || 0) * size * 0.32, height * 0.46, z - Math.sin(yaw || 0) * size * 0.32 - height * 0.48, 0.07, 0.045, materials.black, null, 0, false, 1);
-        for (let i = -2; i <= 2; i++) {
-          addLocalBox(group, x, 0, z, yaw, i * size * 0.17, height * 0.54, -height * 0.52, 0.055, height * 0.48, 0.035, materials.vinylSeam);
-        }
-        addLocalBox(group, x, 0, z, yaw, 0, height * 0.72, -height * 0.52, size * 0.34, height * 0.18, 0.035, materials.white);
-        addLocalBox(group, x, 0, z, yaw, 0, height * 0.84, -height * 0.5, size * 0.5, 0.045, 0.035, highlightMat);
-        addNxlLogo(group, x, z, yaw || 0, height * 0.72, -height * 0.57, Math.min(size * 0.28, 1.8));
-        addBox(group, x - Math.cos(yaw || 0) * size * 0.22, height * 0.72, z + Math.sin(yaw || 0) * size * 0.22 - height * 0.52, size * 0.22, height * 0.28, 0.035, materials.white, null, yaw);
         addCoverPoints(points, x, z, Math.abs(Math.cos(yaw)) * size + Math.abs(Math.sin(yaw)) * height, Math.abs(Math.sin(yaw)) * size + Math.abs(Math.cos(yaw)) * height, x < 0 ? 'red' : x > 0 ? 'blue' : 'any', height);
       } else {
         const pyr = new THREE.Mesh(geometries.pyramid, mat);
@@ -1996,11 +2110,6 @@
       group.add(pyr);
         const footprint = size * Math.SQRT2;
         addMeshCollider(colliders, pyr, 'box');
-        addBox(group, x, height * 0.5, z - footprint * 0.34, size * 0.45, height * 0.18, 0.035, materials.white, null, yaw);
-        addBox(group, x, height * 0.66, z - footprint * 0.36, size * 0.62, 0.045, 0.035, highlightMat, null, yaw);
-        addNxlLogo(group, x, z, yaw || 0, height * 0.52, -footprint * 0.39, size * 0.62);
-        addBox(group, x - footprint * 0.26, height * 0.38, z, 0.04, height * 0.66, 0.05, materials.vinylSeam, null, yaw + 0.52);
-        addBox(group, x + footprint * 0.26, height * 0.38, z, 0.04, height * 0.66, 0.05, materials.vinylSeam, null, yaw - 0.52);
         addCoverPoints(points, x, z, footprint, footprint, x < 0 ? 'red' : 'blue', height);
       }
     }
@@ -2030,32 +2139,6 @@
       shadowMesh(mesh, true, true);
       group.add(mesh);
       return mesh;
-    }
-
-    function addSponsorPatch(group, x, y, z, sx, sy, material) {
-      const patch = new THREE.Mesh(geometries.box, material);
-      patch.position.set(x, y, z);
-      patch.scale.set(sx, sy, 0.035);
-      shadowMesh(patch, true, true);
-      group.add(patch);
-      return patch;
-    }
-
-    function addNxlLogo(group, x, z, yaw, localY, localZ, scale) {
-      const w = scale;
-      const h = scale * 0.62;
-      const d = 0.038;
-      addLocalBox(group, x, 0, z, yaw, 0, localY, localZ, w, h, d, materials.white);
-      addLocalBox(group, x, 0, z, yaw, 0, localY + h * 0.29, localZ - 0.004, w * 0.82, h * 0.08, d, materials.vinylRed);
-      addLocalBox(group, x, 0, z, yaw, -w * 0.36, localY, localZ - 0.005, w * 0.08, h * 0.72, d, materials.vinylRed);
-      addLocalBox(group, x, 0, z, yaw, w * 0.36, localY, localZ - 0.005, w * 0.08, h * 0.72, d, materials.vinylRed);
-      addLocalBox(group, x, 0, z, yaw, 0, localY - h * 0.34, localZ - 0.005, w * 0.42, h * 0.08, d, materials.vinylRed);
-      addLocalBox(group, x, 0, z, yaw, -w * 0.24, localY - h * 0.02, localZ - 0.009, w * 0.06, h * 0.46, d, materials.white);
-      addLocalBox(group, x, 0, z, yaw, -w * 0.09, localY - h * 0.02, localZ - 0.009, w * 0.06, h * 0.46, d, materials.white);
-      addLocalBox(group, x, 0, z, yaw, -w * 0.165, localY, localZ - 0.01, w * 0.19, h * 0.055, d, materials.white);
-      addLocalBox(group, x, 0, z, yaw, w * 0.06, localY - h * 0.02, localZ - 0.009, w * 0.06, h * 0.46, d, materials.white);
-      addLocalBox(group, x, 0, z, yaw, w * 0.18, localY, localZ - 0.009, w * 0.06, h * 0.5, d, materials.white).rotation.z = -0.35;
-      addLocalBox(group, x, 0, z, yaw, w * 0.28, localY - h * 0.02, localZ - 0.009, w * 0.06, h * 0.46, d, materials.white);
     }
 
     function addTireWall(group, colliders, points, x, z, count, radius, yaw) {
@@ -2173,7 +2256,6 @@
       addCylinder(group, x + width / 2, height / 2, z, 0.65, height, mat, colliders, 0, false, 1);
       addCylinder(group, x, height, z, 0.65, width, mat, colliders, 0, true, 1);
       addBox(group, x, 0.62, z + 0.08, 2.2, 1.2, 1.2, mat, colliders, 0);
-      addSponsorPatch(group, x - 1.2, height * 0.72, z - 0.68, 1.5, 0.42, materials.white);
       addCoverPoints(points, x, z, width + 1.3, 2.0, 'any', height + 0.65);
     }
 
@@ -2724,16 +2806,41 @@
 
     function setupMenu() {
       document.querySelectorAll('[data-map]').forEach((card) => {
-        card.addEventListener('click', () => {
-          state.selectedMap = card.dataset.map;
-          document.querySelectorAll('[data-map]').forEach((c) => c.classList.toggle('selected', c === card));
+        const select = () => selectMenuMap(card.dataset.map);
+        card.addEventListener('click', select);
+        card.addEventListener('keydown', (e) => activateMenuChoice(e, select));
+        card.addEventListener('mouseenter', () => {
+          hoveredPreviewMap = card.dataset.map;
+          updateDronePreviewSelection();
+        });
+        card.addEventListener('mouseleave', () => {
+          if (hoveredPreviewMap === card.dataset.map) hoveredPreviewMap = null;
+          updateDronePreviewSelection();
+        });
+        card.addEventListener('focus', () => {
+          hoveredPreviewMap = card.dataset.map;
+          updateDronePreviewSelection();
+        });
+        card.addEventListener('blur', () => {
+          if (hoveredPreviewMap === card.dataset.map) hoveredPreviewMap = null;
+          updateDronePreviewSelection();
         });
       });
       document.querySelectorAll('[data-best]').forEach((choice) => {
-        choice.addEventListener('click', () => {
+        const select = () => {
           state.bestOf = Number(choice.dataset.best);
           document.querySelectorAll('[data-best]').forEach((c) => c.classList.toggle('selected', c === choice));
-        });
+        };
+        choice.addEventListener('click', select);
+        choice.addEventListener('keydown', (e) => activateMenuChoice(e, select));
+      });
+      document.querySelectorAll('[data-time]').forEach((choice) => {
+        const select = () => {
+          state.roundDuration = Number(choice.dataset.time) || ROUND_TIME;
+          document.querySelectorAll('[data-time]').forEach((c) => c.classList.toggle('selected', c === choice));
+        };
+        choice.addEventListener('click', select);
+        choice.addEventListener('keydown', (e) => activateMenuChoice(e, select));
       });
       ui.deployBtn.addEventListener('click', () => {
         unlockAudio();
@@ -2742,7 +2849,7 @@
       });
       ui.restartBtn.addEventListener('click', () => {
         ui.matchScreen.style.display = 'none';
-        ui.menu.style.display = 'grid';
+        ui.menu.style.display = 'block';
         ui.hud.classList.remove('visible');
         state.phase = 'menu';
         state.running = false;
@@ -2750,6 +2857,108 @@
         stopAmbient();
         document.exitPointerLock?.();
       });
+      setupDronePreviews();
+      selectMenuMap(state.selectedMap);
+    }
+
+    function activateMenuChoice(e, callback) {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      callback();
+    }
+
+    function selectMenuMap(mapName) {
+      state.selectedMap = mapName;
+      document.querySelectorAll('[data-map]').forEach((card) => card.classList.toggle('selected', card.dataset.map === mapName));
+      updateDronePreviewSelection();
+    }
+
+    function setupDronePreviews() {
+      document.querySelectorAll('[data-preview]').forEach((canvas) => {
+        const mapName = canvas.dataset.preview;
+        const map = maps[mapName];
+        if (!map) return;
+        const previewScene = new THREE.Scene();
+        previewScene.background = new THREE.Color(OVERCAST_SKY_COLOR);
+        previewScene.fog = new THREE.Fog(OVERCAST_SKY_COLOR, OVERCAST_FOG_NEAR, OVERCAST_FOG_FAR);
+        const previewCamera = new THREE.PerspectiveCamera(52, 16 / 9, 0.1, 260);
+        const previewRenderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'low-power' });
+        previewRenderer.outputColorSpace = THREE.SRGBColorSpace;
+        previewRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+        previewRenderer.toneMappingExposure = 0.7;
+        previewRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+
+        const mapClone = map.group.clone(true);
+        mapClone.visible = true;
+        mapClone.traverse((child) => {
+          if (!child.isMesh) return;
+          child.castShadow = false;
+          child.receiveShadow = true;
+          child.frustumCulled = false;
+        });
+        previewScene.add(mapClone);
+        previewScene.add(new THREE.AmbientLight(0xd8e0e8, 0.8));
+        const previewKey = new THREE.DirectionalLight(0xe8eef0, 0.6);
+        previewKey.position.set(36, 52, 34);
+        previewScene.add(previewKey);
+        previewScene.add(new THREE.HemisphereLight(0xd0dce8, 0x8a9a7a, 1.2));
+
+        dronePreviews.push({ mapName, canvas, card: canvas.closest('[data-map]'), scene: previewScene, camera: previewCamera, renderer: previewRenderer, time: mapName === 'speedball' ? 0 : 1.4 });
+      });
+      resizeDronePreviews();
+    }
+
+    function updateDronePreviewSelection() {
+      document.querySelectorAll('[data-map]').forEach((card) => {
+        const active = card.dataset.map === (hoveredPreviewMap || state.selectedMap);
+        card.classList.toggle('previewing', active);
+      });
+    }
+
+    function updateDronePreviews(dt) {
+      if (!ui.menu || ui.menu.style.display === 'none' || dronePreviews.length === 0) return;
+      resizeDronePreviews();
+      for (let i = 0; i < dronePreviews.length; i++) {
+        const preview = dronePreviews[i];
+        const active = preview.card && (preview.card.classList.contains('previewing') || preview.card.classList.contains('selected'));
+        preview.time += dt * (active ? 1 : 0.35);
+        updateDronePreviewCamera(preview);
+        preview.renderer.render(preview.scene, preview.camera);
+      }
+    }
+
+    function updateDronePreviewCamera(preview) {
+      const t = preview.time;
+      if (preview.mapName === 'speedball') {
+        const angle = t * 0.46;
+        const descend = 0.5 + 0.5 * Math.sin(t * 0.42 - 1.1);
+        const radius = 30 + Math.sin(t * 0.58) * 4;
+        preview.camera.position.set(Math.cos(angle) * radius, 31 - descend * 13, Math.sin(angle) * radius);
+        tmpVecA.set(Math.sin(angle * 0.7) * 2.5, 1.2, Math.cos(angle * 0.8) * 2.5);
+      } else {
+        const phase = (t * 0.085) % 1;
+        const sweep = 0.5 - 0.5 * Math.cos(phase * Math.PI * 2);
+        const side = Math.sin(phase * Math.PI * 2);
+        preview.camera.position.set(-31 + sweep * 62, 6.2 + (1 - Math.abs(side)) * 5.5, -17 + side * 15);
+        tmpVecA.set(-12 + sweep * 24, 1.35, side * 4.5);
+      }
+      preview.camera.lookAt(tmpVecA);
+    }
+
+    function resizeDronePreviews() {
+      for (let i = 0; i < dronePreviews.length; i++) {
+        const preview = dronePreviews[i];
+        const rect = preview.canvas.getBoundingClientRect();
+        const width = Math.max(1, Math.floor(rect.width));
+        const height = Math.max(1, Math.floor(rect.height));
+        const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
+        if (preview.canvas.width !== Math.floor(width * pixelRatio) || preview.canvas.height !== Math.floor(height * pixelRatio)) {
+          preview.renderer.setPixelRatio(pixelRatio);
+          preview.renderer.setSize(width, height, false);
+          preview.camera.aspect = width / height;
+          preview.camera.updateProjectionMatrix();
+        }
+      }
     }
 
     function setupInput() {
@@ -2839,36 +3048,26 @@
       const active = maps[state.selectedMap];
       active.group.visible = true;
       if (!active.group.parent) scene.add(active.group);
-      const speedball = state.selectedMap === 'speedball';
-      setVenueSky(speedball ? 'speedball' : 'scrapyard', active.sky);
-      scene.fog = speedball ? new THREE.FogExp2(0xe8f4f8, 0.006) : new THREE.FogExp2(0xd4c9b0, 0.006);
-      ambientLight.color.setHex(0xffffff);
-      ambientLight.intensity = 0.15;
-      keyLight.intensity = 1.5;
-      keyLight.color.setHex(speedball ? 0xfff5e0 : 0xffe4b0);
-      keyLight.position.set(speedball ? 50 : 30, speedball ? 80 : 50, speedball ? 30 : 60);
+      setVenueSky();
+      ambientLight.color.setHex(0xd8e0e8);
+      ambientLight.intensity = 0.8;
+      keyLight.intensity = 0.6;
+      keyLight.color.setHex(0xe8eef0);
+      keyLight.castShadow = false;
+      keyLight.position.set(36, 52, 34);
       keyLight.target.position.set(0, 0, 0);
       keyLight.target.updateMatrixWorld();
-      keyLight.shadow.mapSize.set(visualQuality.shadow2048 ? 2048 : 4096, visualQuality.shadow2048 ? 2048 : 4096);
-      keyLight.shadow.camera.near = 0.5;
-      keyLight.shadow.camera.far = 200;
-      keyLight.shadow.camera.left = -60;
-      keyLight.shadow.camera.right = 60;
-      keyLight.shadow.camera.top = 60;
-      keyLight.shadow.camera.bottom = -60;
-      keyLight.shadow.bias = -0.0001;
-      keyLight.shadow.normalBias = 0.02;
-      keyLight.shadow.camera.updateProjectionMatrix();
-      hemiLight.color.setHex(speedball ? 0x87ceeb : 0xc8b89a);
-      hemiLight.groundColor.setHex(speedball ? 0x4a7c4a : 0x8b7355);
-      hemiLight.intensity = 0.5;
+      hemiLight.color.setHex(0xd0dce8);
+      hemiLight.groundColor.setHex(0x8a9a7a);
+      hemiLight.intensity = 1.2;
       activeColliders.length = 0;
       activeCoverMeshes.length = 0;
       activeCoverPoints.length = 0;
       for (let i = 0; i < active.colliders.length; i++) {
         activeColliders.push(active.colliders[i]);
-        if (active.colliders[i].mesh) activeCoverMeshes.push(active.colliders[i].mesh);
       }
+      const shootables = active.shootables || active.colliders.map((collider) => collider.mesh).filter(Boolean);
+      for (let i = 0; i < shootables.length; i++) activeCoverMeshes.push(shootables[i]);
       for (let i = 0; i < active.coverPoints.length; i++) activeCoverPoints.push(active.coverPoints[i]);
       state.round = 1;
       state.scoreRed = 0;
@@ -2888,7 +3087,7 @@
     function startRound() {
       state.phase = 'countdown';
       state.countdownClock = COUNTDOWN_TIME;
-      state.roundClock = ROUND_TIME;
+      state.roundClock = state.roundDuration || ROUND_TIME;
       state.readyClock = 0;
       state.roundOverClock = 0;
       state.shotClock = 0;
@@ -2961,12 +3160,9 @@
       state.elapsed += dt;
       updateFps(dt);
       updateVisualQuality();
-      if (codColorPass) {
-        codColorPass.uniforms.time.value = state.elapsed;
-        codColorPass.uniforms.resolution.value.set(window.innerWidth, window.innerHeight);
-      }
       updateGame(dt);
       updateEliminatedSplat();
+      updateDronePreviews(dt);
       if (postEnabled && composer) composer.render();
       else renderer.render(scene, camera);
       requestAnimationFrame(tick);
@@ -3388,13 +3584,9 @@
       coverRaycaster.set(p.prev, coverRayDirection);
       coverRaycaster.near = 0;
       coverRaycaster.far = distance;
-      let bestHit = null;
-      for (let i = 0; i < activeCoverMeshes.length; i++) {
-        const mesh = activeCoverMeshes[i];
-        mesh.updateMatrixWorld(true);
-        const hits = coverRaycaster.intersectObject(mesh, false);
-        if (hits.length && (!bestHit || hits[0].distance < bestHit.distance)) bestHit = hits[0];
-      }
+      for (let i = 0; i < activeCoverMeshes.length; i++) activeCoverMeshes[i].updateWorldMatrix(true, true);
+      const hits = coverRaycaster.intersectObjects(activeCoverMeshes, true);
+      const bestHit = hits[0] || null;
       if (!bestHit) return false;
       segmentHitT = clamp(bestHit.distance / distance, 0, 1);
       if (bestHit.face) {
@@ -4293,75 +4485,19 @@
       try {
         const EffectComposer = THREE.EffectComposer || postModules.EffectComposer;
         const RenderPass = THREE.RenderPass || postModules.RenderPass;
-        const ShaderPass = THREE.ShaderPass || postModules.ShaderPass;
-        const UnrealBloomPass = THREE.UnrealBloomPass || postModules.UnrealBloomPass;
         const SMAAPass = THREE.SMAAPass || postModules.SMAAPass;
-        const OutputPass = THREE.OutputPass || postModules.OutputPass;
         if (!EffectComposer || !RenderPass) return;
         composer = new EffectComposer(renderer);
         composer.addPass(new RenderPass(scene, camera));
-        if (UnrealBloomPass) {
-          bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.3, 0.6, 0.85);
-          bloomPass.enabled = visualQuality.bloom;
-          composer.addPass(bloomPass);
-        }
-        if (ShaderPass) {
-          codColorPass = new ShaderPass(createCODColorGradeShader());
-          composer.addPass(codColorPass);
-        }
         if (SMAAPass) {
           const smaa = new SMAAPass(window.innerWidth * renderer.getPixelRatio(), window.innerHeight * renderer.getPixelRatio());
           composer.addPass(smaa);
         }
-        if (OutputPass) composer.addPass(new OutputPass());
         postEnabled = true;
       } catch (_) {
         composer = null;
-        bloomPass = null;
-        codColorPass = null;
         postEnabled = false;
       }
-    }
-
-    function createCODColorGradeShader() {
-      return {
-        uniforms: {
-          tDiffuse: { value: null },
-          time: { value: 0 },
-          resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
-        },
-        vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-        fragmentShader: `
-          uniform sampler2D tDiffuse;
-          uniform float time;
-          uniform vec2 resolution;
-          varying vec2 vUv;
-          float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }
-          void main(){
-            vec2 uv = vUv;
-            vec2 centered = uv - 0.5;
-            float edge = smoothstep(0.05, 0.72, length(centered));
-            vec2 aberr = centered * 0.0 * edge;
-            vec3 col;
-            col.r = texture2D(tDiffuse, uv + aberr).r;
-            col.g = texture2D(tDiffuse, uv).g;
-            col.b = texture2D(tDiffuse, uv - aberr).b;
-            float lum = dot(col, vec3(0.2126, 0.7152, 0.0722));
-            vec3 cool = vec3(0.90, 0.95, 1.0);
-            vec3 warm = vec3(1.02, 0.99, 0.93);
-            float shadow = smoothstep(0.58, 0.0, lum);
-            float high = smoothstep(0.45, 1.0, lum);
-            col = mix(col, cool, shadow * 0.1);
-            col = mix(col, warm, high * 0.06);
-            vec3 grey = vec3(lum);
-            col = mix(grey, col, 0.85);
-            col = pow(max(col, 0.0), vec3(0.99));
-            col = (col - 0.5) * 1.06 + 0.5;
-            float vig = smoothstep(0.34, 0.82, length(centered));
-            col *= 1.0 - vig * 0.12;
-            gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
-          }`
-      };
     }
 
     function loadPostProcessingModules() {
@@ -4369,18 +4505,12 @@
       Promise.all([
         import('three/addons/postprocessing/EffectComposer.js'),
         import('three/addons/postprocessing/RenderPass.js'),
-        import('three/addons/postprocessing/ShaderPass.js'),
-        import('three/addons/postprocessing/UnrealBloomPass.js'),
         import('three/addons/postprocessing/SMAAPass.js'),
-        import('three/addons/postprocessing/OutputPass.js'),
         import('three/addons/environments/RoomEnvironment.js')
-      ]).then(([composerMod, renderMod, shaderMod, bloomMod, smaaMod, outputMod, roomMod]) => {
+      ]).then(([composerMod, renderMod, smaaMod, roomMod]) => {
         postModules.EffectComposer = composerMod.EffectComposer;
         postModules.RenderPass = renderMod.RenderPass;
-        postModules.ShaderPass = shaderMod.ShaderPass;
-        postModules.UnrealBloomPass = bloomMod.UnrealBloomPass;
         postModules.SMAAPass = smaaMod.SMAAPass;
-        postModules.OutputPass = outputMod.OutputPass;
         if (!environmentMap && roomMod.RoomEnvironment) {
           THREE.RoomEnvironment = roomMod.RoomEnvironment;
           environmentMap = createEnvironmentMap();
@@ -4392,39 +4522,10 @@
       });
     }
 
-    function loadVenueSky() {
-      import('https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/objects/Sky.js').then(({ Sky }) => {
-        venueSky = new Sky();
-        venueSky.scale.setScalar(10000);
-        venueSky.renderOrder = -10;
-        scene.add(venueSky);
-        skyStatus = 'loaded';
-        setVenueSky(state.selectedMap || 'speedball', maps[state.selectedMap || 'speedball'].sky);
-      }).catch(() => {
-        skyStatus = 'fallback-color';
-        scene.background = new THREE.Color(maps[state.selectedMap || 'speedball'].sky);
-      });
-    }
-
-    function setVenueSky(mode, fallbackColor) {
-      if (!venueSky) {
-        scene.background = new THREE.Color(fallbackColor);
-        return;
-      }
-      scene.background = null;
-      venueSky.visible = true;
-      const speedball = mode === 'speedball';
-      const uniforms = venueSky.material.uniforms;
-      uniforms.turbidity.value = speedball ? 6.5 : 7.5;
-      uniforms.rayleigh.value = speedball ? 0.72 : 0.48;
-      uniforms.mieCoefficient.value = speedball ? 0.006 : 0.004;
-      uniforms.mieDirectionalG.value = speedball ? 0.82 : 0.85;
-      const elevation = speedball ? 42 : 31;
-      const azimuth = speedball ? 180 : 155;
-      const phi = THREE.MathUtils.degToRad(90 - elevation);
-      const theta = THREE.MathUtils.degToRad(azimuth);
-      venueSun.setFromSphericalCoords(1, phi, theta);
-      uniforms.sunPosition.value.copy(venueSun);
+    function setVenueSky() {
+      scene.background = new THREE.Color(OVERCAST_SKY_COLOR);
+      scene.fog = new THREE.Fog(OVERCAST_SKY_COLOR, OVERCAST_FOG_NEAR, OVERCAST_FOG_FAR);
+      skyStatus = 'overcast-color';
     }
 
     function setGrassDensity(mode) {
@@ -4459,10 +4560,6 @@
       if (qualityFps > 110) {
         if (visualQuality.grassMode !== 'high') setGrassDensity('high');
         if (visualQuality.crowdMode !== 'high') setCrowdDensity('high');
-        if (bloomPass && !visualQuality.bloom) {
-          bloomPass.enabled = true;
-          visualQuality.bloom = true;
-        }
         return;
       }
       if (qualityFps < 90 && visualQuality.grassMode !== 'low' && visualQuality.grassMode !== 'minimum') {
@@ -4475,16 +4572,6 @@
       } else if (qualityFps > 96 && visualQuality.crowdMode === 'low') {
         setCrowdDensity('medium');
       }
-      if (qualityFps < 90 && !visualQuality.shadow2048) {
-        keyLight.shadow.mapSize.set(2048, 2048);
-        keyLight.shadow.map?.dispose?.();
-        keyLight.shadow.map = null;
-        visualQuality.shadow2048 = true;
-      }
-      if (qualityFps < 85 && bloomPass && visualQuality.bloom) {
-        bloomPass.enabled = false;
-        visualQuality.bloom = false;
-      }
       if (qualityFps < 60 && visualQuality.grassMode !== 'minimum') {
         setGrassDensity('minimum');
       }
@@ -4496,7 +4583,7 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.setPixelRatio(window.devicePixelRatio || 1);
       if (composer) composer.setSize(window.innerWidth, window.innerHeight);
-      if (codColorPass) codColorPass.uniforms.resolution.value.set(window.innerWidth, window.innerHeight);
+      resizeDronePreviews();
     }
 
     function createAudio() {
