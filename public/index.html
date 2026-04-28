@@ -209,6 +209,13 @@
       gap: 16px;
     }
 
+    .lobbyLeaveBtn {
+      min-width: auto;
+      padding: 9px 13px 8px;
+      font-size: 18px;
+      opacity: 0.74;
+    }
+
     .brandMini {
       font-family: 'Bebas Neue', Impact, sans-serif;
       font-size: clamp(32px, 5vw, 58px);
@@ -610,6 +617,7 @@
 
     <section id="lobbyView" class="view lobbyView">
       <div class="topBar">
+        <button id="leaveLobbyBtn" class="secondaryBtn lobbyLeaveBtn hidden">Leave Lobby</button>
         <div class="brandMini">2 STEPS <span>AHEAD</span></div>
         <div id="connectionStatus" class="statusPill">Connecting</div>
       </div>
@@ -646,11 +654,11 @@
               <button class="choice" data-value="scrapyard">Scrapyard</button>
             </div>
           </div>
-          <div class="optionGroup" data-option-group="bestOf">
-            <label>Best Of</label>
+          <div class="optionGroup" data-option-group="firstTo">
+            <label>First To</label>
             <div class="choiceSet">
-              <button class="choice selected" data-value="3">Best of 3</button>
-              <button class="choice" data-value="5">Best of 5</button>
+              <button class="choice selected" data-value="5">First to 5</button>
+              <button class="choice" data-value="10">First to 10</button>
             </div>
           </div>
         </div>
@@ -693,7 +701,7 @@
           <div class="matchInfo">
             <div id="modeDisplay">Mode: --</div>
             <div id="mapDisplay">Map: --</div>
-            <div id="bestOfDisplay">Best of --</div>
+            <div id="firstToDisplay">FIRST TO --</div>
           </div>
           <button id="switchTeamBtn" class="teamBtn">Switch Team</button>
           <button id="readyBtn" class="teamBtn">Ready</button>
@@ -715,18 +723,22 @@
       'use strict'
 
       const $ = (selector) => document.querySelector(selector)
+      const urlParams = new URLSearchParams(window.location.search)
+      const LOBBY_ROOM_CODE = (urlParams.get('room') || '').toUpperCase()
       const SOCKET_URL = window.location.hostname === 'localhost'
         ? 'http://localhost:3000'
         : 'https://two-steps-ahead-paintball.onrender.com'
       const state = {
         socket: null,
-        username: '',
+        username: sessionStorage.getItem('paintballUsername') || '',
+        team: sessionStorage.getItem('paintballTeam') || 'red',
         code: '',
         room: null,
+        pendingRoom: LOBBY_ROOM_CODE,
         createOptions: {
           gameMode: '1v1',
           map: 'speedball',
-          bestOf: 3
+          firstTo: 5
         }
       }
 
@@ -754,15 +766,18 @@
         roomCodeShare: $('#roomCodeShare'),
         modeDisplay: $('#modeDisplay'),
         mapDisplay: $('#mapDisplay'),
-        bestOfDisplay: $('#bestOfDisplay'),
+        firstToDisplay: $('#firstToDisplay'),
         redSlots: $('#redSlots'),
         blueSlots: $('#blueSlots'),
         switchTeamBtn: $('#switchTeamBtn'),
         readyBtn: $('#readyBtn'),
-        startMatchBtn: $('#startMatchBtn')
+        startMatchBtn: $('#startMatchBtn'),
+        leaveLobbyBtn: $('#leaveLobbyBtn')
       }
 
       function init() {
+        if (state.username) ui.usernameInput.value = state.username
+        if (state.pendingRoom) showView('lobby')
         bindUi()
         connectSocket()
       }
@@ -797,6 +812,7 @@
         ui.startMatchBtn.addEventListener('click', () => {
           if (state.code) state.socket.emit('start_game', { code: state.code })
         })
+        ui.leaveLobbyBtn.addEventListener('click', leaveLobby)
         ui.roomCodeInput.addEventListener('input', () => {
           ui.roomCodeInput.value = ui.roomCodeInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4)
         })
@@ -813,7 +829,15 @@
         state.socket = io(SOCKET_URL, {
           transports: ['websocket', 'polling']
         })
-        state.socket.on('connect', () => setStatus('Connected'))
+        state.socket.on('connect', () => {
+          setStatus('Connected')
+          if (state.pendingRoom && state.username) {
+            state.socket.emit('rejoin_lobby', { code: state.pendingRoom, username: state.username, team: state.team })
+          } else if (state.pendingRoom) {
+            ui.roomCodeInput.value = state.pendingRoom
+            showPanel('join')
+          }
+        })
         state.socket.on('disconnect', () => setStatus('Disconnected'))
         state.socket.on('room_created', ({ code, room }) => enterRoom(code, room))
         state.socket.on('room_joined', ({ code, room }) => enterRoom(code, room))
@@ -832,6 +856,7 @@
 
       function showPanel(name) {
         Object.keys(panels).forEach((key) => panels[key].classList.toggle('active', key === name))
+        ui.leaveLobbyBtn.classList.toggle('hidden', name !== 'arena')
         clearErrors()
       }
 
@@ -843,13 +868,14 @@
           return false
         }
         state.username = username
+        sessionStorage.setItem('paintballUsername', username)
         return true
       }
 
       function selectOption(groupName, choice) {
         choice.parentElement.querySelectorAll('.choice').forEach((item) => item.classList.toggle('selected', item === choice))
         const value = choice.dataset.value
-        state.createOptions[groupName] = groupName === 'bestOf' ? Number(value) : value
+        state.createOptions[groupName] = groupName === 'firstTo' ? Number(value) : value
       }
 
       function createRoom() {
@@ -862,7 +888,7 @@
           username: state.username,
           gameMode: state.createOptions.gameMode,
           map: state.createOptions.map,
-          bestOf: state.createOptions.bestOf
+          firstTo: state.createOptions.firstTo
         })
       }
 
@@ -882,6 +908,7 @@
 
       function enterRoom(code, room) {
         state.code = code
+        state.pendingRoom = ''
         showPanel('arena')
         renderRoom(room)
       }
@@ -889,12 +916,13 @@
       function renderRoom(room) {
         state.room = room
         state.code = room.code
+        rememberCurrentPlayer(room)
         clearErrors()
         ui.roomCodeDisplay.textContent = room.code
         ui.roomCodeShare.textContent = room.code
         ui.modeDisplay.textContent = 'Mode: ' + room.gameMode
         ui.mapDisplay.textContent = 'Map: ' + formatMap(room.map)
-        ui.bestOfDisplay.textContent = 'Best of ' + room.bestOf
+        ui.firstToDisplay.textContent = 'FIRST TO ' + (room.firstTo || 5)
         renderTeam('red', ui.redSlots, room)
         renderTeam('blue', ui.blueSlots, room)
         renderControls(room)
@@ -955,9 +983,36 @@
           username: state.username,
           mode: room.gameMode,
           map: room.map,
-          bestof: String(room.bestOf)
+          firstto: String(room.firstTo || 5)
         })
         window.location.href = '/game.html?' + params.toString()
+      }
+
+      function leaveLobby() {
+        let navigated = false
+        const navigate = () => {
+          if (navigated) return
+          navigated = true
+          sessionStorage.removeItem('paintballRoom')
+          sessionStorage.removeItem('paintballTeam')
+          window.location.href = '/'
+        }
+        if (state.socket && state.socket.connected && state.code) {
+          state.socket.emit('leave_room', { code: state.code }, navigate)
+          setTimeout(navigate, 200)
+        } else {
+          navigate()
+        }
+      }
+
+      function rememberCurrentPlayer(room) {
+        const me = currentPlayer(room)
+        if (!me) return
+        state.username = me.username || state.username
+        state.team = me.team || state.team
+        sessionStorage.setItem('paintballUsername', state.username)
+        sessionStorage.setItem('paintballTeam', state.team)
+        sessionStorage.setItem('paintballRoom', room.code)
       }
 
       function currentPlayer(room) {

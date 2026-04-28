@@ -32,17 +32,37 @@ function normalizeTeam(team) {
   return team === 'blue' ? 'blue' : 'red'
 }
 
+function normalizeFirstTo(firstTo) {
+  return Number(firstTo) === 10 ? 10 : 5
+}
+
+function removePlayerFromRoom(socket, code) {
+  const room = rooms[code]
+  if (!room) return
+  const existing = room.players.find(p => p.id === socket.id)
+  if (!existing) return
+  room.players = room.players.filter(p => p.id !== socket.id)
+  socket.leave(code)
+  if (room.players.length === 0) {
+    delete rooms[code]
+    return
+  }
+  if (room.host === socket.id) room.host = room.players[0].id
+  io.to(code).emit('lobby_update', room)
+  io.to(code).emit('player_disconnected', { id: socket.id })
+}
+
 io.on('connection', (socket) => {
   console.log('Player connected:', socket.id)
 
-  socket.on('create_room', ({ username, gameMode, map, bestOf }) => {
+  socket.on('create_room', ({ username, gameMode, map, firstTo }) => {
     const code = generateCode()
     rooms[code] = {
       code, host: socket.id,
-      gameMode, map, bestOf,
+      gameMode, map, firstTo: normalizeFirstTo(firstTo),
       players: [{
         id: socket.id, username,
-        team: 'red', ready: false, connected: true
+        team: 'red', ready: false, connected: true, returningToLobby: false
       }],
       state: 'lobby'
     }
@@ -60,8 +80,33 @@ io.on('connection', (socket) => {
     }
     const team = room.players.filter(p=>p.team==='red').length <=
                  room.players.filter(p=>p.team==='blue').length ? 'red' : 'blue'
-    room.players.push({ id: socket.id, username, team, ready: false, connected: true })
+    room.players.push({ id: socket.id, username, team, ready: false, connected: true, returningToLobby: false })
     socket.join(code)
+    socket.emit('room_joined', { code, room })
+    io.to(code).emit('lobby_update', room)
+  })
+
+  socket.on('rejoin_lobby', ({ code, username, team }) => {
+    code = normalizeCode(code)
+    team = normalizeTeam(team)
+    username = String(username || 'Player').slice(0, 16)
+    const room = rooms[code]
+    if (!room) { socket.emit('join_error', 'Room not found'); return }
+    room.state = 'lobby'
+    socket.join(code)
+    let player = room.players.find(p => p.username === username) || room.players.find(p => p.id === socket.id)
+    if (player) {
+      if (room.host === player.id) room.host = socket.id
+      player.id = socket.id
+      player.team = team
+      player.connected = true
+      player.returningToLobby = false
+    } else {
+      const maxPlayers = room.gameMode === '2v2' ? 4 : 2
+      if (room.players.length >= maxPlayers) { socket.emit('join_error', 'Room is full'); return }
+      player = { id: socket.id, username, team, ready: false, connected: true, returningToLobby: false }
+      room.players.push(player)
+    }
     socket.emit('room_joined', { code, room })
     io.to(code).emit('lobby_update', room)
   })
@@ -115,8 +160,9 @@ io.on('connection', (socket) => {
       player.team = team
       player.ready = true
       player.connected = true
+      player.returningToLobby = false
     } else {
-      player = { id: socket.id, username, team, ready: true, connected: true }
+      player = { id: socket.id, username, team, ready: true, connected: true, returningToLobby: false }
       room.players.push(player)
     }
     socket.emit('game_ready', { room, myTeam: team })
@@ -153,25 +199,39 @@ io.on('connection', (socket) => {
     io.to(code).emit('round_ended', { winner })
   })
 
+  socket.on('return_to_lobby', ({ code }, ack) => {
+    code = normalizeCode(code)
+    const room = rooms[code]
+    if (room) {
+      room.state = 'lobby'
+      const player = room.players.find(p => p.id === socket.id)
+      if (player) {
+        player.connected = false
+        player.returningToLobby = true
+      }
+      io.to(code).emit('lobby_update', room)
+    }
+    if (typeof ack === 'function') ack()
+  })
+
+  socket.on('leave_room', ({ code }, ack) => {
+    code = normalizeCode(code)
+    removePlayerFromRoom(socket, code)
+    if (typeof ack === 'function') ack()
+  })
+
   socket.on('disconnect', () => {
     Object.keys(rooms).forEach(code => {
       const room = rooms[code]
-      if (room.state === 'playing') {
-        const player = room.players.find(p => p.id === socket.id)
+      const player = room.players.find(p => p.id === socket.id)
+      if (room.state === 'playing' || player?.returningToLobby) {
         if (player) {
           player.connected = false
           io.to(code).emit('player_disconnected', { id: socket.id })
         }
         return
       }
-      room.players = room.players.filter(p => p.id !== socket.id)
-      if (room.players.length === 0) {
-        delete rooms[code]
-      } else {
-        if (room.host === socket.id) room.host = room.players[0].id
-        io.to(code).emit('lobby_update', room)
-        io.to(code).emit('player_disconnected', { id: socket.id })
-      }
+      removePlayerFromRoom(socket, code)
     })
   })
 })

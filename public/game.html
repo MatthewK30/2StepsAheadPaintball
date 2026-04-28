@@ -361,7 +361,8 @@
     }
 
     #menu,
-    #matchScreen {
+    #matchScreen,
+    #pauseScreen {
       position: fixed;
       inset: 0;
       z-index: 5;
@@ -418,6 +419,13 @@
 
     #matchScreen {
       display: none;
+      background: rgba(0, 0, 0, 0.78);
+    }
+
+    #pauseScreen {
+      z-index: 7;
+      display: none;
+      place-items: center;
       background: rgba(0, 0, 0, 0.78);
     }
 
@@ -694,6 +702,32 @@
       font-weight: 700;
     }
 
+    .overlayActions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      justify-content: center;
+    }
+
+    .overlayActions button,
+    #leaveGameBtn {
+      color: #ffffff;
+      background: linear-gradient(135deg, #7d0808 0%, #cc1515 52%, #ff3333 100%);
+      clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+      border-radius: 0;
+      letter-spacing: 0.14em;
+    }
+
+    #leaveGameBtn {
+      position: absolute;
+      left: 18px;
+      top: 18px;
+      z-index: 2;
+      padding: 9px 14px 8px;
+      font-size: 18px;
+      opacity: 0.82;
+    }
+
     @media (max-width: 720px) {
       .cards,
       .menuOptions {
@@ -746,8 +780,8 @@
         <div class="optionGroup">
           <div class="optionLabel">Match Length</div>
           <div class="optionButtons">
-            <div class="choice selected" data-best="3" tabindex="0">Best of 3</div>
-            <div class="choice" data-best="5" tabindex="0">Best of 5</div>
+            <div class="choice selected" data-first="5" tabindex="0">First to 5</div>
+            <div class="choice" data-first="10" tabindex="0">First to 10</div>
           </div>
         </div>
         <div class="optionGroup">
@@ -769,11 +803,26 @@
     <div class="panel" style="padding: 32px; width: min(720px, calc(100vw - 34px));">
       <h2 id="matchTitle">Match Complete</h2>
       <p id="matchCopy">Red wins the match.</p>
-      <button id="restartBtn" style="display:block; margin:0 auto;">Back to Map Select</button>
+      <div class="overlayActions">
+        <button id="matchLobbyBtn">Back to Lobby</button>
+        <button id="matchMenuBtn">Main Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="pauseScreen">
+    <div class="panel" style="padding: 32px; width: min(620px, calc(100vw - 34px));">
+      <h2 id="pauseTitle">2 Steps Ahead</h2>
+      <div class="overlayActions">
+        <button id="resumeBtn">Resume</button>
+        <button id="pauseLobbyBtn">Back to Lobby</button>
+        <button id="pauseMenuBtn">Main Menu</button>
+      </div>
     </div>
   </div>
 
   <div id="hud">
+    <button id="leaveGameBtn">Leave</button>
     <div id="topHud">
       <div id="timer">1:00</div>
       <div id="score">Red 0 - Blue 0</div>
@@ -877,7 +926,7 @@
     const MY_USERNAME = urlParams.get('username') || 'Player';
     const GAME_MODE = urlParams.get('mode') || '1v1';
     const SELECTED_MAP = urlParams.get('map') === 'scrapyard' ? 'scrapyard' : 'speedball';
-    const BEST_OF = parseInt(urlParams.get('bestof'), 10) || 3;
+    const FIRST_TO = parseInt(urlParams.get('firstto'), 10) === 10 ? 10 : 5;
     const OPPONENT_TEAM = MY_TEAM === 'blue' ? 'red' : 'blue';
     const SOCKET_URL = window.location.hostname === 'localhost'
       ? 'http://localhost:3000'
@@ -914,7 +963,13 @@
       menu: document.getElementById('menu'),
       matchScreen: document.getElementById('matchScreen'),
       deployBtn: document.getElementById('deployBtn'),
-      restartBtn: document.getElementById('restartBtn'),
+      matchLobbyBtn: document.getElementById('matchLobbyBtn'),
+      matchMenuBtn: document.getElementById('matchMenuBtn'),
+      pauseScreen: document.getElementById('pauseScreen'),
+      resumeBtn: document.getElementById('resumeBtn'),
+      pauseLobbyBtn: document.getElementById('pauseLobbyBtn'),
+      pauseMenuBtn: document.getElementById('pauseMenuBtn'),
+      leaveGameBtn: document.getElementById('leaveGameBtn'),
       hud: document.getElementById('hud'),
       timer: document.getElementById('timer'),
       score: document.getElementById('score'),
@@ -936,7 +991,7 @@
 
     const state = {
       selectedMap: MULTIPLAYER ? SELECTED_MAP : 'scrapyard',
-      bestOf: MULTIPLAYER ? BEST_OF : 3,
+      firstTo: MULTIPLAYER ? FIRST_TO : 5,
       roundDuration: ROUND_TIME,
       phase: 'menu',
       round: 1,
@@ -2858,8 +2913,11 @@
     function applyMatchSettings() {
       if (MULTIPLAYER) {
         state.selectedMap = SELECTED_MAP;
-        state.bestOf = BEST_OF;
+        state.firstTo = FIRST_TO;
         setTeamSpawns(MY_TEAM);
+        sessionStorage.setItem('paintballRoom', ROOM_CODE);
+        sessionStorage.setItem('paintballUsername', MY_USERNAME);
+        sessionStorage.setItem('paintballTeam', MY_TEAM);
       }
       updateTeamBadge();
     }
@@ -2882,6 +2940,12 @@
     }
 
     function setupMenu() {
+      ui.matchLobbyBtn.addEventListener('click', goBackToLobby);
+      ui.matchMenuBtn.addEventListener('click', goMainMenu);
+      ui.leaveGameBtn.addEventListener('click', showPauseMenu);
+      ui.resumeBtn.addEventListener('click', hidePauseMenu);
+      ui.pauseLobbyBtn.addEventListener('click', goBackToLobby);
+      ui.pauseMenuBtn.addEventListener('click', goMainMenu);
       if (MULTIPLAYER) {
         ui.menu.style.display = 'none';
         return;
@@ -2907,10 +2971,10 @@
           updateDronePreviewSelection();
         });
       });
-      document.querySelectorAll('[data-best]').forEach((choice) => {
+      document.querySelectorAll('[data-first]').forEach((choice) => {
         const select = () => {
-          state.bestOf = Number(choice.dataset.best);
-          document.querySelectorAll('[data-best]').forEach((c) => c.classList.toggle('selected', c === choice));
+          state.firstTo = Number(choice.dataset.first) || 5;
+          document.querySelectorAll('[data-first]').forEach((c) => c.classList.toggle('selected', c === choice));
         };
         choice.addEventListener('click', select);
         choice.addEventListener('keydown', (e) => activateMenuChoice(e, select));
@@ -2928,18 +2992,60 @@
         startMatch();
         renderer.domElement.requestPointerLock?.();
       });
-      ui.restartBtn.addEventListener('click', () => {
-        ui.matchScreen.style.display = 'none';
-        ui.menu.style.display = 'block';
-        ui.hud.classList.remove('visible');
-        state.phase = 'menu';
-        state.running = false;
-        hideAllMaps();
-        stopAmbient();
-        document.exitPointerLock?.();
-      });
       setupDronePreviews();
       selectMenuMap(state.selectedMap);
+    }
+
+    function showPauseMenu() {
+      if (state.phase === 'menu' || state.phase === 'matchOver') return;
+      ui.pauseScreen.style.display = 'grid';
+      document.exitPointerLock?.();
+    }
+
+    function hidePauseMenu() {
+      ui.pauseScreen.style.display = 'none';
+      if (state.running && state.phase !== 'matchOver') renderer.domElement.requestPointerLock?.();
+    }
+
+    function goBackToLobby() {
+      if (!MULTIPLAYER || !ROOM_CODE) {
+        window.location.href = '/';
+        return;
+      }
+      sessionStorage.setItem('paintballRoom', ROOM_CODE);
+      sessionStorage.setItem('paintballUsername', MY_USERNAME);
+      sessionStorage.setItem('paintballTeam', MY_TEAM);
+      const navigate = () => { window.location.href = '/?room=' + encodeURIComponent(ROOM_CODE); };
+      if (multiplayer.socket && multiplayer.socket.connected) {
+        let navigated = false;
+        const done = () => {
+          if (navigated) return;
+          navigated = true;
+          navigate();
+        };
+        multiplayer.socket.emit('return_to_lobby', { code: ROOM_CODE }, done);
+        setTimeout(done, 200);
+        return;
+      }
+      navigate();
+    }
+
+    function goMainMenu() {
+      sessionStorage.removeItem('paintballRoom');
+      sessionStorage.removeItem('paintballTeam');
+      const navigate = () => { window.location.href = '/'; };
+      if (MULTIPLAYER && multiplayer.socket && multiplayer.socket.connected) {
+        let navigated = false;
+        const done = () => {
+          if (navigated) return;
+          navigated = true;
+          navigate();
+        };
+        multiplayer.socket.emit('leave_room', { code: ROOM_CODE }, done);
+        setTimeout(done, 200);
+        return;
+      }
+      navigate();
     }
 
     function activateMenuChoice(e, callback) {
@@ -3226,7 +3332,7 @@
         input.pointerLocked = document.pointerLockElement === renderer.domElement;
       });
       renderer.domElement.addEventListener('click', () => {
-        if (state.phase !== 'menu' && state.phase !== 'matchOver') {
+        if (state.phase !== 'menu' && state.phase !== 'matchOver' && ui.pauseScreen.style.display !== 'grid') {
           unlockAudio();
           renderer.domElement.requestPointerLock?.();
         }
@@ -3248,6 +3354,12 @@
 
     function setKey(e, down) {
       const code = e.code;
+      if (code === 'Escape' && down && !e.repeat) {
+        if (ui.pauseScreen.style.display === 'grid') hidePauseMenu();
+        else showPauseMenu();
+        e.preventDefault();
+        return;
+      }
       if (code === 'KeyW') input.forward = down;
       else if (code === 'KeyS') input.backward = down;
       else if (code === 'KeyA') input.left = down;
@@ -3340,6 +3452,7 @@
       ui.menu.style.display = 'none';
       ui.hud.classList.add('visible');
       ui.matchScreen.style.display = 'none';
+      ui.pauseScreen.style.display = 'none';
       startRound();
       startAmbient(active.ambient);
     }
@@ -3488,8 +3601,7 @@
     function updateRoundOver(dt) {
       state.roundOverClock -= dt;
       if (state.roundOverClock <= 0) {
-        const needed = Math.ceil(state.bestOf / 2);
-        if (state.scoreRed >= needed || state.scoreBlue >= needed) {
+        if (state.scoreRed >= state.firstTo || state.scoreBlue >= state.firstTo) {
           endMatch(state.scoreRed > state.scoreBlue ? 'Red' : 'Blue');
         } else {
           state.round += 1;
@@ -4582,6 +4694,7 @@
       audio.updateRattle(false, false);
       ui.hud.classList.remove('visible');
       hideEliminatedOverlay();
+      ui.pauseScreen.style.display = 'none';
       ui.matchTitle.textContent = winner + ' Wins Match';
       ui.matchCopy.textContent = 'Final score: Red ' + state.scoreRed + ' - Blue ' + state.scoreBlue + '. Average FPS: ' + Math.round(state.fpsAverage) + '.';
       ui.matchScreen.style.display = 'grid';
@@ -4768,7 +4881,7 @@
       const seconds = Math.max(0, Math.ceil(state.roundClock));
       ui.timer.textContent = Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0');
       ui.score.innerHTML = '<span class="scoreRed">Red ' + state.scoreRed + '</span> - <span class="scoreBlue">Blue ' + state.scoreBlue + '</span>';
-      ui.roundInfo.textContent = 'Round ' + state.round + ' | Best of ' + state.bestOf;
+      ui.roundInfo.textContent = 'Round ' + state.round + ' | FIRST TO ' + state.firstTo;
       const fill = clamp(1 - state.shotClock / SHOT_COOLDOWN, 0, 1) * 360;
       ui.cooldown.style.background = 'conic-gradient(#ff3442 ' + fill + 'deg, rgba(255,255,255,0.15) ' + fill + 'deg)';
       updateAmmoHud();
