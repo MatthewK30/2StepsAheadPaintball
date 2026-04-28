@@ -1125,10 +1125,19 @@
       reactClock: 0,
       cover: null,
       moving: false,
+      aiming: false,
       shotStreak: 0,
       shotStreakTimer: 0,
       lastKnownPlayer: new THREE.Vector3(0, 0, 0),
-      lastKnownTime: 0
+      lastKnownTime: 0,
+      visual: {
+        crouch: 0,
+        prone: 0,
+        aim: 0,
+        run: 0,
+        death: 0,
+        deathActive: false
+      }
     };
 
     const remotePlayer = {
@@ -2709,182 +2718,143 @@
       const teamMats = getTeamMaterials(team || 'blue');
       ai.group.visible = false;
       ai.limbs = {};
-      ai.body = new THREE.Mesh(geometries.cylinderLow, teamMats.primary);
-      ai.body.position.y = 0.88;
-      ai.body.scale.set(0.48, 0.78, 0.42);
-      const chest = new THREE.Mesh(geometries.box, materials.black);
-      chest.position.set(0, 1.02, -0.38);
-      chest.scale.set(0.46, 0.42, 0.045);
-      const logo = new THREE.Mesh(geometries.box, materials.white);
-      logo.position.set(0, 1.06, -0.43);
-      logo.scale.set(0.22, 0.12, 0.025);
-      const backLogo = new THREE.Mesh(geometries.box, materials.white);
-      backLogo.position.set(0, 1.05, 0.43);
-      backLogo.scale.set(0.26, 0.16, 0.025);
-      ai.head = new THREE.Mesh(geometries.sphere, materials.skin);
-      ai.head.position.y = 1.68;
-      ai.head.scale.set(0.28, 0.3, 0.28);
-      const helmet = new THREE.Mesh(geometries.sphere, materials.black);
-      helmet.position.y = 1.88;
-      helmet.scale.set(0.31, 0.12, 0.31);
-      const mask = new THREE.Mesh(geometries.box, materials.black);
-      mask.position.set(0, 1.66, -0.25);
-      mask.scale.set(0.36, 0.2, 0.07);
-      const visor = new THREE.Mesh(geometries.box, materials.hopperGlass);
-      visor.position.set(0, 1.71, -0.3);
-      visor.scale.set(0.34, 0.07, 0.035);
-      const chin = new THREE.Mesh(geometries.box, teamMats.dark);
-      chin.position.set(0, 1.51, -0.27);
-      chin.scale.set(0.28, 0.09, 0.08);
-      const maskAccent = new THREE.Mesh(geometries.box, teamMats.primary);
-      maskAccent.position.set(0.22, 1.66, -0.26);
-      maskAccent.scale.set(0.04, 0.18, 0.08);
-      const gear = [];
-      const foamTop = new THREE.Mesh(geometries.box, materials.foam);
-      foamTop.position.set(0, 1.77, -0.318);
-      foamTop.scale.set(0.4, 0.045, 0.025);
-      const foamBottom = foamTop.clone();
-      foamBottom.position.y = 1.61;
-      gear.push(foamTop, foamBottom);
-      for (let side = -1; side <= 1; side += 2) {
-        const ear = new THREE.Mesh(geometries.sphere, materials.foam);
-        ear.position.set(side * 0.3, 1.66, -0.04);
-        ear.scale.set(0.065, 0.16, 0.13);
-        gear.push(ear);
-      }
-      const collar = new THREE.Mesh(geometries.cylinderLow, materials.black);
-      collar.position.y = 1.37;
-      collar.scale.set(0.23, 0.055, 0.23);
-      gear.push(collar);
-      const protector = new THREE.Mesh(geometries.sphere, teamMats.dark);
-      protector.position.set(0, 1.02, -0.43);
-      protector.scale.set(0.38, 0.35, 0.065);
-      gear.push(protector);
-      const strap = new THREE.Mesh(geometries.box, materials.black);
-      strap.position.set(0, 1.68, 0.25);
-      strap.scale.set(0.52, 0.075, 0.055);
-      gear.push(strap);
-      const chestStrapA = new THREE.Mesh(geometries.box, materials.gunRubber);
-      chestStrapA.position.set(-0.1, 1.05, -0.45);
-      chestStrapA.scale.set(0.055, 0.62, 0.028);
-      chestStrapA.rotation.z = -0.48;
-      const chestStrapB = chestStrapA.clone();
-      chestStrapB.position.x = 0.1;
-      chestStrapB.rotation.z = 0.48;
-      gear.push(chestStrapA, chestStrapB);
-      const numberOne = new THREE.Mesh(geometries.box, materials.white);
-      numberOne.position.set(-0.055, 1.05, 0.465);
-      numberOne.scale.set(0.045, 0.24, 0.022);
-      const numberTwoA = new THREE.Mesh(geometries.box, materials.white);
-      numberTwoA.position.set(0.07, 1.12, 0.465);
-      numberTwoA.scale.set(0.12, 0.04, 0.022);
-      const numberTwoB = numberTwoA.clone();
-      numberTwoB.position.y = 1.02;
-      const numberTwoC = numberTwoA.clone();
-      numberTwoC.position.y = 0.92;
-      gear.push(numberOne, numberTwoA, numberTwoB, numberTwoC);
-      for (let i = 0; i < 4; i++) {
-        const vent = new THREE.Mesh(geometries.box, materials.darkGrey);
-        vent.position.set(0, 1.49 + i * 0.035, -0.326);
-        vent.scale.set(0.23 - i * 0.02, 0.012, 0.018);
-        gear.push(vent);
-      }
-      for (let side = -1; side <= 1; side += 2) {
-        const shoulder = new THREE.Mesh(geometries.sphere, teamMats.dark);
-        shoulder.position.set(side * 0.43, 1.27, -0.04);
-        shoulder.scale.set(0.16, 0.12, 0.18);
-        gear.push(shoulder);
-        const elbow = new THREE.Mesh(geometries.sphere, materials.black);
-        elbow.position.set(side * 0.35, 1.02, -0.27);
-        elbow.scale.set(0.105, 0.07, 0.11);
-        gear.push(elbow);
-      }
-      const podPack = new THREE.Mesh(geometries.box, materials.black);
-      podPack.position.set(0, 0.8, 0.43);
-      podPack.scale.set(0.5, 0.23, 0.12);
-      gear.push(podPack);
-      ai.podTubes = [];
-      for (let i = 0; i < STARTING_PODS; i++) {
-        const pod = new THREE.Mesh(geometries.cylinderLow, i % 2 ? materials.darkGrey : materials.grey);
-        pod.position.set((i - 2) * 0.11, 1.02, 0.49);
-        pod.scale.set(0.045, 0.26, 0.045);
-        pod.rotation.x = 0.16;
-        gear.push(pod);
-        ai.podTubes.push(pod);
-      }
+      const root = new THREE.Group();
+      root.name = 'opponentMannequinRoot';
+      ai.limbs.root = root;
 
-      function limb(name, x, y, z, sx, sy, sz, rotX, rotY, rotZ, mat) {
-        const mesh = new THREE.Mesh(geometries.cylinderLow, mat);
+      const addMesh = (mesh, parent, name) => {
+        if (name) mesh.name = name;
+        shadowMesh(mesh, true, true);
+        mesh.frustumCulled = false;
+        mesh.userData.coverCull = true;
+        (parent || root).add(mesh);
+        return mesh;
+      };
+      const addBox = (name, mat, x, y, z, sx, sy, sz, parent, rx, ry, rz) => {
+        const mesh = new THREE.Mesh(geometries.box, mat);
         mesh.position.set(x, y, z);
         mesh.scale.set(sx, sy, sz);
-        mesh.rotation.set(rotX, rotY, rotZ);
-        shadowMesh(mesh, true, true);
-        ai.limbs[name] = mesh;
-        ai.group.add(mesh);
+        mesh.rotation.set(rx || 0, ry || 0, rz || 0);
+        return addMesh(mesh, parent, name);
+      };
+      const addSphere = (name, mat, x, y, z, sx, sy, sz, parent) => {
+        const mesh = new THREE.Mesh(geometries.sphere, mat);
+        mesh.position.set(x, y, z);
+        mesh.scale.set(sx, sy, sz);
+        return addMesh(mesh, parent, name);
+      };
+      const addCylinder = (name, mat, x, y, z, radiusTop, radiusBottom, length, parent, radialSegments) => {
+        const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radiusTop, radiusBottom, length, radialSegments || 16, 1), mat);
+        mesh.position.set(x, y, z);
+        return addMesh(mesh, parent, name);
+      };
+      const addSegment = (name, mat, length, radiusTop, radiusBottom, parent) => {
+        const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radiusTop, radiusBottom, length, 14, 1), mat);
+        mesh.position.y = -length * 0.5;
+        addMesh(mesh, parent, name + 'Mesh');
         return mesh;
+      };
+      const addPivot = (name, x, y, z, parent) => {
+        const group = new THREE.Group();
+        group.name = name;
+        group.position.set(x, y, z);
+        (parent || root).add(group);
+        return group;
+      };
+
+      const jersey = teamMats.primary;
+      const jerseyDark = teamMats.dark;
+      const jointMat = teamMats.dark;
+      const pants = teamMats.dark;
+      const glove = materials.glove;
+      const boot = materials.rubber;
+
+      const hips = addBox('hips', jerseyDark, 0, 0.88, 0, 0.25, 0.105, 0.16, root);
+      ai.limbs.hips = hips;
+      ai.body = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.135, 0.45, 8, 1), jersey);
+      ai.body.position.set(0, 1.135, 0);
+      ai.body.scale.set(1.18, 1, 0.62);
+      addMesh(ai.body, root, 'torso');
+      addBox('torsoBelt', materials.black, 0, 0.925, -0.002, 0.24, 0.025, 0.17, root);
+      addBox('chestPlate', jerseyDark, 0, 1.19, -0.115, 0.17, 0.075, 0.018, root);
+
+      addCylinder('neck', jointMat, 0, 1.405, 0, 0.045, 0.04, 0.1, root, 16);
+      ai.head = addSphere('head', jersey, 0, 1.59, -0.01, 0.15, 0.18, 0.135, root);
+      addBox('mask', materials.black, 0, 1.58, -0.13, 0.16, 0.115, 0.04, root);
+      addBox('visor', materials.hopperGlass, 0, 1.615, -0.155, 0.13, 0.035, 0.014, root);
+      addBox('maskMouth', jerseyDark, 0, 1.525, -0.156, 0.105, 0.03, 0.014, root);
+
+      ai.limbs.leftShoulderJoint = addSphere('leftShoulderJoint', jointMat, -0.28, 1.34, 0, 0.07, 0.07, 0.07, root);
+      ai.limbs.rightShoulderJoint = addSphere('rightShoulderJoint', jointMat, 0.28, 1.34, 0, 0.07, 0.07, 0.07, root);
+
+      function buildArm(prefix, side) {
+        const upper = addPivot(prefix + 'UpperArm', side * 0.28, 1.31, 0, root);
+        upper.userData.side = side;
+        addSegment(prefix + 'UpperArm', jersey, 0.34, 0.044, 0.04, upper);
+        ai.limbs[prefix + 'UpperArm'] = upper;
+        ai.limbs[prefix + 'ElbowJoint'] = addSphere(prefix + 'ElbowJoint', jointMat, 0, -0.34, 0, 0.052, 0.052, 0.052, upper);
+        const fore = addPivot(prefix + 'ForeArm', 0, -0.34, 0, upper);
+        fore.userData.side = side;
+        addSegment(prefix + 'ForeArm', jerseyDark, 0.31, 0.037, 0.033, fore);
+        ai.limbs[prefix + 'ForeArm'] = fore;
+        ai.limbs[prefix + 'Hand'] = addBox(prefix + 'Hand', glove, 0, -0.325, -0.015, 0.055, 0.055, 0.07, fore);
       }
-      limb('leftUpperArm', -0.38, 1.18, -0.08, 0.08, 0.34, 0.08, 1.05, 0.2, 0.55, teamMats.primary);
-      limb('leftForeArm', -0.32, 1.02, -0.42, 0.07, 0.34, 0.07, 1.35, 0, 0.2, teamMats.dark);
-      limb('rightUpperArm', 0.38, 1.18, -0.05, 0.08, 0.34, 0.08, 0.95, -0.18, -0.55, teamMats.primary);
-      limb('rightForeArm', 0.36, 0.98, -0.36, 0.07, 0.34, 0.07, 1.25, 0.05, -0.16, teamMats.dark);
-      limb('leftThigh', -0.18, 0.42, 0.02, 0.1, 0.38, 0.1, 0.04, 0, 0.08, materials.darkGrey);
-      limb('rightThigh', 0.18, 0.42, 0.02, 0.1, 0.38, 0.1, -0.04, 0, -0.08, materials.darkGrey);
-      limb('leftShin', -0.18, 0.14, -0.02, 0.085, 0.32, 0.085, 0.08, 0, 0.02, materials.grey);
-      limb('rightShin', 0.18, 0.14, -0.02, 0.085, 0.32, 0.085, -0.08, 0, -0.02, materials.grey);
-      const leftKnee = new THREE.Mesh(geometries.sphere, materials.black);
-      leftKnee.position.set(-0.18, 0.27, -0.12);
-      leftKnee.scale.set(0.13, 0.08, 0.13);
-      const rightKnee = leftKnee.clone();
-      rightKnee.position.x = 0.18;
-      const leftFoot = new THREE.Mesh(geometries.box, materials.black);
-      leftFoot.position.set(-0.18, 0.03, -0.18);
-      leftFoot.scale.set(0.2, 0.08, 0.34);
-      const leftCleat = new THREE.Mesh(geometries.box, materials.rubber);
-      leftCleat.position.set(-0.18, 0.0, -0.2);
-      leftCleat.scale.set(0.24, 0.035, 0.38);
-      const rightFoot = leftFoot.clone();
-      rightFoot.position.x = 0.18;
-      const rightCleat = leftCleat.clone();
-      rightCleat.position.x = 0.18;
-      for (let side = -1; side <= 1; side += 2) {
-        const pocket = new THREE.Mesh(geometries.box, materials.darkGrey);
-        pocket.position.set(side * 0.29, 0.48, 0.0);
-        pocket.scale.set(0.065, 0.18, 0.13);
-        gear.push(pocket);
-        for (let i = 0; i < 3; i++) {
-          const stud = new THREE.Mesh(geometries.sphere, materials.grey);
-          stud.position.set(side * 0.18, -0.045, -0.33 + i * 0.1);
-          stud.scale.setScalar(0.025);
-          gear.push(stud);
-        }
+      buildArm('left', -1);
+      buildArm('right', 1);
+
+      ai.limbs.leftHipJoint = addSphere('leftHipJoint', jointMat, -0.135, 0.88, 0, 0.06, 0.06, 0.06, root);
+      ai.limbs.rightHipJoint = addSphere('rightHipJoint', jointMat, 0.135, 0.88, 0, 0.06, 0.06, 0.06, root);
+
+      function buildLeg(prefix, side) {
+        const thigh = addPivot(prefix + 'Thigh', side * 0.135, 0.86, 0, root);
+        thigh.userData.side = side;
+        addSegment(prefix + 'Thigh', pants, 0.42, 0.06, 0.05, thigh);
+        ai.limbs[prefix + 'Thigh'] = thigh;
+        ai.limbs[prefix + 'KneeJoint'] = addSphere(prefix + 'KneeJoint', materials.black, 0, -0.42, 0, 0.055, 0.055, 0.055, thigh);
+        const shin = addPivot(prefix + 'Shin', 0, -0.42, 0, thigh);
+        shin.userData.side = side;
+        addSegment(prefix + 'Shin', pants, 0.43, 0.047, 0.04, shin);
+        ai.limbs[prefix + 'Shin'] = shin;
+        ai.limbs[prefix + 'Foot'] = addBox(prefix + 'Foot', boot, 0, -0.445, -0.055, 0.09, 0.045, 0.2, shin);
       }
-      const leftGlove = new THREE.Mesh(geometries.sphere, materials.black);
-      leftGlove.position.set(-0.28, 0.88, -0.68);
-      leftGlove.scale.set(0.1, 0.08, 0.1);
-      const rightGlove = leftGlove.clone();
-      rightGlove.position.set(0.34, 0.86, -0.55);
+      buildLeg('left', -1);
+      buildLeg('right', 1);
+
+      ai.podTubes = [];
+      const podPack = addBox('podPack', materials.black, 0, 0.92, 0.18, 0.22, 0.09, 0.06, root);
+      for (let i = 0; i < STARTING_PODS; i++) {
+        const pod = addCylinder('podTube' + i, i % 2 ? materials.darkGrey : materials.grey, (i - 1) * 0.075, 0.95, 0.235, 0.028, 0.028, 0.18, root, 12);
+        pod.rotation.x = 0.18;
+        ai.podTubes.push(pod);
+      }
+      podPack.userData.coverCull = true;
+
       ai.marker = new THREE.Group();
+      ai.marker.name = 'marker';
+      ai.marker.position.set(0.08, 1.11, -0.36);
+      root.add(ai.marker);
       const body = new THREE.Mesh(geometries.box, materials.gunAccent);
-      body.position.set(0.38, 1.05, -0.2);
-      body.scale.set(0.35, 0.16, 0.48);
+      body.position.set(0.02, 0, -0.04);
+      body.scale.set(0.17, 0.07, 0.22);
       const barrel = new THREE.Mesh(geometries.cylinderLow, materials.black);
-      barrel.position.set(0.38, 1.08, -0.62);
-      barrel.scale.set(0.045, 0.55, 0.045);
+      barrel.position.set(0.02, 0.015, -0.32);
+      barrel.scale.set(0.024, 0.34, 0.024);
       barrel.rotation.x = Math.PI / 2;
       const hopper = new THREE.Mesh(geometries.sphere, materials.hopper);
-      hopper.position.set(0.38, 1.32, -0.18);
-      hopper.scale.set(0.25, 0.2, 0.25);
+      hopper.position.set(0.02, 0.14, -0.03);
+      hopper.scale.set(0.12, 0.085, 0.12);
       ai.marker.add(body, barrel, hopper);
       ai.splat = new THREE.Mesh(geometries.splat, getTeamMaterials(MY_TEAM).paint);
-      ai.splat.position.set(0, 1.25, -0.43);
-      ai.splat.scale.set(0.55, 0.46, 1);
+      ai.splat.position.set(0, 1.18, -0.14);
+      ai.splat.scale.set(0.32, 0.26, 1);
       ai.splat.visible = false;
       const splat2 = new THREE.Mesh(geometries.splat, getTeamMaterials(MY_TEAM).paint);
-      splat2.position.set(0.22, 1.62, -0.31);
-      splat2.scale.set(0.22, 0.18, 1);
+      splat2.position.set(0.08, 1.6, -0.16);
+      splat2.scale.set(0.16, 0.13, 1);
       splat2.visible = false;
       ai.limbs.splat2 = splat2;
-      ai.group.add(ai.body, chest, logo, backLogo, ai.head, helmet, mask, visor, chin, maskAccent, ...gear, leftKnee, rightKnee, leftFoot, rightFoot, leftCleat, rightCleat, leftGlove, rightGlove, ai.marker, ai.splat, splat2);
+      root.add(ai.splat, splat2);
+      ai.group.add(root);
       ai.group.traverse((child) => {
         if (child.isMesh) {
           child.userData.coverCull = child !== ai.splat && child !== splat2;
@@ -3507,10 +3477,17 @@
       ai.peekSide = 0;
       ai.reactClock = 0;
       ai.cover = null;
+      ai.aiming = false;
       ai.shotStreak = 0;
       ai.shotStreakTimer = 0;
       ai.lastKnownPlayer.copy(player.root.position);
       ai.lastKnownTime = 0;
+      ai.visual.crouch = 0;
+      ai.visual.prone = 0;
+      ai.visual.aim = 0;
+      ai.visual.run = 0;
+      ai.visual.death = 0;
+      ai.visual.deathActive = false;
       gun.paint.visible = false;
       hideEliminatedOverlay();
       clearProjectiles();
@@ -3564,6 +3541,7 @@
       updateClouds(dt);
       updateSpectators();
       updateRemotePlayer(dt);
+      if (state.aiEliminated) updateAiVisual(dt, false, false);
       if (state.phase === 'countdown') updateCountdown(dt);
       else if (state.phase === 'active') updateActiveRound(dt);
       else if (state.phase === 'roundOver') updateRoundOver(dt);
@@ -4504,10 +4482,11 @@
       if (tmpVecB.lengthSq() > 0.001) {
         ai.group.rotation.y = Math.atan2(tmpVecB.x, tmpVecB.z);
       }
-      updateAiVisual(dt, dist > 0.12, atCover);
-      state.aiShotClock -= dt;
       const shootY = Math.max(0.55, Math.min(ai.tacticalHeight, ai.height) * 0.82);
       const hasSight = hasLineOfSight(ai.position.x, shootY, ai.position.z, player.bodyCenter.x, player.height * 0.78, player.bodyCenter.z);
+      ai.aiming = hasSight || ai.reactClock > 0.12;
+      updateAiVisual(dt, dist > 0.12, atCover);
+      state.aiShotClock -= dt;
       updateAiAwareness(hasSight, config);
       if (state.aiShotClock <= 0) {
         const fired = aiShoot(hasSight);
@@ -4515,19 +4494,103 @@
       }
     }
 
+    function startAiDeathVisual() {
+      ai.visual.death = 0;
+      ai.visual.deathActive = true;
+    }
+
     function updateAiVisual(dt, moving, atCover) {
-      if (!ai.limbs) return;
-      const stride = Math.sin(state.elapsed * (moving ? 12 : 2.4)) * (moving ? 0.45 : 0.04);
-      if (ai.limbs.leftThigh) ai.limbs.leftThigh.rotation.x = stride;
-      if (ai.limbs.rightThigh) ai.limbs.rightThigh.rotation.x = -stride;
-      if (ai.limbs.leftShin) ai.limbs.leftShin.rotation.x = -stride * 0.55;
-      if (ai.limbs.rightShin) ai.limbs.rightShin.rotation.x = stride * 0.55;
-      if (ai.marker) ai.marker.position.z = -0.04 - (atCover ? 0.05 : 0);
-      const targetScaleY = Math.max(0.44, Math.min(1, ai.tacticalHeight / ai.height));
-      ai.group.scale.y += (targetScaleY - ai.group.scale.y) * Math.min(1, dt * 10);
-      const targetLean = atCover ? ai.peekSide * 0.1 : 0;
-      ai.group.rotation.z += (targetLean - ai.group.rotation.z) * Math.min(1, dt * 8);
-      ai.body.position.y = 0.88 + Math.sin(state.elapsed * 2.1) * 0.015;
+      if (!ai.limbs || !ai.limbs.root) return;
+      const root = ai.limbs.root;
+      const visual = ai.visual;
+      const rate = Math.min(1, dt * 10);
+      const setRot = (part, x, y, z, speed) => {
+        if (!part) return;
+        const t = Math.min(1, dt * (speed || 12));
+        part.rotation.x += (x - part.rotation.x) * t;
+        part.rotation.y += (y - part.rotation.y) * t;
+        part.rotation.z += (z - part.rotation.z) * t;
+      };
+      if (visual.deathActive || state.aiEliminated) {
+        visual.death = clamp(visual.death + dt / 0.5, 0, 1);
+        const fall = 1 - Math.pow(1 - visual.death, 3);
+        ai.group.rotation.x = fall * Math.PI * 0.5;
+        ai.group.rotation.z += (0 - ai.group.rotation.z) * rate;
+        ai.group.position.y = (ai.position.y || 0) + fall * 0.04;
+        root.position.set(0, 0, 0);
+        root.rotation.set(0, 0, 0);
+        setRot(ai.limbs.leftUpperArm, 0.45, 0, -0.25, 8);
+        setRot(ai.limbs.rightUpperArm, 0.28, 0, 0.3, 8);
+        setRot(ai.limbs.leftForeArm, -0.55, 0, 0, 8);
+        setRot(ai.limbs.rightForeArm, -0.38, 0, 0, 8);
+        setRot(ai.limbs.leftThigh, -0.22, 0, -0.04, 8);
+        setRot(ai.limbs.rightThigh, 0.18, 0, 0.04, 8);
+        setRot(ai.limbs.leftShin, 0.55, 0, 0, 8);
+        setRot(ai.limbs.rightShin, 0.4, 0, 0, 8);
+        if (ai.marker) ai.marker.position.set(0.1, 0.68, -0.12);
+        return;
+      }
+
+      ai.group.rotation.x += (0 - ai.group.rotation.x) * rate;
+      ai.group.position.y = ai.position.y || 0;
+      const proneTarget = MULTIPLAYER && remotePlayer.prone ? 1 : 0;
+      const crouchTarget = proneTarget ? 0 : (atCover || (MULTIPLAYER && remotePlayer.crouching) ? 1 : 0);
+      const runTarget = moving && ai.reactClock > 0.05 ? 1 : 0;
+      const aimTarget = proneTarget ? 0 : (ai.aiming || crouchTarget > 0 ? 1 : 0);
+      visual.prone += (proneTarget - visual.prone) * Math.min(1, dt * 7);
+      visual.crouch += (crouchTarget - visual.crouch) * Math.min(1, dt * 8);
+      visual.run += (runTarget - visual.run) * Math.min(1, dt * 6);
+      visual.aim += (aimTarget - visual.aim) * Math.min(1, dt * 9);
+
+      const deg = Math.PI / 180;
+      const moveBlend = moving ? 1 : 0;
+      const run = visual.run;
+      const crouch = visual.crouch;
+      const prone = visual.prone;
+      const aim = visual.aim;
+      const cycle = state.elapsed * (moving ? 7.4 + run * 5.2 : 2.1);
+      const stride = Math.sin(cycle);
+      const crawl = Math.sin(state.elapsed * 4.4);
+      const idle = Math.sin(state.elapsed * Math.PI * 2 / 3);
+      const legAmp = (25 + run * 15) * deg * moveBlend * (1 - prone);
+      const armAmp = (20 + run * 15) * deg * moveBlend * (1 - prone);
+      const bob = (moving ? Math.abs(Math.cos(cycle)) * (0.025 + run * 0.03) : idle * 0.02) * (1 - prone);
+      root.position.y = bob - crouch * 0.22 + prone * 0.18;
+      root.position.x = idle * 0.012 * (1 - moveBlend) * (1 - prone);
+      root.rotation.x = -run * 0.16 - crouch * 0.22 - prone * Math.PI * 0.5;
+      root.rotation.z = idle * 0.025 * (1 - moveBlend) * (1 - prone);
+
+      const sideLean = atCover ? ai.peekSide * 0.1 : 0;
+      ai.group.rotation.z += (sideLean - ai.group.rotation.z) * Math.min(1, dt * 8);
+      ai.body.position.y = 1.135 + idle * 0.008 * (1 - moving) * (1 - prone);
+      ai.body.rotation.x += ((-0.08 * crouch - 0.08 * run) - ai.body.rotation.x) * rate;
+
+      const leftLeg = stride * legAmp;
+      const rightLeg = -stride * legAmp;
+      setRot(ai.limbs.leftThigh, leftLeg - crouch * 0.55 + prone * (-0.55 + crawl * 0.16), 0, -0.035, 12);
+      setRot(ai.limbs.rightThigh, rightLeg - crouch * 0.55 + prone * (-0.55 - crawl * 0.16), 0, 0.035, 12);
+      setRot(ai.limbs.leftShin, Math.max(0, -stride) * 0.72 * moveBlend + crouch * 0.95 + prone * (0.85 - crawl * 0.18), 0, 0, 12);
+      setRot(ai.limbs.rightShin, Math.max(0, stride) * 0.72 * moveBlend + crouch * 0.95 + prone * (0.85 + crawl * 0.18), 0, 0, 12);
+      setRot(ai.limbs.leftFoot, -0.1 - crouch * 0.2, 0, 0, 12);
+      setRot(ai.limbs.rightFoot, -0.1 - crouch * 0.2, 0, 0, 12);
+
+      const leftWalkArm = -stride * armAmp + idle * 0.04 * (1 - moveBlend);
+      const rightWalkArm = stride * armAmp - idle * 0.04 * (1 - moveBlend);
+      setRot(ai.limbs.leftUpperArm, leftWalkArm * (1 - aim) + aim * 1.3 + prone * (1.05 + crawl * 0.2), 0, -0.11 - aim * 0.08, 12);
+      setRot(ai.limbs.rightUpperArm, rightWalkArm * (1 - aim) + aim * 1.16 + prone * (1.0 - crawl * 0.2), 0, 0.11 + aim * 0.1, 12);
+      setRot(ai.limbs.leftForeArm, -0.08 - aim * 0.18 + prone * -0.78, 0, 0, 12);
+      setRot(ai.limbs.rightForeArm, -0.12 - aim * 0.7 + prone * -0.85, 0, 0, 12);
+
+      if (ai.marker) {
+        const aimBlend = aim * (1 - prone);
+        const targetX = 0.28 * (1 - aimBlend) + 0.08 * aimBlend;
+        const targetY = (0.68 * (1 - aimBlend) + 1.1 * aimBlend) - crouch * 0.16 + prone * -0.54;
+        const targetZ = -0.08 * (1 - aimBlend) - 0.43 * aimBlend + prone * 0.08;
+        ai.marker.position.x += (targetX - ai.marker.position.x) * rate;
+        ai.marker.position.y += (targetY - ai.marker.position.y) * rate;
+        ai.marker.position.z += (targetZ - ai.marker.position.z) * rate;
+        setRot(ai.marker, -0.04 * aimBlend - prone * 0.9, 0, 0, 12);
+      }
     }
 
     function chooseAiCover(initial) {
@@ -4607,8 +4670,7 @@
       state.aiEliminated = true;
       ai.splat.visible = true;
       if (ai.limbs && ai.limbs.splat2) ai.limbs.splat2.visible = true;
-      ai.group.rotation.x = -1.15;
-      ai.group.position.y = 0.08;
+      startAiDeathVisual();
       playEliminationAudio('shooter');
       scoreTeam('red');
       endRound('Red', 'Red wins the round');
@@ -4633,8 +4695,7 @@
         ai.limbs.splat2.material = localMats.paint;
         ai.limbs.splat2.visible = true;
       }
-      ai.group.rotation.x = -1.15;
-      ai.group.position.y = 0.08;
+      startAiDeathVisual();
       remotePlayer.visible = false;
       playEliminationAudio('shooter');
       scoreTeam(MY_TEAM);
