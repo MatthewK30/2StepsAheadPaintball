@@ -4,12 +4,990 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>2 Steps Ahead Paintball</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --panel: rgba(15, 15, 17, 0.86);
+      --red: #cc1515;
+      --red-soft: rgba(204, 21, 21, 0.22);
+      --blue: #1566cc;
+      --blue-soft: rgba(21, 102, 204, 0.22);
+      --white: #f5f5f5;
+      --muted: rgba(255, 255, 255, 0.66);
+      --green: #38d46b;
+      --border: rgba(255, 255, 255, 0.15);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--white);
+      font-family: 'Rajdhani', Arial, Helvetica, sans-serif;
+    }
+
+    body {
+      overflow-x: hidden;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+      text-transform: uppercase;
+    }
+
+    .screen {
+      position: relative;
+      min-height: 100vh;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% -12%, rgba(204, 21, 21, 0.26), transparent 34%),
+        radial-gradient(circle at 8% 28%, rgba(21, 102, 204, 0.18), transparent 28%),
+        radial-gradient(circle at 92% 34%, rgba(204, 21, 21, 0.16), transparent 28%),
+        linear-gradient(135deg, #050505 0%, var(--bg) 50%, #111114 100%);
+    }
+
+    .screen::before,
+    .screen::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .screen::before {
+      background:
+        repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.03) 0 1px, transparent 1px 4px),
+        linear-gradient(105deg, transparent 0 18%, rgba(255, 255, 255, 0.07) 19%, transparent 31%, transparent 63%, rgba(204, 21, 21, 0.09) 65%, transparent 78%);
+      mix-blend-mode: screen;
+      opacity: 0.55;
+      animation: scan 7s linear infinite;
+    }
+
+    .screen::after {
+      background:
+        radial-gradient(circle at 18% 24%, rgba(255, 255, 255, 0.24) 0 1px, transparent 2px),
+        radial-gradient(circle at 34% 74%, rgba(204, 21, 21, 0.38) 0 1px, transparent 2px),
+        radial-gradient(circle at 70% 18%, rgba(255, 255, 255, 0.18) 0 1px, transparent 2px),
+        radial-gradient(circle at 84% 68%, rgba(21, 102, 204, 0.35) 0 1px, transparent 2px);
+      background-size: 260px 190px, 340px 250px, 300px 220px, 380px 280px;
+      opacity: 0.5;
+      animation: particles 14s linear infinite;
+    }
+
+    @keyframes scan {
+      from { transform: translateY(-20px); }
+      to { transform: translateY(20px); }
+    }
+
+    @keyframes particles {
+      from { background-position: 0 0, 0 0, 0 0, 0 0; }
+      to { background-position: 130px -190px, -170px -250px, 150px -220px, -190px -280px; }
+    }
+
+    .view {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      padding: clamp(24px, 4vw, 56px);
+      display: none;
+      animation: viewIn 360ms ease both;
+    }
+
+    .view.active {
+      display: grid;
+    }
+
+    @keyframes viewIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .heroView {
+      place-items: center;
+      text-align: center;
+    }
+
+    .heroStack {
+      width: min(980px, 100%);
+      display: grid;
+      gap: 28px;
+      justify-items: center;
+    }
+
+    .title {
+      margin: 0;
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: clamp(78px, 15vw, 190px);
+      line-height: 0.82;
+      letter-spacing: 0.045em;
+      text-shadow: 0 0 28px rgba(204, 21, 21, 0.35), 0 18px 48px rgba(0, 0, 0, 0.95);
+    }
+
+    .title span {
+      color: var(--red);
+    }
+
+    .subtitle {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.72);
+      font-size: clamp(16px, 2.4vw, 26px);
+      font-weight: 600;
+      letter-spacing: 0.38em;
+      text-transform: uppercase;
+    }
+
+    .heroButtons,
+    .buttonRow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      justify-content: center;
+    }
+
+    .primaryBtn,
+    .secondaryBtn,
+    .smallBtn,
+    .teamBtn {
+      position: relative;
+      min-width: 210px;
+      padding: 16px 24px 14px;
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border);
+      clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: 31px;
+      line-height: 0.9;
+      letter-spacing: 0.12em;
+      transition: transform 170ms ease, box-shadow 170ms ease, border-color 170ms ease, filter 170ms ease;
+    }
+
+    .primaryBtn {
+      background: linear-gradient(135deg, #7a0707, var(--red) 48%, #ff3333);
+      box-shadow: 0 16px 44px rgba(0, 0, 0, 0.55), 0 0 28px rgba(204, 21, 21, 0.32);
+    }
+
+    .secondaryBtn {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+    }
+
+    .primaryBtn:hover,
+    .secondaryBtn:hover,
+    .smallBtn:hover,
+    .teamBtn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.36);
+      filter: brightness(1.08);
+    }
+
+    .lobbyView {
+      align-content: center;
+    }
+
+    .topBar {
+      width: min(1240px, 100%);
+      margin: 0 auto 22px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .brandMini {
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: clamp(32px, 5vw, 58px);
+      letter-spacing: 0.08em;
+    }
+
+    .brandMini span {
+      color: var(--red);
+    }
+
+    .statusPill {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--muted);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .panel {
+      width: min(1040px, 100%);
+      margin: 0 auto;
+      padding: clamp(20px, 3vw, 34px);
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(20, 20, 23, 0.92), rgba(9, 9, 11, 0.88));
+      box-shadow: 0 28px 80px rgba(0, 0, 0, 0.62), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      clip-path: polygon(0 0, calc(100% - 28px) 0, 100% 28px, 100% 100%, 28px 100%, 0 calc(100% - 28px));
+    }
+
+    .step {
+      display: none;
+      gap: 22px;
+    }
+
+    .step.active {
+      display: grid;
+    }
+
+    .sectionTitle {
+      margin: 0;
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: clamp(42px, 6vw, 80px);
+      line-height: 0.9;
+      letter-spacing: 0.08em;
+      text-align: center;
+    }
+
+    .sectionCopy {
+      margin: -8px auto 0;
+      max-width: 680px;
+      color: var(--muted);
+      font-size: 18px;
+      font-weight: 600;
+      text-align: center;
+      letter-spacing: 0.04em;
+    }
+
+    .fieldGrid {
+      display: grid;
+      gap: 14px;
+    }
+
+    label {
+      color: rgba(255, 255, 255, 0.78);
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    input {
+      width: 100%;
+      padding: 16px 18px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.08);
+      color: #ffffff;
+      outline: none;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    input:focus {
+      border-color: rgba(204, 21, 21, 0.8);
+      box-shadow: 0 0 24px rgba(204, 21, 21, 0.18);
+    }
+
+    .optionGrid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .optionGroup {
+      display: grid;
+      gap: 10px;
+      padding: 16px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.045);
+    }
+
+    .choiceSet {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .choice {
+      padding: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.055);
+      color: rgba(255, 255, 255, 0.8);
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-align: center;
+      text-transform: uppercase;
+      transition: border-color 160ms ease, color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+    }
+
+    .choice.selected {
+      border-color: rgba(204, 21, 21, 0.85);
+      background: var(--red-soft);
+      color: #ffffff;
+      box-shadow: 0 0 20px rgba(204, 21, 21, 0.16);
+    }
+
+    .smallBtn,
+    .teamBtn {
+      min-width: 150px;
+      padding: 12px 18px 10px;
+      font-size: 24px;
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    .errorText {
+      min-height: 22px;
+      color: #ff6666;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .roomCodePanel {
+      justify-self: center;
+      width: min(430px, 100%);
+      padding: 18px;
+      border: 1px solid rgba(204, 21, 21, 0.58);
+      background: var(--red-soft);
+      text-align: center;
+      box-shadow: 0 0 28px rgba(204, 21, 21, 0.2);
+    }
+
+    .roomCodePanel span {
+      display: block;
+      color: var(--muted);
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .roomCodePanel strong {
+      display: block;
+      margin-top: 4px;
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: 76px;
+      line-height: 0.95;
+      letter-spacing: 0.16em;
+    }
+
+    .arenaLobby {
+      width: min(1320px, 100%);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(250px, 1fr) minmax(250px, 0.8fr) minmax(250px, 1fr);
+      gap: clamp(14px, 2vw, 26px);
+      align-items: stretch;
+    }
+
+    .teamColumn,
+    .centerConsole {
+      min-height: 560px;
+      padding: clamp(16px, 2vw, 26px);
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02));
+      box-shadow: 0 22px 62px rgba(0, 0, 0, 0.46);
+    }
+
+    .teamColumn {
+      display: grid;
+      align-content: start;
+      gap: 16px;
+    }
+
+    .redColumn {
+      border-color: rgba(204, 21, 21, 0.42);
+    }
+
+    .blueColumn {
+      border-color: rgba(21, 102, 204, 0.48);
+    }
+
+    .teamHeader {
+      margin: 0;
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: clamp(42px, 4vw, 64px);
+      line-height: 0.9;
+      letter-spacing: 0.1em;
+      text-align: center;
+    }
+
+    .redColumn .teamHeader { color: var(--red); }
+    .blueColumn .teamHeader { color: var(--blue); }
+
+    .slots {
+      display: grid;
+      gap: 14px;
+    }
+
+    .playerCard,
+    .emptySlot {
+      min-height: 138px;
+      padding: 18px;
+      display: grid;
+      align-content: center;
+      gap: 8px;
+      animation: cardIn 260ms ease both;
+    }
+
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(10px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .playerCard {
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.075);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+
+    .redColumn .playerCard {
+      background: linear-gradient(135deg, rgba(204, 21, 21, 0.2), rgba(255, 255, 255, 0.04));
+    }
+
+    .blueColumn .playerCard {
+      background: linear-gradient(135deg, rgba(21, 102, 204, 0.22), rgba(255, 255, 255, 0.04));
+    }
+
+    .emptySlot {
+      border: 2px dashed rgba(255, 255, 255, 0.18);
+      color: rgba(255, 255, 255, 0.38);
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: 34px;
+      letter-spacing: 0.12em;
+      text-align: center;
+    }
+
+    .playerName {
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: clamp(34px, 4vw, 52px);
+      line-height: 0.9;
+      letter-spacing: 0.08em;
+    }
+
+    .playerMeta {
+      color: var(--muted);
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .readyStatus {
+      color: #ff7777;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      transition: color 180ms ease;
+    }
+
+    .readyStatus.ready {
+      color: var(--green);
+    }
+
+    .readyStatus.ready::before {
+      content: "✓ ";
+    }
+
+    .centerConsole {
+      display: grid;
+      align-content: center;
+      gap: 18px;
+      text-align: center;
+    }
+
+    .consoleLabel {
+      color: var(--muted);
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .bigCode {
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: clamp(58px, 8vw, 104px);
+      line-height: 0.9;
+      letter-spacing: 0.16em;
+      color: #ffffff;
+      text-shadow: 0 0 24px rgba(204, 21, 21, 0.32);
+    }
+
+    .matchInfo {
+      display: grid;
+      gap: 6px;
+      color: rgba(255, 255, 255, 0.78);
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .startReady {
+      background: linear-gradient(135deg, #1a7f3d, #38d46b);
+      color: #06110b;
+      animation: pulseStart 1s ease-in-out infinite alternate;
+    }
+
+    @keyframes pulseStart {
+      from { box-shadow: 0 0 16px rgba(56, 212, 107, 0.26); }
+      to { box-shadow: 0 0 34px rgba(56, 212, 107, 0.62); }
+    }
+
+    .teamBtn:disabled {
+      cursor: not-allowed;
+      opacity: 0.42;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 1000px) {
+      .arenaLobby {
+        grid-template-columns: 1fr;
+      }
+
+      .centerConsole {
+        min-height: auto;
+        order: -1;
+      }
+
+      .teamColumn {
+        min-height: auto;
+      }
+
+      .optionGrid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .view {
+        padding: 22px 16px;
+      }
+
+      .heroButtons,
+      .buttonRow {
+        display: grid;
+        width: 100%;
+      }
+
+      .primaryBtn,
+      .secondaryBtn,
+      .smallBtn,
+      .teamBtn {
+        width: 100%;
+      }
+
+      .choiceSet {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 <body>
-  <main>
-    <h1>2 Steps Ahead Paintball</h1>
-    <p>Multiplayer menu coming soon.</p>
-    <a href="/game.html">Launch game</a>
-  </main>
+  <div class="screen">
+    <section id="heroView" class="view heroView active">
+      <div class="heroStack">
+        <div>
+          <h1 class="title">2 STEPS <span>AHEAD</span></h1>
+          <p class="subtitle">COMPETITIVE PAINTBALL</p>
+        </div>
+        <div class="heroButtons">
+          <button id="playMultiplayerBtn" class="primaryBtn">Play Multiplayer</button>
+          <button id="practiceBtn" class="secondaryBtn">Practice vs AI</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="lobbyView" class="view lobbyView">
+      <div class="topBar">
+        <div class="brandMini">2 STEPS <span>AHEAD</span></div>
+        <div id="connectionStatus" class="statusPill">Connecting</div>
+      </div>
+
+      <div id="entryPanel" class="panel step active">
+        <h2 class="sectionTitle">Enter The Lobby</h2>
+        <p class="sectionCopy">Lock in your callsign, create a private room, or join your squad with a four-character code.</p>
+        <div class="fieldGrid">
+          <label for="usernameInput">Enter your callsign</label>
+          <input id="usernameInput" maxlength="16" autocomplete="off" placeholder="CALLSIGN">
+        </div>
+        <div class="buttonRow">
+          <button id="showCreateBtn" class="primaryBtn">Create Room</button>
+          <button id="showJoinBtn" class="secondaryBtn">Join Room</button>
+        </div>
+        <div id="entryError" class="errorText"></div>
+      </div>
+
+      <div id="createPanel" class="panel step">
+        <h2 class="sectionTitle">Create Room</h2>
+        <p class="sectionCopy">Choose your match settings before the room code is generated.</p>
+        <div class="optionGrid">
+          <div class="optionGroup" data-option-group="gameMode">
+            <label>Game Mode</label>
+            <div class="choiceSet">
+              <button class="choice selected" data-value="1v1">1v1</button>
+              <button class="choice" data-value="2v2">2v2</button>
+            </div>
+          </div>
+          <div class="optionGroup" data-option-group="map">
+            <label>Map</label>
+            <div class="choiceSet">
+              <button class="choice selected" data-value="speedball">Speedball</button>
+              <button class="choice" data-value="scrapyard">Scrapyard</button>
+            </div>
+          </div>
+          <div class="optionGroup" data-option-group="bestOf">
+            <label>Best Of</label>
+            <div class="choiceSet">
+              <button class="choice selected" data-value="3">Best of 3</button>
+              <button class="choice" data-value="5">Best of 5</button>
+            </div>
+          </div>
+        </div>
+        <div class="buttonRow">
+          <button id="createRoomBtn" class="primaryBtn">Generate Code</button>
+          <button class="secondaryBtn backToEntryBtn">Back</button>
+        </div>
+        <div id="createError" class="errorText"></div>
+      </div>
+
+      <div id="joinPanel" class="panel step">
+        <h2 class="sectionTitle">Join Room</h2>
+        <p class="sectionCopy">Enter the four-character room code from your host.</p>
+        <div class="fieldGrid">
+          <label for="roomCodeInput">Room code</label>
+          <input id="roomCodeInput" maxlength="4" autocomplete="off" placeholder="CODE">
+        </div>
+        <div class="buttonRow">
+          <button id="joinRoomBtn" class="primaryBtn">Join Room</button>
+          <button class="secondaryBtn backToEntryBtn">Back</button>
+        </div>
+        <div id="joinError" class="errorText"></div>
+      </div>
+
+      <div id="arenaLobby" class="arenaLobby step">
+        <aside class="teamColumn redColumn">
+          <h2 class="teamHeader">Red Team</h2>
+          <div id="redSlots" class="slots"></div>
+        </aside>
+
+        <section class="centerConsole">
+          <div>
+            <div class="consoleLabel">Room Code</div>
+            <div id="roomCodeDisplay" class="bigCode">----</div>
+          </div>
+          <div class="roomCodePanel">
+            <span>Share this code with friends</span>
+            <strong id="roomCodeShare">----</strong>
+          </div>
+          <div class="matchInfo">
+            <div id="modeDisplay">Mode: --</div>
+            <div id="mapDisplay">Map: --</div>
+            <div id="bestOfDisplay">Best of --</div>
+          </div>
+          <button id="switchTeamBtn" class="teamBtn">Switch Team</button>
+          <button id="readyBtn" class="teamBtn">Ready</button>
+          <button id="startMatchBtn" class="teamBtn">Start Match</button>
+          <div id="lobbyError" class="errorText"></div>
+        </section>
+
+        <aside class="teamColumn blueColumn">
+          <h2 class="teamHeader">Blue Team</h2>
+          <div id="blueSlots" class="slots"></div>
+        </aside>
+      </div>
+    </section>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    (() => {
+      'use strict'
+
+      const $ = (selector) => document.querySelector(selector)
+      const state = {
+        socket: null,
+        username: '',
+        code: '',
+        room: null,
+        createOptions: {
+          gameMode: '1v1',
+          map: 'speedball',
+          bestOf: 3
+        }
+      }
+
+      const views = {
+        hero: $('#heroView'),
+        lobby: $('#lobbyView')
+      }
+
+      const panels = {
+        entry: $('#entryPanel'),
+        create: $('#createPanel'),
+        join: $('#joinPanel'),
+        arena: $('#arenaLobby')
+      }
+
+      const ui = {
+        connectionStatus: $('#connectionStatus'),
+        usernameInput: $('#usernameInput'),
+        roomCodeInput: $('#roomCodeInput'),
+        entryError: $('#entryError'),
+        createError: $('#createError'),
+        joinError: $('#joinError'),
+        lobbyError: $('#lobbyError'),
+        roomCodeDisplay: $('#roomCodeDisplay'),
+        roomCodeShare: $('#roomCodeShare'),
+        modeDisplay: $('#modeDisplay'),
+        mapDisplay: $('#mapDisplay'),
+        bestOfDisplay: $('#bestOfDisplay'),
+        redSlots: $('#redSlots'),
+        blueSlots: $('#blueSlots'),
+        switchTeamBtn: $('#switchTeamBtn'),
+        readyBtn: $('#readyBtn'),
+        startMatchBtn: $('#startMatchBtn')
+      }
+
+      function init() {
+        bindUi()
+        connectSocket()
+      }
+
+      function bindUi() {
+        $('#playMultiplayerBtn').addEventListener('click', () => showView('lobby'))
+        $('#practiceBtn').addEventListener('click', () => {
+          window.location.href = '/game.html?mode=singleplayer'
+        })
+        $('#showCreateBtn').addEventListener('click', () => {
+          if (!captureUsername(ui.entryError)) return
+          showPanel('create')
+        })
+        $('#showJoinBtn').addEventListener('click', () => {
+          if (!captureUsername(ui.entryError)) return
+          showPanel('join')
+        })
+        document.querySelectorAll('.backToEntryBtn').forEach((button) => {
+          button.addEventListener('click', () => showPanel('entry'))
+        })
+        document.querySelectorAll('[data-option-group]').forEach((group) => {
+          group.querySelectorAll('.choice').forEach((choice) => {
+            choice.addEventListener('click', () => selectOption(group.dataset.optionGroup, choice))
+          })
+        })
+        $('#createRoomBtn').addEventListener('click', createRoom)
+        $('#joinRoomBtn').addEventListener('click', joinRoom)
+        ui.switchTeamBtn.addEventListener('click', () => {
+          if (state.code) state.socket.emit('switch_team', { code: state.code })
+        })
+        ui.readyBtn.addEventListener('click', toggleReady)
+        ui.startMatchBtn.addEventListener('click', () => {
+          if (state.code) state.socket.emit('start_game', { code: state.code })
+        })
+        ui.roomCodeInput.addEventListener('input', () => {
+          ui.roomCodeInput.value = ui.roomCodeInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4)
+        })
+        ui.usernameInput.addEventListener('input', () => {
+          ui.usernameInput.value = ui.usernameInput.value.toUpperCase().slice(0, 16)
+        })
+      }
+
+      function connectSocket() {
+        if (typeof io !== 'function') {
+          setStatus('Socket unavailable')
+          return
+        }
+        state.socket = io()
+        state.socket.on('connect', () => setStatus('Connected'))
+        state.socket.on('disconnect', () => setStatus('Disconnected'))
+        state.socket.on('room_created', ({ code, room }) => enterRoom(code, room))
+        state.socket.on('room_joined', ({ code, room }) => enterRoom(code, room))
+        state.socket.on('lobby_update', (room) => renderRoom(room))
+        state.socket.on('join_error', (message) => setError(ui.joinError, message))
+        state.socket.on('switch_error', (message) => setError(ui.lobbyError, message))
+        state.socket.on('start_error', (message) => setError(ui.lobbyError, message))
+        state.socket.on('player_disconnected', () => setError(ui.lobbyError, 'Player disconnected'))
+        state.socket.on('game_start', (room) => startGame(room))
+      }
+
+      function showView(name) {
+        Object.keys(views).forEach((key) => views[key].classList.toggle('active', key === name))
+        if (name === 'lobby') showPanel('entry')
+      }
+
+      function showPanel(name) {
+        Object.keys(panels).forEach((key) => panels[key].classList.toggle('active', key === name))
+        clearErrors()
+      }
+
+      function captureUsername(errorEl) {
+        const username = ui.usernameInput.value.trim().toUpperCase()
+        if (!username) {
+          setError(errorEl, 'Enter your callsign')
+          ui.usernameInput.focus()
+          return false
+        }
+        state.username = username
+        return true
+      }
+
+      function selectOption(groupName, choice) {
+        choice.parentElement.querySelectorAll('.choice').forEach((item) => item.classList.toggle('selected', item === choice))
+        const value = choice.dataset.value
+        state.createOptions[groupName] = groupName === 'bestOf' ? Number(value) : value
+      }
+
+      function createRoom() {
+        clearErrors()
+        if (!state.socket || !state.socket.connected) {
+          setError(ui.createError, 'Connecting to server')
+          return
+        }
+        state.socket.emit('create_room', {
+          username: state.username,
+          gameMode: state.createOptions.gameMode,
+          map: state.createOptions.map,
+          bestOf: state.createOptions.bestOf
+        })
+      }
+
+      function joinRoom() {
+        clearErrors()
+        if (!state.socket || !state.socket.connected) {
+          setError(ui.joinError, 'Connecting to server')
+          return
+        }
+        const code = ui.roomCodeInput.value.trim().toUpperCase()
+        if (code.length !== 4) {
+          setError(ui.joinError, 'Enter a 4 character code')
+          return
+        }
+        state.socket.emit('join_room', { code, username: state.username })
+      }
+
+      function enterRoom(code, room) {
+        state.code = code
+        showPanel('arena')
+        renderRoom(room)
+      }
+
+      function renderRoom(room) {
+        state.room = room
+        state.code = room.code
+        clearErrors()
+        ui.roomCodeDisplay.textContent = room.code
+        ui.roomCodeShare.textContent = room.code
+        ui.modeDisplay.textContent = 'Mode: ' + room.gameMode
+        ui.mapDisplay.textContent = 'Map: ' + formatMap(room.map)
+        ui.bestOfDisplay.textContent = 'Best of ' + room.bestOf
+        renderTeam('red', ui.redSlots, room)
+        renderTeam('blue', ui.blueSlots, room)
+        renderControls(room)
+      }
+
+      function renderTeam(team, container, room) {
+        const maxPerTeam = room.gameMode === '2v2' ? 2 : 1
+        const players = room.players.filter((player) => player.team === team)
+        container.innerHTML = ''
+        for (let i = 0; i < maxPerTeam; i++) {
+          const player = players[i]
+          if (player) container.appendChild(createPlayerCard(player, room))
+          else container.appendChild(createEmptySlot())
+        }
+      }
+
+      function createPlayerCard(player, room) {
+        const card = document.createElement('div')
+        card.className = 'playerCard'
+        const isHost = player.id === room.host
+        card.innerHTML = `
+          <div class="playerName">${escapeHtml(player.username || 'PLAYER')}</div>
+          <div class="playerMeta">${isHost ? 'HOST' : 'PLAYER'}</div>
+          <div class="readyStatus ${player.ready ? 'ready' : ''}">${player.ready ? 'Ready' : 'Not Ready'}</div>
+        `
+        return card
+      }
+
+      function createEmptySlot() {
+        const slot = document.createElement('div')
+        slot.className = 'emptySlot'
+        slot.textContent = 'Add Player'
+        return slot
+      }
+
+      function renderControls(room) {
+        const me = currentPlayer(room)
+        const isHost = me && room.host === me.id
+        const allReady = room.players.length > 0 && room.players.every((player) => player.ready)
+        ui.readyBtn.textContent = me && me.ready ? 'Not Ready' : 'Ready'
+        ui.startMatchBtn.classList.toggle('hidden', !isHost)
+        ui.startMatchBtn.disabled = !allReady
+        ui.startMatchBtn.classList.toggle('startReady', isHost && allReady)
+      }
+
+      function toggleReady() {
+        const me = currentPlayer(state.room)
+        if (!state.code || !me) return
+        state.socket.emit('set_ready', { code: state.code, ready: !me.ready })
+      }
+
+      function startGame(room) {
+        const me = currentPlayer(room)
+        const team = me ? me.team : 'red'
+        const params = new URLSearchParams({
+          room: room.code,
+          team,
+          username: state.username,
+          mode: room.gameMode
+        })
+        window.location.href = '/game.html?' + params.toString()
+      }
+
+      function currentPlayer(room) {
+        if (!room || !state.socket) return null
+        return room.players.find((player) => player.id === state.socket.id) || null
+      }
+
+      function setStatus(text) {
+        ui.connectionStatus.textContent = text
+      }
+
+      function setError(el, message) {
+        el.textContent = message || ''
+      }
+
+      function clearErrors() {
+        ui.entryError.textContent = ''
+        ui.createError.textContent = ''
+        ui.joinError.textContent = ''
+        ui.lobbyError.textContent = ''
+      }
+
+      function formatMap(map) {
+        return map === 'scrapyard' ? 'Scrapyard' : 'Speedball'
+      }
+
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>"]/g, (char) => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;'
+        })[char])
+      }
+
+      init()
+    })()
+  </script>
 </body>
 </html>
