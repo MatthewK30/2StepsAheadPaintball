@@ -622,7 +622,7 @@
     </div>
     <div id="teamBadge">Red Team</div>
     <div id="cooldownWrap"></div>
-    <div id="ammoHud"><div id="ammoText">HOPPER 30 | PODS 5</div><div id="podIcons"></div></div>
+    <div id="ammoHud"><div id="ammoText">HOPPER 50 | PODS 5</div><div id="podIcons"></div></div>
     <div id="crosshair"></div>
     <div id="centerMessage"></div>
     <div id="hint">Pointer lock may release on Esc. Click the field to re-lock. AI uses cover, line-of-sight checks, and a balanced firing cadence.</div>
@@ -661,15 +661,15 @@
   (() => {
     'use strict';
 
-    const ARENA_HALF_X = 75;
-    const ARENA_HALF_Z = 50;
+    const ARENA_HALF_X = 30;
+    const ARENA_HALF_Z = 20;
     const WALK_SPEED = 6.5;
     const SPRINT_MULTIPLIER = 1.5;
     const CROUCH_SPEED = 3.6;
     const CRAWL_SPEED = 2.0;
     const LEAN_DISTANCE = 1.5;
     const LEAN_ANGLE = Math.PI / 12;
-    const HOPPER_CAPACITY = 30;
+    const HOPPER_CAPACITY = 50;
     const POD_CAPACITY = 200;
     const STARTING_PODS = 5;
     const STAND_HEIGHT = 1.68;
@@ -678,10 +678,10 @@
     const PLAYER_RADIUS = 0.42;
     const CROUCH_RADIUS = 0.36;
     const CRAWL_RADIUS = 0.26;
-    const SHOT_COOLDOWN = 0.2;
+    const SHOT_COOLDOWN = 0.05;
     const PAINTBALL_RADIUS = 0.06;
     const PAINTBALL_SPEED = 70;
-    const PAINTBALL_GRAVITY = 9.8;
+    const PAINTBALL_GRAVITY = 2.0;
     const PAINTBALL_LIFE = 2.2;
     const DIVE_DISTANCE = 3;
     const DIVE_DURATION = 0.6;
@@ -689,6 +689,7 @@
     const DIVE_CAMERA_TILT = 0.34;
     const ROUND_TIME = 60;
     const COUNTDOWN_TIME = 3;
+    const READY_DELAY = 2;
     const ROUND_OVER_TIME = 2;
     const PROJECTILE_POOL_SIZE = 96;
     const SPLAT_POOL_SIZE = 180;
@@ -765,6 +766,7 @@
       scoreBlue: 0,
       roundClock: ROUND_TIME,
       countdownClock: COUNTDOWN_TIME,
+      readyClock: 0,
       roundOverClock: 0,
       shotClock: 0,
       nextShotTime: 0,
@@ -847,7 +849,7 @@
       diveCooldown: 0,
       diveDir: new THREE.Vector3(),
       radius: PLAYER_RADIUS,
-      spawn: new THREE.Vector3(-60, 0, 0),
+      spawn: new THREE.Vector3(-24, 0, 0),
       bodyCenter: new THREE.Vector3()
     };
 
@@ -857,9 +859,9 @@
       head: null,
       marker: null,
       splat: null,
-      position: new THREE.Vector3(60, 0, 0),
-      spawn: new THREE.Vector3(60, 0, 0),
-      target: new THREE.Vector3(60, 0, 0),
+      position: new THREE.Vector3(24, 0, 0),
+      spawn: new THREE.Vector3(24, 0, 0),
+      target: new THREE.Vector3(24, 0, 0),
       bodyCenter: new THREE.Vector3(),
       radius: 0.48,
       height: 1.72,
@@ -1295,7 +1297,6 @@
       addTireStack(group, colliders, coverPoints, 18, 16, 4, 0.75);
       addMetalSheet(group, colliders, coverPoints, -5, 0, 0.35);
       addMetalSheet(group, colliders, coverPoints, 6, -2, -0.35);
-      addExpandedScrapyardCover(group, colliders, coverPoints);
       addScrapyardVenueDetails(group);
       addScrapyardAtmosphere(group);
       finalizeMapShadows(group);
@@ -1338,7 +1339,6 @@
       addInflatableBunker(group, colliders, coverPoints, 0, 17, 'snake', RED, 8.0, 1.2, 0);
       addInflatableBunker(group, colliders, coverPoints, -7, 0, 'small', RED, 1.45, 2.2, 0);
       addInflatableBunker(group, colliders, coverPoints, 7, 0, 'small', RED, 1.45, 2.2, 0);
-      addExpandedSpeedballCover(group, colliders, coverPoints);
       finalizeMapShadows(group);
       return { group, colliders, coverPoints, sky: 0xbcc5c9, ambient: 'speedball' };
     }
@@ -2431,57 +2431,179 @@
     }
 
     function createGunModel() {
-      const group = new THREE.Group();
-      group.position.set(0.56, -0.48, -0.82);
-      group.rotation.set(-0.05, -0.1, -0.02);
+      const gunGroup = new THREE.Group();
+      gunGroup.position.set(0.18, -0.22, -0.45);
+      gunGroup.rotation.set(-0.04, 0.08, 0);
+      gunGroup.scale.set(1, 1, 1);
 
-      const body = new THREE.Mesh(geometries.box, materials.gunRed);
-      body.position.set(0, 0, 0);
-      body.scale.set(0.5, 0.22, 0.78);
-      const barrel = new THREE.Mesh(geometries.cylinderLow, materials.gunMetal);
-      barrel.position.set(0.01, 0.04, -0.74);
-      barrel.scale.set(0.055, 0.86, 0.055);
-      barrel.rotation.x = Math.PI / 2;
-      const barrelTip = new THREE.Mesh(geometries.cylinderLow, materials.black);
-      barrelTip.position.set(0.01, 0.04, -1.2);
-      barrelTip.scale.set(0.075, 0.22, 0.075);
-      barrelTip.rotation.x = Math.PI / 2;
-      const grip = new THREE.Mesh(geometries.box, materials.gunMetal);
-      grip.position.set(0.05, -0.34, 0.18);
-      grip.scale.set(0.18, 0.5, 0.22);
-      grip.rotation.x = -0.24;
-      const trigger = new THREE.Mesh(geometries.box, materials.black);
-      trigger.position.set(0.05, -0.15, -0.1);
-      trigger.scale.set(0.04, 0.2, 0.08);
-      const feed = new THREE.Mesh(geometries.cylinderLow, materials.gunMetal);
-      feed.position.set(0.02, 0.34, 0.03);
-      feed.scale.set(0.11, 0.26, 0.11);
-      const hopper = new THREE.Mesh(geometries.box, materials.hopper);
-      hopper.position.set(0.03, 0.7, 0.02);
-      hopper.scale.set(0.52, 0.45, 0.58);
-      hopper.rotation.x = -0.05;
-      const lid = new THREE.Mesh(geometries.cylinderLow, materials.black);
-      lid.position.set(0.03, 0.96, 0.01);
-      lid.scale.set(0.34, 0.045, 0.34);
-      const screen = new THREE.Mesh(geometries.box, materials.hopperGlass);
-      screen.position.set(0.03, 0.7, -0.272);
-      screen.scale.set(0.25, 0.2, 0.015);
-      const tank = new THREE.Mesh(geometries.cylinderLow, materials.gunMetal);
-      tank.position.set(0.02, -0.18, 0.64);
-      tank.scale.set(0.16, 0.55, 0.16);
-      tank.rotation.x = Math.PI / 2;
+      const jerseyMat = materials.redDark;
+      const armMat = materials.red;
+      const gloveMat = materials.glove;
+      const speedFeedPetals = [];
+      const hopperBalls = [];
+      const reloadBalls = [];
+
+      const addMesh = (mesh, parent, name) => {
+        shadowMesh(mesh, true, true);
+        mesh.frustumCulled = false;
+        mesh.userData.coverCull = true;
+        (parent || gunGroup).add(mesh);
+        if (name) mesh.name = name;
+        return mesh;
+      };
+      const addCylinder = (mat, x, y, z, radius, length, rx, ry, rz, parent, name, radialSegments) => {
+        const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, length, radialSegments || 24, 1), mat);
+        mesh.position.set(x, y, z);
+        mesh.rotation.set(rx || 0, ry || 0, rz || 0);
+        return addMesh(mesh, parent, name);
+      };
+      const addBoxPart = (mat, x, y, z, sx, sy, sz, rx, ry, rz, parent, name) => {
+        const mesh = new THREE.Mesh(geometries.box, mat);
+        mesh.position.set(x, y, z);
+        mesh.scale.set(sx, sy, sz);
+        mesh.rotation.set(rx || 0, ry || 0, rz || 0);
+        return addMesh(mesh, parent, name);
+      };
+      const addSpherePart = (mat, x, y, z, sx, sy, sz, parent, name) => {
+        const mesh = new THREE.Mesh(geometries.sphere, mat);
+        mesh.position.set(x, y, z);
+        mesh.scale.set(sx, sy, sz);
+        return addMesh(mesh, parent, name);
+      };
+
+      const upperY = 0.08;
+      const bodyZ = -0.25;
+      addCylinder(materials.gunAccent, 0, upperY, bodyZ, 0.032, 0.28, Math.PI / 2, 0, 0, null, 'upperBody', 32);
+      addBoxPart(materials.gunAccent, 0, 0.02, -0.2, 0.13, 0.075, 0.18, 0, 0, 0, null, 'lowerBody');
+      addBoxPart(materials.gunMetal, 0, 0.09, -0.17, 0.095, 0.03, 0.12, 0, 0, 0, null, 'sightRail');
+      addBoxPart(materials.gunMetal, 0.071, 0.027, -0.2, 0.012, 0.052, 0.13, 0, 0, 0.06, null, 'rightBlackInset');
+      addBoxPart(materials.gunMetal, -0.071, 0.027, -0.2, 0.012, 0.052, 0.13, 0, 0, -0.06, null, 'leftBlackInset');
+      for (let i = 0; i < 4; i++) addSpherePart(materials.lightGrey, 0.082, 0.043 - i * 0.022, -0.155 - (i % 2) * 0.08, 0.009, 0.009, 0.009, null, 'bodyScrew');
+
+      addCylinder(materials.gunMetal, 0, upperY, -0.46, 0.028, 0.18, Math.PI / 2, 0, 0, null, 'barrelBack', 32);
+      addCylinder(materials.gunMetal, 0, upperY, -0.79, 0.019, 0.48, Math.PI / 2, 0, 0, null, 'barrelFront', 32);
+      addCylinder(materials.foam, 0, upperY, -1.045, 0.022, 0.035, Math.PI / 2, 0, 0, null, 'barrelTip', 32);
+      addCylinder(materials.black, 0, upperY, -1.069, 0.012, 0.006, Math.PI / 2, 0, 0, null, 'barrelOpening', 24);
+      for (let i = 0; i < 12; i++) {
+        const z = -0.65 - i * 0.03;
+        addSpherePart(materials.foam, -0.011, upperY + 0.02, z, 0.004, 0.003, 0.004);
+        addSpherePart(materials.foam, 0.011, upperY - 0.02, z - 0.012, 0.004, 0.003, 0.004);
+      }
+      [-0.36, -0.55].forEach((z, i) => {
+        const ring = new THREE.Mesh(geometries.seamRing, materials.gunRubber);
+        ring.position.set(0, upperY, z);
+        ring.scale.setScalar(i ? 0.027 : 0.033);
+        addMesh(ring, null, i ? 'frontBarrelSeam' : 'backBoreSeam');
+      });
+
+      addCylinder(materials.gunMetal, 0, 0.18, -0.25, 0.019, 0.105, 0, 0, 0, null, 'feedNeck', 24);
+      addCylinder(materials.gunRubber, 0, 0.238, -0.25, 0.03, 0.018, 0, 0, 0, null, 'feedClamp', 24);
+      addBoxPart(materials.gunRubber, 0.042, 0.238, -0.25, 0.035, 0.01, 0.024, 0, 0, 0.12, null, 'feedClampLever');
+
+      const hopperCenterY = 0.345;
+      const hopperTopY = 0.43;
+      addBoxPart(materials.hopper, 0, hopperCenterY, -0.3, 0.27, 0.15, 0.24, 0, 0, 0, null, 'rotorLoaderShell');
+      addSpherePart(materials.hopper, -0.1, hopperCenterY + 0.005, -0.31, 0.105, 0.074, 0.11, null, 'loaderLeftRound');
+      addSpherePart(materials.hopperDrive, 0.105, hopperCenterY, -0.28, 0.075, 0.075, 0.09, null, 'loaderRightDrive');
+      addBoxPart(materials.hopperGlass, 0.028, hopperCenterY + 0.008, -0.43, 0.12, 0.063, 0.012, 0, 0, 0, null, 'loaderWindow');
+      for (let i = 0; i < 5; i++) addBoxPart(materials.gunRubber, -0.09 + i * 0.045, hopperTopY + 0.018, -0.3, 0.018, 0.014, 0.17, 0, 0, 0.06, null, 'loaderTopRib');
+      addCylinder(materials.gunRubber, 0, hopperTopY + 0.06, -0.31, 0.018, 0.11, 0, 0, 0, null, 'actionCamPost', 16);
+      addBoxPart(materials.black, 0, hopperTopY + 0.15, -0.33, 0.145, 0.115, 0.13, 0, 0, 0, null, 'actionCamera');
+      addBoxPart(materials.hopperGlass, 0, hopperTopY + 0.15, -0.402, 0.095, 0.058, 0.012, 0, 0, 0, null, 'actionCamScreen');
+      addCylinder(materials.black, 0.038, hopperTopY + 0.124, -0.407, 0.014, 0.01, Math.PI / 2, 0, 0, null, 'actionCamButton', 16);
+      const reloadLid = addBoxPart(materials.gunRubber, 0, hopperTopY + 0.046, -0.3, 0.22, 0.022, 0.17, 0, 0, 0, null, 'reloadLid');
+      reloadLid.userData.baseY = reloadLid.position.y;
+      for (let i = 0; i < 6; i++) {
+        const pivot = new THREE.Group();
+        pivot.position.set(0, reloadLid.position.y + 0.025, -0.3);
+        pivot.rotation.y = i * Math.PI / 3;
+        pivot.userData.baseRotation = new THREE.Euler(0, pivot.rotation.y, 0);
+        const petal = new THREE.Mesh(geometries.box, materials.gunRubber);
+        petal.position.set(0, 0, 0.056);
+        petal.scale.set(0.032, 0.009, 0.105);
+        petal.userData.coverCull = true;
+        shadowMesh(petal, true, true);
+        petal.frustumCulled = false;
+        pivot.add(petal);
+        gunGroup.add(pivot);
+        speedFeedPetals.push(pivot);
+      }
+      for (let i = 0; i < 18; i++) {
+        const ball = new THREE.Mesh(geometries.paintball, i % 2 ? materials.paintBlue : materials.paintRed);
+        const a = i * 2.399;
+        ball.position.set(Math.cos(a) * (0.034 + (i % 3) * 0.012), hopperCenterY - 0.04 + (i % 6) * 0.011, -0.415 + Math.sin(a) * 0.012);
+        ball.scale.setScalar(0.48);
+        ball.userData.baseY = ball.position.y;
+        addMesh(ball);
+        hopperBalls.push(ball);
+      }
+
+      addBoxPart(materials.gunMetal, -0.045, -0.035, -0.13, 0.018, 0.14, 0.045, -0.04, 0, 0, null, 'frontFrame');
+      addBoxPart(materials.gunMetal, 0.056, -0.07, -0.08, 0.022, 0.2, 0.045, 0.18, 0, 0, null, 'backFrame');
+      addBoxPart(materials.gunMetal, 0.008, -0.17, -0.075, 0.12, 0.022, 0.045, 0, 0, 0, null, 'frameBottom');
+      addBoxPart(materials.gunRubber, 0.035, -0.17, -0.02, 0.075, 0.255, 0.082, -0.18, 0, 0, null, 'gripPanel');
+      for (let i = 0; i < 6; i++) addBoxPart(materials.darkGrey, 0.081, -0.07 - i * 0.034, -0.025 + i * 0.006, 0.009, 0.006, 0.064, -0.72, 0, 0, null, 'gripTexture');
+      const guard = new THREE.Mesh(new THREE.TorusGeometry(0.067, 0.006, 8, 24, Math.PI), materials.gunMetal);
+      guard.position.set(-0.004, -0.09, -0.145);
+      guard.rotation.set(0.4, Math.PI / 2, -Math.PI / 2);
+      guard.scale.set(1.1, 0.82, 1);
+      addMesh(guard, null, 'triggerGuard');
+      addBoxPart(materials.gunRubber, -0.012, -0.075, -0.128, 0.01, 0.09, 0.014, -0.22, 0, 0, null, 'triggerBlade');
+      addCylinder(materials.gunMetal, 0.02, -0.315, 0.005, 0.024, 0.08, 0, 0, 0, null, 'regulator', 24);
+      addCylinder(materials.gunRubber, 0.022, -0.365, 0.075, 0.036, 0.12, Math.PI / 2, 0, 0, null, 'asa', 24);
+      addSpherePart(materials.darkGrey, 0.073, -0.364, 0.075, 0.022, 0.022, 0.011, null, 'gaugeBezel');
+      addSpherePart(materials.line, 0.078, -0.364, 0.075, 0.012, 0.012, 0.004, null, 'gaugeFace');
+
+      const leftHand = new THREE.Group();
+      leftHand.userData.basePosition = new THREE.Vector3(0, 0, 0);
+      leftHand.userData.baseRotation = new THREE.Euler(0, 0, 0);
+      gunGroup.add(leftHand);
+      addCylinder(jerseyMat, -0.25, -0.31, -0.02, 0.062, 0.28, 1.02, 0.18, -0.44, leftHand);
+      addCylinder(armMat, -0.12, -0.16, -0.33, 0.054, 0.3, 1.2, 0.05, -0.12, leftHand);
+      addSpherePart(gloveMat, -0.025, -0.038, -0.5, 0.105, 0.074, 0.095, leftHand);
+      addBoxPart(materials.gunRubber, -0.015, 0.006, -0.49, 0.12, 0.02, 0.082, -0.18, 0, 0.04, leftHand);
+      for (let i = 0; i < 5; i++) {
+        const finger = addCylinder(gloveMat, -0.065 + i * 0.029, -0.032 - (i === 0 ? 0.016 : 0), -0.57 + Math.abs(i - 2) * 0.008, 0.011, 0.066, 1.36, 0.04, -0.18 + i * 0.08, leftHand);
+        finger.scale.x *= i === 0 ? 1.25 : 1;
+        finger.scale.z *= i === 0 ? 1.25 : 1;
+      }
+
+      const rightHand = new THREE.Group();
+      gunGroup.add(rightHand);
+      addCylinder(jerseyMat, 0.24, -0.33, 0.1, 0.067, 0.32, 0.84, -0.08, 0.46, rightHand);
+      addCylinder(armMat, 0.15, -0.2, -0.08, 0.056, 0.29, 1.0, -0.18, 0.22, rightHand);
+      addSpherePart(gloveMat, 0.058, -0.14, -0.015, 0.118, 0.095, 0.11, rightHand);
+      for (let i = 0; i < 4; i++) addCylinder(gloveMat, 0.012 + i * 0.024, -0.155 - i * 0.006, -0.11, 0.012, 0.072, 1.18, -0.12, 0.08 + i * 0.04, rightHand);
+
+      const reloadPod = addCylinder(materials.gunAccent, -0.32, 0.25, -0.24, 0.06, 0.33, 0.42, 0.1, -0.72);
+      reloadPod.userData.coverCull = false;
+      reloadPod.visible = false;
+      const podCap = addCylinder(materials.gunRubber, -0.32, 0.405, -0.305, 0.063, 0.03, 0.42, 0.1, -0.72);
+      podCap.userData.coverCull = false;
+      podCap.visible = false;
+      reloadPod.userData.cap = podCap;
+
+      const gunLight = new THREE.PointLight(0xff8a1c, 0.08, 1.0);
+      gunLight.position.set(-0.08, upperY, -0.5);
+      gunGroup.add(gunLight);
       const paint = new THREE.Mesh(geometries.splat, materials.paintBlue);
-      paint.position.set(-0.08, 0.08, -0.405);
+      paint.position.set(-0.055, upperY, -0.51);
       paint.scale.set(0.18, 0.13, 1);
       paint.rotation.set(0, 0, 0.4);
       paint.visible = false;
-      group.add(body, barrel, barrelTip, grip, trigger, feed, hopper, lid, screen, tank, paint);
-      group.traverse((child) => {
-        if (!child.isMesh) return;
-        child.frustumCulled = false;
-        child.userData.coverCull = child !== paint;
-      });
-      return { group, baseX: 0.56, baseY: -0.48, recoil: 0, paint };
+      addMesh(paint);
+      paint.userData.coverCull = false;
+
+      for (let i = 0; i < 8; i++) {
+        const ball = new THREE.Mesh(geometries.paintball, i % 2 ? materials.paintBlue : materials.paintRed);
+        ball.visible = false;
+        ball.scale.setScalar(1.35);
+        addMesh(ball);
+        ball.userData.coverCull = false;
+        reloadBalls.push(ball);
+      }
+
+      return { group: gunGroup, baseX: 0.18, baseY: -0.22, baseZ: -0.45, recoil: 0, paint, reloadLid, reloadBalls, speedFeedPetals, hopperBalls, leftHand, reloadPod, gunLight };
     }
 
     function createAiModel() {
@@ -2786,7 +2908,7 @@
       if (down) {
         if (repeat) return;
         if (reload.active) {
-          cancelReload();
+          stopReload(true);
           return;
         }
         reload.keyDown = true;
@@ -2797,8 +2919,8 @@
         if (!reload.keyDown) return;
         reload.keyDown = false;
         const heldTime = performance.now() / 1000 - reload.keyStartTime;
-        if (!reload.holdStarted && heldTime >= 0.5) startReload(POD_CAPACITY, 2.5);
-        else if (!reload.holdStarted) startReload(15, 0.8);
+        if (!reload.holdStarted && heldTime >= 0.5) startReload(POD_CAPACITY, 2.0);
+        else if (!reload.holdStarted) startReload(50, 0.5);
       }
     }
 
@@ -2822,7 +2944,7 @@
       active.group.visible = true;
       const speedball = state.selectedMap === 'speedball';
       setVenueSky(speedball ? 'speedball' : 'scrapyard', active.sky);
-      scene.fog = speedball ? new THREE.FogExp2(0xe8f4f8, 0.015) : new THREE.FogExp2(0xd4c9b0, 0.02);
+      scene.fog = speedball ? new THREE.FogExp2(0xe8f4f8, 0.006) : new THREE.FogExp2(0xd4c9b0, 0.006);
       ambientLight.color.setHex(0xffffff);
       ambientLight.intensity = 0.15;
       keyLight.intensity = 1.5;
@@ -2870,6 +2992,7 @@
       state.phase = 'countdown';
       state.countdownClock = COUNTDOWN_TIME;
       state.roundClock = ROUND_TIME;
+      state.readyClock = 0;
       state.roundOverClock = 0;
       state.shotClock = 0;
       state.nextShotTime = 0;
@@ -2978,7 +3101,8 @@
       if (after !== before && after > 0) audio.beep();
       if (state.countdownClock <= 0) {
         state.phase = 'active';
-        ui.centerMessage.classList.remove('visible');
+        state.readyClock = READY_DELAY;
+        showCenter('READY');
         audio.roundStart();
       } else {
         showCenter(String(Math.ceil(state.countdownClock)));
@@ -2987,13 +3111,21 @@
 
     function updateActiveRound(dt) {
       state.roundClock -= dt;
+      updateReadyDelay(dt);
       updateAi(dt);
-      if (input.shotRequests > 0 && state.shotClock <= 0) {
+      if (input.shotRequests > 0 && state.shotClock <= 0 && state.readyClock <= 0) {
         if (tryShootPlayer()) input.shotRequests -= 1;
       }
       if (state.roundClock <= 0) {
         endRound('Time', 'No point. Resetting round.');
       }
+    }
+
+    function updateReadyDelay(dt) {
+      if (state.readyClock <= 0) return;
+      state.readyClock = Math.max(0, state.readyClock - dt);
+      if (state.readyClock > 0) showCenter('READY');
+      else ui.centerMessage.classList.remove('visible');
     }
 
     function updateRoundOver(dt) {
@@ -3178,22 +3310,29 @@
 
     function updateGun(dt, canMove) {
       const moveMag = Math.min(1, Math.hypot(player.velocity.x, player.velocity.z) / WALK_SPEED);
-      const sway = canMove ? Math.sin(state.elapsed * 8.5) * 0.018 * moveMag : 0;
-      const bob = canMove ? Math.abs(Math.cos(state.elapsed * 8.5)) * 0.018 * moveMag : 0;
+      const sprintLift = player.sprinting ? 1.65 : 1;
+      const walkFreq = player.sprinting ? 12.5 : 8.5;
+      const idle = canMove ? Math.sin(state.elapsed * 1.65) * 0.002 : 0;
+      const sway = canMove ? Math.sin(state.elapsed * walkFreq) * 0.018 * moveMag * sprintLift : 0;
+      const bob = canMove ? Math.abs(Math.cos(state.elapsed * walkFreq)) * 0.018 * moveMag * sprintLift + idle : 0;
       gun.recoil = Math.max(0, gun.recoil - dt * 5.8);
-      gun.group.position.x = gun.baseX + sway + player.peek * 0.09;
-      gun.group.position.y = gun.baseY - bob + (input.crouch ? -0.035 : 0);
-      gun.group.position.z = -0.82 + gun.recoil * 0.16;
-      gun.group.rotation.x = -0.05 - gun.recoil * 0.16 + Math.sin(state.elapsed * 5.1) * 0.008 * moveMag;
-      gun.group.rotation.y = -0.1 + Math.sin(state.elapsed * 4.5) * 0.012 * moveMag;
-      gun.group.rotation.z = -0.02 + sway * 0.5;
+      const targetX = gun.baseX + sway;
+      const targetY = gun.baseY - bob + (input.crawl ? -0.055 : input.crouch ? -0.035 : 0);
+      const targetZ = gun.baseZ + gun.recoil * 0.05;
+      gun.group.position.x += (targetX - gun.group.position.x) * Math.min(1, dt * 16);
+      gun.group.position.y += (targetY - gun.group.position.y) * Math.min(1, dt * 16);
+      gun.group.position.z += (targetZ - gun.group.position.z) * Math.min(1, dt * 16);
+      gun.group.rotation.x = -0.04 - gun.recoil * 0.052 + Math.sin(state.elapsed * 5.1) * 0.01 * moveMag * sprintLift;
+      gun.group.rotation.y = 0.08 + Math.sin(state.elapsed * 4.5) * 0.012 * moveMag;
+      gun.group.rotation.z = sway * 0.55 + (player.sprinting ? Math.sin(state.elapsed * 6.8) * 0.018 : 0);
+      if (gun.gunLight) gun.gunLight.intensity = 0.22 + gun.recoil * 0.38;
       if (state.running) updateCoverCullVisibility(gun.group, 0.015);
       else restoreCoverCullVisibility(gun.group);
     }
 
     function tryShootPlayer() {
       const now = performance.now() / 1000;
-      if (state.phase !== 'active' || state.playerEliminated || now < state.nextShotTime) return false;
+      if (state.phase !== 'active' || state.playerEliminated || state.readyClock > 0 || now < state.nextShotTime) return false;
       if (ammo.hopper <= 0) {
         ammo.hopper = 0;
         state.nextShotTime = now + SHOT_COOLDOWN;
@@ -3781,6 +3920,7 @@
     }
 
     function aiShoot(hasSight) {
+      if (state.readyClock > 0) return;
       tmpVecB.set(player.bodyCenter.x - ai.position.x, 0, player.bodyCenter.z - ai.position.z);
       if (tmpVecB.lengthSq() > 0.001) tmpVecB.normalize();
       tmpVecC.set(-tmpVecB.z, 0, tmpVecB.x).multiplyScalar(ai.peekSide * 0.42);
@@ -4050,11 +4190,11 @@
         audio.empty();
         return false;
       }
-      const amount = Math.min(requestedAmount, ammo.pods[podIndex], room);
+      const amount = Math.min(requestedAmount, ammo.pods[podIndex]);
       if (amount <= 0) return false;
       reload.active = true;
       reload.elapsed = 0;
-      reload.duration = Math.max(0.15, duration);
+      reload.duration = Math.max(0.15, duration * (amount / requestedAmount));
       reload.startTime = performance.now() / 1000;
       reload.amount = amount;
       reload.poured = 0;
@@ -4064,19 +4204,6 @@
       audio.reloadOpen();
       audio.startPour(reload.duration > 0.6);
       return true;
-    }
-
-    function cancelReload() {
-      if (!reload.active) return;
-      if (reload.duration > 0) {
-        reload.elapsed = performance.now() / 1000 - reload.startTime;
-        applyReloadProgress(clamp(reload.elapsed / reload.duration, 0, 1), false);
-      }
-      reload.keyDown = false;
-      reload.holdStarted = false;
-      reload.keyStartTime = 0;
-      reload.keyTime = 0;
-      stopReload(false);
     }
 
     function stopReload(playClose) {
@@ -4094,27 +4221,6 @@
       updateReloadVisual(0);
     }
 
-    function applyReloadProgress(progress, finishOnFull) {
-      const targetPoured = Math.floor(reload.amount * progress);
-      const delta = targetPoured - reload.poured;
-      if (delta <= 0 || reload.podIndex < 0) return true;
-      const room = HOPPER_CAPACITY - ammo.hopper;
-      const available = ammo.pods[reload.podIndex];
-      if (room <= 0 || available <= 0) {
-        if (finishOnFull) stopReload(true);
-        return false;
-      }
-      const actual = Math.min(delta, room, available);
-      ammo.hopper += actual;
-      ammo.pods[reload.podIndex] -= actual;
-      reload.poured += actual;
-      if (actual < delta || ammo.pods[reload.podIndex] <= 0 || ammo.hopper >= HOPPER_CAPACITY) {
-        if (finishOnFull) stopReload(true);
-        return false;
-      }
-      return true;
-    }
-
     function updateReload(dt) {
       const now = performance.now() / 1000;
       if (state.phase !== 'active' || state.playerEliminated) {
@@ -4130,7 +4236,7 @@
         reload.keyTime = now - reload.keyStartTime;
         if (reload.keyTime >= 0.5) {
           reload.holdStarted = true;
-          startReload(POD_CAPACITY, 2.5);
+          startReload(POD_CAPACITY, 2.0);
         }
       }
       if (!reload.active) {
@@ -4139,7 +4245,24 @@
       }
       reload.elapsed = now - reload.startTime;
       const progress = clamp(reload.elapsed / reload.duration, 0, 1);
-      if (!applyReloadProgress(progress, true)) return;
+      const targetPoured = Math.floor(reload.amount * progress);
+      const delta = targetPoured - reload.poured;
+      if (delta > 0 && reload.podIndex >= 0) {
+        const room = HOPPER_CAPACITY - ammo.hopper;
+        const available = ammo.pods[reload.podIndex];
+        if (room <= 0 || available <= 0) {
+          stopReload(true);
+          return;
+        }
+        const actual = Math.min(delta, room, available);
+        ammo.hopper += actual;
+        ammo.pods[reload.podIndex] -= actual;
+        reload.poured += actual;
+        if (actual < delta || ammo.pods[reload.podIndex] <= 0 || ammo.hopper >= HOPPER_CAPACITY) {
+          stopReload(true);
+          return;
+        }
+      }
       updateReloadVisual(progress);
       if (progress >= 1 || reload.poured >= reload.amount) stopReload(true);
     }
@@ -4209,7 +4332,7 @@
       const fill = clamp(1 - state.shotClock / SHOT_COOLDOWN, 0, 1) * 360;
       ui.cooldown.style.background = 'conic-gradient(#ff3442 ' + fill + 'deg, rgba(255,255,255,0.15) ' + fill + 'deg)';
       updateAmmoHud();
-      if (state.phase === 'active') ui.centerMessage.classList.remove('visible');
+      if (state.phase === 'active' && state.readyClock <= 0) ui.centerMessage.classList.remove('visible');
     }
 
     function updateAmmoHud() {
