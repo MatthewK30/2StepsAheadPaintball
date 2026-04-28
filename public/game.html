@@ -2613,10 +2613,6 @@
       addSpherePart(materials.hopperDrive, 0.105, hopperCenterY, -0.28, 0.075, 0.075, 0.09, null, 'loaderRightDrive');
       addBoxPart(materials.hopperGlass, 0.028, hopperCenterY + 0.008, -0.43, 0.12, 0.063, 0.012, 0, 0, 0, null, 'loaderWindow');
       for (let i = 0; i < 5; i++) addBoxPart(materials.gunRubber, -0.09 + i * 0.045, hopperTopY + 0.018, -0.3, 0.018, 0.014, 0.17, 0, 0, 0.06, null, 'loaderTopRib');
-      addCylinder(materials.gunRubber, 0, hopperTopY + 0.06, -0.31, 0.018, 0.11, 0, 0, 0, null, 'actionCamPost', 16);
-      addBoxPart(materials.black, 0, hopperTopY + 0.15, -0.33, 0.145, 0.115, 0.13, 0, 0, 0, null, 'actionCamera');
-      addBoxPart(materials.hopperGlass, 0, hopperTopY + 0.15, -0.402, 0.095, 0.058, 0.012, 0, 0, 0, null, 'actionCamScreen');
-      addCylinder(materials.black, 0.038, hopperTopY + 0.124, -0.407, 0.014, 0.01, Math.PI / 2, 0, 0, null, 'actionCamButton', 16);
       const reloadLid = addBoxPart(materials.gunRubber, 0, hopperTopY + 0.046, -0.3, 0.22, 0.022, 0.17, 0, 0, 0, null, 'reloadLid');
       reloadLid.userData.baseY = reloadLid.position.y;
       for (let i = 0; i < 6; i++) {
