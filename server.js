@@ -185,11 +185,11 @@ io.on('connection', (socket) => {
     })
   })
 
-  socket.on('player_hit', ({ code, victimId, hit }) => {
+  socket.on('player_hit', ({ code, victimId }) => {
     code = normalizeCode(code)
     if (!rooms[code]) return
     io.to(code).emit('hit_confirmed', {
-      shooterId: socket.id, victimId, hit
+      shooterId: socket.id, victimId
     })
   })
 
