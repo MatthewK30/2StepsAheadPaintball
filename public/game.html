@@ -150,6 +150,13 @@
       position: absolute;
       background: rgba(255, 255, 255, 0.88);
       box-shadow: 0 0 4px rgba(0, 0, 0, 0.9);
+      transition: background 120ms ease, box-shadow 120ms ease;
+    }
+
+    #crosshair.blocked::before,
+    #crosshair.blocked::after {
+      background: rgba(255, 52, 66, 0.96);
+      box-shadow: 0 0 9px rgba(255, 52, 66, 0.9), 0 0 4px rgba(0, 0, 0, 0.9);
     }
 
     #crosshair::before {
@@ -590,7 +597,7 @@
 
     .menuOptions {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 20px;
       padding: 2px 0 0;
     }
@@ -791,10 +798,18 @@
             <div class="choice" data-time="90" tabindex="0">90s</div>
           </div>
         </div>
+        <div class="optionGroup">
+          <div class="optionLabel">AI Difficulty</div>
+          <div class="optionButtons">
+            <div class="choice" data-ai="basic" tabindex="0">Basic</div>
+            <div class="choice selected" data-ai="pro" tabindex="0">Pro</div>
+            <div class="choice" data-ai="elite" tabindex="0">Elite</div>
+          </div>
+        </div>
       </div>
       <div class="deployRow">
         <button id="deployBtn">DEPLOY</button>
-        <div class="controls">WASD move. Mouse aim. Left click shoot. Shift sprint. X dive or crawl. Space stands from prone. C crouch. Q/E peek.</div>
+        <div class="controls">WASD move. Mouse aim. Left click shoot. Shift sprint. X dive or crawl. Space stands from prone. C crouch. Q/E peek. Step off cover to shoot or peek.</div>
       </div>
     </div>
   </div>
@@ -897,6 +912,10 @@
     const COUNTDOWN_TIME = 3;
     const READY_DELAY = 2;
     const ROUND_OVER_TIME = 2;
+    const BUNKER_TAG_DISTANCE = 0.3;
+    const PEEK_CLEARANCE_DISTANCE = 1.2;
+    const PAINT_CHECK_DURATION = 1;
+    const DEFAULT_CAMERA_FOV = 64;
     const PROJECTILE_POOL_SIZE = 96;
     const SPLAT_POOL_SIZE = 180;
     const OVERCAST_SKY_COLOR = 0xc8d4dc;
@@ -906,6 +925,11 @@
     const RED = 0xc0151a;
     const BLUE = 0x2364de;
     const WHITE = 0xf0f0ea;
+    const AI_DIFFICULTIES = {
+      basic: { speed: 2.35, reactSpeed: 2.7, shotDelay: 0.95, shotJitter: 0.55, searchDelay: 1.45, searchJitter: 0.75, accuracy: 0.55, sightSpread: 0.82, blindSpread: 8.5, reaction: 1.25, aggression: 0.72, elite: false },
+      pro: { speed: 2.85, reactSpeed: 3.35, shotDelay: 0.62, shotJitter: 0.35, searchDelay: 1.15, searchJitter: 0.55, accuracy: 0.78, sightSpread: 0.28, blindSpread: 6.0, reaction: 0.85, aggression: 1, elite: false },
+      elite: { speed: 3.18, reactSpeed: 4.05, shotDelay: 0.43, shotJitter: 0.22, searchDelay: 0.86, searchJitter: 0.38, accuracy: 0.94, sightSpread: 0.12, blindSpread: 3.2, reaction: 0.48, aggression: 1.45, elite: true }
+    };
     const tmpVecA = new THREE.Vector3();
     const tmpVecB = new THREE.Vector3();
     const tmpVecC = new THREE.Vector3();
@@ -980,6 +1004,7 @@
       roundInfo: document.getElementById('roundInfo'),
       cooldown: document.getElementById('cooldownWrap'),
       teamBadge: document.getElementById('teamBadge'),
+      crosshair: document.getElementById('crosshair'),
       centerMessage: document.getElementById('centerMessage'),
       eliminatedOverlay: document.getElementById('eliminatedOverlay'),
       eliminatedCanvas: document.getElementById('eliminatedSplatCanvas'),
@@ -1013,6 +1038,9 @@
       winnerText: '',
       playerEliminated: false,
       aiEliminated: false,
+      aiDifficulty: 'pro',
+      bunkerTagged: false,
+      peekBlocked: false,
       lastRoundMessage: '',
       running: false,
       fps: 60,
@@ -1110,7 +1138,11 @@
       peekSide: 0,
       reactClock: 0,
       cover: null,
-      moving: false
+      moving: false,
+      shotStreak: 0,
+      shotStreakTimer: 0,
+      lastKnownPlayer: new THREE.Vector3(0, 0, 0),
+      lastKnownTime: 0
     };
 
     const remotePlayer = {
@@ -1128,7 +1160,7 @@
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(OVERCAST_SKY_COLOR);
     scene.fog = new THREE.Fog(OVERCAST_SKY_COLOR, OVERCAST_FOG_NEAR, OVERCAST_FOG_FAR);
-    const camera = new THREE.PerspectiveCamera(64, window.innerWidth / window.innerHeight, 0.05, 2200);
+    const camera = new THREE.PerspectiveCamera(DEFAULT_CAMERA_FOV, window.innerWidth / window.innerHeight, 0.05, 2200);
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance', logarithmicDepthBuffer: true });
     renderer.setPixelRatio(window.devicePixelRatio || 1);
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -1148,6 +1180,7 @@
     let skyStatus = 'overcast-color';
     const eliminatedSplat = { active: false, start: 0, color: '#0055cc', seed: 1, drips: [], drops: [], satellites: [], edgeDots: [] };
     const eliminatedCtx = ui.eliminatedCanvas ? ui.eliminatedCanvas.getContext('2d') : null;
+    const paintCheck = { clock: 0, target: new THREE.Vector3(), baseFov: DEFAULT_CAMERA_FOV };
 
     const ambientLight = new THREE.AmbientLight(0xd8e0e8, 0.8);
     const keyLight = new THREE.DirectionalLight(0xe8eef0, 0.6);
@@ -2989,6 +3022,14 @@
         choice.addEventListener('click', select);
         choice.addEventListener('keydown', (e) => activateMenuChoice(e, select));
       });
+      document.querySelectorAll('[data-ai]').forEach((choice) => {
+        const select = () => {
+          state.aiDifficulty = AI_DIFFICULTIES[choice.dataset.ai] ? choice.dataset.ai : 'pro';
+          document.querySelectorAll('[data-ai]').forEach((c) => c.classList.toggle('selected', c === choice));
+        };
+        choice.addEventListener('click', select);
+        choice.addEventListener('keydown', (e) => activateMenuChoice(e, select));
+      });
       ui.deployBtn.addEventListener('click', () => {
         unlockAudio();
         startMatch();
@@ -3109,9 +3150,9 @@
         if (id && id !== remotePlayer.id) remotePlayer.id = id;
         spawnRemotePaintball(origin, direction, team || remotePlayer.team);
       });
-      multiplayer.socket.on('hit_confirmed', ({ shooterId, victimId }) => {
-        if (victimId === multiplayer.socket.id) hitPlayer();
-        else if (!remotePlayer.id || victimId === remotePlayer.id || shooterId === multiplayer.socket.id) hitOpponent();
+      multiplayer.socket.on('hit_confirmed', ({ shooterId, victimId, hit }) => {
+        if (victimId === multiplayer.socket.id) hitPlayer(hit);
+        else if (!remotePlayer.id || victimId === remotePlayer.id || shooterId === multiplayer.socket.id) hitOpponent(hit);
       });
       multiplayer.socket.on('round_ended', ({ winner }) => {
         endRound(winner, roundMessage(winner), false);
@@ -3436,7 +3477,7 @@
       state.roundOverClock = 0;
       state.shotClock = 0;
       state.nextShotTime = 0;
-      state.aiShotClock = 1.25;
+      state.aiShotClock = initialAiShotDelay();
       state.aiMoveClock = 0.2;
       input.crawl = false;
       input.shotRequests = 0;
@@ -3444,7 +3485,10 @@
       stopReload(false);
       state.playerEliminated = false;
       state.aiEliminated = false;
+      state.bunkerTagged = false;
+      state.peekBlocked = false;
       state.lastRoundMessage = '';
+      resetPaintCheck();
       player.yaw = MULTIPLAYER && MY_TEAM === 'blue' ? Math.PI / 2 : -Math.PI / 2;
       player.pitch = 0;
       player.root.position.copy(player.spawn);
@@ -3485,6 +3529,10 @@
       ai.peekSide = 0;
       ai.reactClock = 0;
       ai.cover = null;
+      ai.shotStreak = 0;
+      ai.shotStreakTimer = 0;
+      ai.lastKnownPlayer.copy(player.root.position);
+      ai.lastKnownTime = 0;
       gun.paint.visible = false;
       hideEliminatedOverlay();
       clearProjectiles();
@@ -3524,12 +3572,14 @@
 
     function updateGame(dt) {
       if (!state.running) {
+        updatePaintCheck(dt);
         updateGun(dt, false);
         audio.updateRattle(false, false);
         return;
       }
       state.shotClock = Math.max(0, state.nextShotTime - performance.now() / 1000);
       updatePlayer(dt);
+      updatePaintCheck(dt);
       sendMultiplayerUpdate();
       updateReload(dt);
       updateGun(dt, state.phase === 'active' && !state.playerEliminated);
@@ -3601,7 +3651,9 @@
       player.targetHeight = input.crawl || player.diving ? CRAWL_HEIGHT : player.sliding ? SLIDE_HEIGHT : input.crouch ? CROUCH_HEIGHT : STAND_HEIGHT;
       player.height += (player.targetHeight - player.height) * Math.min(1, dt * (player.diving ? 18 : 12));
       player.radius = input.crawl || player.diving ? CRAWL_RADIUS : player.sliding || input.crouch ? CROUCH_RADIUS : PLAYER_RADIUS;
-      const rawPeek = (input.peekLeft ? -LEAN_DISTANCE : 0) + (input.peekRight ? LEAN_DISTANCE : 0);
+      const wantsPeek = input.peekLeft || input.peekRight;
+      updatePlayerCoverRules(wantsPeek);
+      const rawPeek = state.peekBlocked ? 0 : (input.peekLeft ? -LEAN_DISTANCE : 0) + (input.peekRight ? LEAN_DISTANCE : 0);
       player.targetPeek = clampLeanOffset(rawPeek);
       player.peek += (player.targetPeek - player.peek) * Math.min(1, dt / 0.15);
       player.peek = clampLeanOffset(player.peek);
@@ -3616,6 +3668,8 @@
       player.bodyCenter.set(player.root.position.x + player.hitLeanX, player.height * 0.5, player.root.position.z + player.hitLeanZ);
 
       if (state.phase !== 'active' || state.playerEliminated) {
+        state.bunkerTagged = false;
+        state.peekBlocked = false;
         player.diving = false;
         player.sliding = false;
         player.diveElapsed = 0;
@@ -3657,6 +3711,7 @@
         }
         player.bodyCenter.set(player.root.position.x + player.hitLeanX, player.height * 0.5, player.root.position.z + player.hitLeanZ);
         camera.position.set(player.peek, player.height, 0);
+        updatePlayerCoverRules(wantsPeek);
         audio.updateRattle(false, false);
         return;
       }
@@ -3678,6 +3733,7 @@
         }
         player.bodyCenter.set(player.root.position.x + player.hitLeanX, player.height * 0.5, player.root.position.z + player.hitLeanZ);
         camera.position.set(player.peek, player.height, 0);
+        updatePlayerCoverRules(wantsPeek);
         audio.updateRattle(false, false);
         return;
       }
@@ -3709,6 +3765,7 @@
       moveWithCollision(player.root.position, player.velocity.x * dt, player.velocity.z * dt, player.radius);
       player.bodyCenter.set(player.root.position.x + player.hitLeanX, player.height * 0.5, player.root.position.z + player.hitLeanZ);
       camera.position.set(player.peek, player.height + player.bobOffset, 0);
+      updatePlayerCoverRules(wantsPeek);
       audio.updateRattle(player.moving && !input.crouch && !input.crawl, player.sprinting);
     }
 
@@ -3737,6 +3794,51 @@
     function constrainBounds(pos, radius) {
       pos.x = clamp(pos.x, -ARENA_HALF_X + radius + 0.18, ARENA_HALF_X - radius - 0.18);
       pos.z = clamp(pos.z, -ARENA_HALF_Z + radius + 0.18, ARENA_HALF_Z - radius - 0.18);
+    }
+
+    function updatePlayerCoverRules(wantsPeek) {
+      if (state.phase !== 'active' || state.playerEliminated) {
+        state.bunkerTagged = false;
+        state.peekBlocked = false;
+        return;
+      }
+      const clearance = nearestCoverClearance(player.root.position, player.radius, player.height);
+      state.bunkerTagged = clearance <= BUNKER_TAG_DISTANCE;
+      state.peekBlocked = wantsPeek && clearance < PEEK_CLEARANCE_DISTANCE;
+    }
+
+    function isNearCover(pos, radius, height, threshold) {
+      return nearestCoverClearance(pos, radius, height) <= threshold;
+    }
+
+    function nearestCoverClearance(pos, radius, height) {
+      if (activeColliders.length === 0) return Infinity;
+      let best = Infinity;
+      for (let i = 0; i < activeColliders.length; i++) {
+        const c = activeColliders[i];
+        updateMeshCollider(c);
+        if (c.y - c.halfY > height || c.y + c.halfY < 0) continue;
+        let dist = Infinity;
+        if (c.type === 'box') {
+          const lx = (pos.x - c.x) * c.cos - (pos.z - c.z) * c.sin;
+          const lz = (pos.x - c.x) * c.sin + (pos.z - c.z) * c.cos;
+          const dx = Math.max(0, Math.abs(lx) - c.halfX);
+          const dz = Math.max(0, Math.abs(lz) - c.halfZ);
+          dist = Math.hypot(dx, dz) - radius;
+        } else if (c.type === 'vcylinder') {
+          dist = Math.hypot(pos.x - c.x, pos.z - c.z) - c.radius - radius;
+        } else if (c.type === 'capsule') {
+          const abx = c.bx - c.ax;
+          const abz = c.bz - c.az;
+          const lenSq = abx * abx + abz * abz;
+          const t = lenSq > 0.000001 ? clamp(((pos.x - c.ax) * abx + (pos.z - c.az) * abz) / lenSq, 0, 1) : 0;
+          const cx = c.ax + abx * t;
+          const cz = c.az + abz * t;
+          dist = Math.hypot(pos.x - cx, pos.z - cz) - c.radius - radius;
+        }
+        if (dist < best) best = dist;
+      }
+      return Math.max(0, best);
     }
 
     function resolveCoverCollision(pos, radius, xAxis, velocity, height) {
@@ -3874,6 +3976,13 @@
     function tryShootPlayer() {
       const now = performance.now() / 1000;
       if (state.phase !== 'active' || state.playerEliminated || player.sliding || state.readyClock > 0 || now < state.nextShotTime) return false;
+      if (state.bunkerTagged) {
+        state.nextShotTime = now + SHOT_COOLDOWN;
+        state.shotClock = SHOT_COOLDOWN;
+        showCenter('MOVE TO SHOOT');
+        audio.empty();
+        return true;
+      }
       if (ammo.hopper <= 0) {
         ammo.hopper = 0;
         state.nextShotTime = now + SHOT_COOLDOWN;
@@ -3896,6 +4005,7 @@
         });
       }
       ammo.hopper -= 1;
+      notePlayerShot();
       state.nextShotTime = now + SHOT_COOLDOWN;
       state.shotClock = SHOT_COOLDOWN;
       gun.recoil = 1;
@@ -3975,10 +4085,12 @@
         if (bodyTarget === 1) {
           tmpVecA.copy(p.pos);
           p.pos.copy(p.prev).lerp(tmpVecA, bodyT);
-          if (MULTIPLAYER) confirmOpponentHit(p.pos);
+          tmpVecB.set(p.pos.x - ai.position.x, p.pos.y - Math.max(0.45, ai.tacticalHeight * 0.52), p.pos.z - ai.position.z);
+          if (tmpVecB.lengthSq() < 0.000001) tmpVecB.copy(p.vel).multiplyScalar(-1);
+          tmpVecB.normalize();
+          if (MULTIPLAYER) confirmOpponentHit(p.pos, tmpVecB);
           else {
-            aiEliminated(p.pos);
-            spawnSplat('red', ai.position.x, 1.25, ai.position.z - 0.45, 0, 0, -1, 0.72);
+            aiEliminated(p.pos, tmpVecB);
           }
           deactivateProjectile(p);
           continue;
@@ -3990,9 +4102,11 @@
         if (bodyTarget === 2) {
           tmpVecA.copy(p.pos);
           p.pos.copy(p.prev).lerp(tmpVecA, bodyT);
+          tmpVecB.set(p.pos.x - player.bodyCenter.x, p.pos.y - player.bodyCenter.y, p.pos.z - player.bodyCenter.z);
+          if (tmpVecB.lengthSq() < 0.000001) tmpVecB.copy(p.vel).multiplyScalar(-1);
+          tmpVecB.normalize();
           if (!MULTIPLAYER) {
-            playerEliminated();
-            spawnSplat('blue', player.bodyCenter.x, player.height * 0.82, player.bodyCenter.z, 0, 0, 1, 0.72);
+            playerEliminated(p.pos, tmpVecB);
           }
           deactivateProjectile(p);
           continue;
@@ -4020,12 +4134,12 @@
       return p.team === 'blue' && !state.playerEliminated;
     }
 
-    function confirmOpponentHit(hitPos) {
+    function confirmOpponentHit(hitPos, hitNormal) {
       if (!remotePlayer.id || !multiplayer.socket || !multiplayer.socket.connected) return;
-      spawnSplat(MY_TEAM, hitPos.x, Math.max(0.6, ai.tacticalHeight * 0.82), hitPos.z, 0, 0, -1, 0.72);
       multiplayer.socket.emit('player_hit', {
         code: ROOM_CODE,
-        victimId: remotePlayer.id
+        victimId: remotePlayer.id,
+        hit: makeHitPayload(hitPos, hitNormal)
       });
     }
 
@@ -4409,9 +4523,50 @@
       }
     }
 
+    function currentAiConfig() {
+      return AI_DIFFICULTIES[state.aiDifficulty] || AI_DIFFICULTIES.pro;
+    }
+
+    function initialAiShotDelay() {
+      const config = currentAiConfig();
+      return config.reaction + Math.random() * config.shotJitter;
+    }
+
+    function nextAiShotDelay(hasSight, fired) {
+      const config = currentAiConfig();
+      const base = hasSight ? config.shotDelay : config.searchDelay;
+      const jitter = hasSight ? config.shotJitter : config.searchJitter;
+      return base + Math.random() * jitter + (fired ? 0 : 0.14);
+    }
+
+    function notePlayerShot() {
+      if (MULTIPLAYER) return;
+      ai.shotStreak = Math.min(5, ai.shotStreak + 1);
+      ai.shotStreakTimer = 2.2;
+      ai.lastKnownPlayer.copy(player.root.position);
+      ai.lastKnownTime = 2.4;
+      if (currentAiConfig().elite) state.aiMoveClock = Math.min(state.aiMoveClock, 0.32);
+    }
+
+    function updateAiAwareness(hasSight, config) {
+      if (hasSight || player.sprinting || ai.shotStreak > 0) {
+        ai.lastKnownPlayer.copy(player.root.position);
+        ai.lastKnownTime = hasSight ? 2.8 : player.sprinting ? 1.7 : 1.2;
+      }
+      if (!config.elite) return;
+      if (player.sprinting || ai.shotStreak >= 2 || ammo.hopper <= 10) {
+        ai.reactClock = Math.max(ai.reactClock, 0.22 + ai.shotStreak * 0.04);
+        state.aiMoveClock = Math.min(state.aiMoveClock, 0.55);
+      }
+    }
+
     function updateAi(dt) {
       if (state.aiEliminated) return;
+      const config = currentAiConfig();
       ai.reactClock = Math.max(0, ai.reactClock - dt);
+      ai.shotStreakTimer = Math.max(0, ai.shotStreakTimer - dt);
+      ai.lastKnownTime = Math.max(0, ai.lastKnownTime - dt);
+      if (ai.shotStreakTimer <= 0) ai.shotStreak = 0;
       state.aiMoveClock -= dt;
       if (state.aiMoveClock <= 0 || ai.position.distanceToSquared(ai.target) < 0.55 || ai.reactClock > 0.42) chooseAiCover(false);
       tmpVecA.subVectors(ai.target, ai.position);
@@ -4427,7 +4582,8 @@
       }
       if (dist > 0.08) {
         tmpVecA.multiplyScalar(1 / dist);
-        const speed = ai.reactClock > 0 ? 3.35 : 2.85;
+        const lowHopperPush = config.elite && ammo.hopper <= 10;
+        const speed = (ai.reactClock > 0 ? config.reactSpeed : config.speed) * (lowHopperPush ? 1.18 : 1);
         moveAiWithCollision(tmpVecA.x * speed * dt, tmpVecA.z * speed * dt);
       }
       tmpVecB.subVectors(player.root.position, ai.position);
@@ -4439,9 +4595,10 @@
       state.aiShotClock -= dt;
       const shootY = Math.max(0.55, Math.min(ai.tacticalHeight, ai.height) * 0.82);
       const hasSight = hasLineOfSight(ai.position.x, shootY, ai.position.z, player.bodyCenter.x, player.height * 0.78, player.bodyCenter.z);
+      updateAiAwareness(hasSight, config);
       if (state.aiShotClock <= 0) {
-        aiShoot(hasSight);
-        state.aiShotClock = hasSight ? 0.62 + Math.random() * 0.35 : 1.15 + Math.random() * 0.55;
+        const fired = aiShoot(hasSight);
+        state.aiShotClock = nextAiShotDelay(hasSight, fired);
       }
     }
 
@@ -4465,23 +4622,28 @@
         ai.target.copy(ai.spawn);
         return;
       }
+      const config = currentAiConfig();
+      const focus = ai.lastKnownTime > 0 ? ai.lastKnownPlayer : player.root.position;
+      const lowHopperPush = config.elite && ammo.hopper <= 10;
       let best = activeCoverPoints[state.aiCoverIndex % activeCoverPoints.length];
       let bestScore = -9999;
       for (let i = 0; i < activeCoverPoints.length; i++) {
         const p = activeCoverPoints[(state.aiCoverIndex + i * 7 + (initial ? 0 : 3)) % activeCoverPoints.length];
         if (p.x < -8) continue;
-        const dx = p.x - player.root.position.x;
-        const dz = p.z - player.root.position.z;
+        const dx = p.x - focus.x;
+        const dz = p.z - focus.z;
         const distPlayer = Math.sqrt(dx * dx + dz * dz);
         const daix = p.x - ai.position.x;
         const daiz = p.z - ai.position.z;
         const distAi = Math.sqrt(daix * daix + daiz * daiz);
         const sideBonus = p.team === 'blue' ? 3 : p.team === 'any' ? 1 : -1;
-        const laneBonus = Math.abs(p.z - player.root.position.z) > 8 ? 1.2 : -0.5;
+        const laneBonus = Math.abs(p.z - focus.z) > 8 ? 1.2 : -0.5;
         const coverHeightBonus = p.height > 1.4 ? 0.8 : 0.2;
         const reactBonus = ai.reactClock > 0 ? Math.min(distAi, 24) * 0.08 : -Math.max(0, distAi - 34) * 0.035;
+        const awarenessBonus = config.elite && ai.shotStreak > 1 ? (Math.abs(p.z - focus.z) > 4 ? 1.1 : -0.2) : 0;
+        const distanceBonus = lowHopperPush ? -distPlayer * 0.045 : Math.min(distPlayer, 55) * 0.025 / config.aggression;
         const randomish = ((i * 17 + state.round * 11 + state.aiCoverIndex) % 9) * 0.08;
-        const score = sideBonus + laneBonus + coverHeightBonus + reactBonus + Math.min(distPlayer, 55) * 0.025 + randomish - Math.abs(p.z) * 0.004;
+        const score = sideBonus + laneBonus + coverHeightBonus + reactBonus + awarenessBonus + distanceBonus + randomish - Math.abs(p.z) * 0.004;
         if (score > bestScore) {
           bestScore = score;
           best = p;
@@ -4490,30 +4652,34 @@
       state.aiCoverIndex = (state.aiCoverIndex + 5) % activeCoverPoints.length;
       ai.cover = best;
       ai.target.set(clamp(best.x, -ARENA_HALF_X + 4, ARENA_HALF_X - 4), 0, clamp(best.z, -ARENA_HALF_Z + 4, ARENA_HALF_Z - 4));
-      state.aiMoveClock = initial ? 0.7 : 1.6 + ((state.aiCoverIndex * 13) % 8) * 0.18;
+      state.aiMoveClock = initial ? config.reaction : (1.6 + ((state.aiCoverIndex * 13) % 8) * 0.18) / config.aggression;
     }
 
     function aiShoot(hasSight) {
-      if (state.readyClock > 0) return;
+      if (state.readyClock > 0) return false;
+      const config = currentAiConfig();
+      if (isNearCover(ai.position, ai.radius, ai.tacticalHeight || ai.height, BUNKER_TAG_DISTANCE)) return false;
       tmpVecB.set(player.bodyCenter.x - ai.position.x, 0, player.bodyCenter.z - ai.position.z);
       if (tmpVecB.lengthSq() > 0.001) tmpVecB.normalize();
       tmpVecC.set(-tmpVecB.z, 0, tmpVecB.x).multiplyScalar(ai.peekSide * 0.42);
       tmpVecA.set(ai.position.x + tmpVecC.x, Math.max(0.55, Math.min(ai.tacticalHeight, ai.height) * 0.82), ai.position.z + tmpVecC.z);
       tmpVecB.set(player.bodyCenter.x, player.height * 0.78, player.bodyCenter.z).sub(tmpVecA);
       const shotDistance = Math.hypot(tmpVecB.x, tmpVecB.z);
-      tmpVecB.y += 0.5 * PAINTBALL_GRAVITY * Math.pow(shotDistance / PAINTBALL_SPEED, 2) * 0.78;
+      tmpVecB.y += 0.5 * PAINTBALL_GRAVITY * Math.pow(shotDistance / PAINTBALL_SPEED, 2) * (0.58 + config.accuracy * 0.28);
+      const spread = hasSight ? config.sightSpread : config.blindSpread;
       if (!hasSight) {
-        tmpVecB.x += Math.sin(state.elapsed * 2.3) * 6.0;
-        tmpVecB.z += Math.cos(state.elapsed * 1.9) * 6.0;
+        tmpVecB.x += Math.sin(state.elapsed * 2.3) * spread;
+        tmpVecB.z += Math.cos(state.elapsed * 1.9) * spread;
       } else {
-        tmpVecB.x += Math.sin(state.elapsed * 3.1) * 0.28;
-        tmpVecB.y += Math.cos(state.elapsed * 2.4) * 0.12;
-        tmpVecB.z += Math.cos(state.elapsed * 2.7) * 0.28;
+        tmpVecB.x += Math.sin(state.elapsed * 3.1) * spread;
+        tmpVecB.y += Math.cos(state.elapsed * 2.4) * spread * 0.42;
+        tmpVecB.z += Math.cos(state.elapsed * 2.7) * spread;
       }
       tmpVecB.normalize();
       tmpVecA.addScaledVector(tmpVecB, 0.62);
       fireProjectile('blue', tmpVecA, tmpVecB);
       audio.fire();
+      return true;
     }
 
     function hasLineOfSight(ax, ay, az, bx, by, bz) {
@@ -4525,27 +4691,29 @@
       return true;
     }
 
-    function aiEliminated(hitPos) {
+    function aiEliminated(hitPos, hitNormal) {
       state.aiEliminated = true;
       ai.splat.visible = true;
       if (ai.limbs && ai.limbs.splat2) ai.limbs.splat2.visible = true;
       ai.group.rotation.x = -1.15;
       ai.group.position.y = 0.08;
-      audio.eliminate();
+      spawnPaintCheck('red', hitPos, hitNormal, ai.position, Math.max(0.55, ai.tacticalHeight * 0.52));
+      playEliminationAudio('shooter');
       scoreTeam('red');
       endRound('Red', 'Red wins the round');
     }
 
-    function playerEliminated() {
+    function playerEliminated(hitPos, hitNormal) {
       state.playerEliminated = true;
       gun.paint.visible = true;
       showEliminatedOverlay('blue');
-      audio.eliminate();
+      spawnPaintCheck('blue', hitPos, hitNormal, player.bodyCenter, player.height * 0.5);
+      playEliminationAudio('victim');
       scoreTeam('blue');
       endRound('Blue', 'Blue wins the round');
     }
 
-    function hitOpponent() {
+    function hitOpponent(hit) {
       if (state.aiEliminated || state.phase === 'roundOver' || state.phase === 'matchOver') return;
       const localMats = getTeamMaterials(MY_TEAM);
       state.aiEliminated = true;
@@ -4558,19 +4726,21 @@
       ai.group.rotation.x = -1.15;
       ai.group.position.y = 0.08;
       remotePlayer.visible = false;
-      audio.eliminate();
+      spawnPaintCheckFromHit(MY_TEAM, hit, ai.position, Math.max(0.55, ai.tacticalHeight * 0.52), new THREE.Vector3(0, 0, -1));
+      playEliminationAudio('shooter');
       scoreTeam(MY_TEAM);
       endRound(MY_TEAM, formatTeam(MY_TEAM) + ' wins the round', false);
     }
 
-    function hitPlayer() {
+    function hitPlayer(hit) {
       if (state.playerEliminated || state.phase === 'roundOver' || state.phase === 'matchOver') return;
       const winner = remotePlayer.team || OPPONENT_TEAM;
       gun.paint.material = getTeamMaterials(winner).paint;
       state.playerEliminated = true;
       gun.paint.visible = true;
       showEliminatedOverlay(winner);
-      audio.eliminate();
+      spawnPaintCheckFromHit(winner, hit, player.bodyCenter, player.height * 0.5, new THREE.Vector3(0, 0, 1));
+      playEliminationAudio('victim');
       scoreTeam(winner);
       endRound(winner, formatTeam(winner) + ' wins the round', false);
     }
@@ -4589,6 +4759,79 @@
 
     function roundMessage(winner) {
       return formatTeam(winner) === 'Time' ? 'No point. Resetting round.' : formatTeam(winner) + ' wins the round';
+    }
+
+    function playEliminationAudio(role) {
+      if (role === 'victim') audio.victimEliminated();
+      else audio.shooterConfirmed();
+      audio.crowdReaction();
+    }
+
+    function makeHitPayload(position, normal) {
+      return {
+        position: { x: position.x, y: position.y, z: position.z },
+        normal: { x: normal.x, y: normal.y, z: normal.z }
+      };
+    }
+
+    function vectorFromPayload(source, fallback) {
+      if (!source) return fallback.clone();
+      const x = Number(source.x);
+      const y = Number(source.y);
+      const z = Number(source.z);
+      if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) return fallback.clone();
+      return new THREE.Vector3(x, y, z);
+    }
+
+    function spawnPaintCheckFromHit(team, hit, fallbackCenter, fallbackY, fallbackNormal) {
+      const fallbackPos = new THREE.Vector3(fallbackCenter.x, fallbackY, fallbackCenter.z);
+      const position = vectorFromPayload(hit?.position, fallbackPos);
+      const normal = vectorFromPayload(hit?.normal, fallbackNormal);
+      spawnPaintCheck(team, position, normal, fallbackCenter, fallbackY);
+    }
+
+    function spawnPaintCheck(team, hitPos, hitNormal, fallbackCenter, fallbackY) {
+      if (!hitPos) return;
+      const normal = hitNormal ? hitNormal.clone() : new THREE.Vector3(hitPos.x - fallbackCenter.x, hitPos.y - fallbackY, hitPos.z - fallbackCenter.z);
+      if (normal.lengthSq() < 0.000001) normal.set(0, 0, 1);
+      normal.normalize();
+      const base = hitPos.clone().addScaledVector(normal, 0.035);
+      spawnSplat(team, base.x, base.y, base.z, normal.x, normal.y, normal.z, 0.78);
+      const tangent = Math.abs(normal.y) < 0.92 ? new THREE.Vector3(0, 1, 0).cross(normal).normalize() : new THREE.Vector3(1, 0, 0);
+      const bitangent = normal.clone().cross(tangent).normalize();
+      for (let i = 0; i < 5; i++) {
+        const angle = i * 2.399 + seededNoise(i + state.elapsed * 17) * 0.35;
+        const distance = 0.18 + i * 0.045;
+        tmpVecC.copy(base)
+          .addScaledVector(tangent, Math.cos(angle) * distance)
+          .addScaledVector(bitangent, Math.sin(angle) * distance * 0.72)
+          .addScaledVector(normal, 0.012 + i * 0.003);
+        spawnSplat(team, tmpVecC.x, tmpVecC.y, tmpVecC.z, normal.x, normal.y, normal.z, 0.2 + i * 0.035);
+      }
+      startPaintCheckFocus(base);
+    }
+
+    function startPaintCheckFocus(target) {
+      paintCheck.clock = PAINT_CHECK_DURATION;
+      paintCheck.target.copy(target);
+      showCenter('PAINT CHECK');
+    }
+
+    function resetPaintCheck() {
+      paintCheck.clock = 0;
+      camera.fov = paintCheck.baseFov;
+      camera.updateProjectionMatrix();
+    }
+
+    function updatePaintCheck(dt) {
+      if (paintCheck.clock > 0) paintCheck.clock = Math.max(0, paintCheck.clock - dt);
+      const progress = paintCheck.clock > 0 ? paintCheck.clock / PAINT_CHECK_DURATION : 0;
+      const pulse = Math.sin(progress * Math.PI);
+      const targetFov = paintCheck.baseFov - pulse * 8;
+      if (Math.abs(camera.fov - targetFov) > 0.01) {
+        camera.fov += (targetFov - camera.fov) * Math.min(1, dt * 14);
+        camera.updateProjectionMatrix();
+      }
     }
 
     function seededNoise(seed) {
@@ -4763,6 +5006,7 @@
       state.phase = 'matchOver';
       state.running = false;
       stopReload(false);
+      resetPaintCheck();
       audio.updateRattle(false, false);
       ui.hud.classList.remove('visible');
       hideEliminatedOverlay();
@@ -4957,7 +5201,13 @@
       const fill = clamp(1 - state.shotClock / SHOT_COOLDOWN, 0, 1) * 360;
       ui.cooldown.style.background = 'conic-gradient(#ff3442 ' + fill + 'deg, rgba(255,255,255,0.15) ' + fill + 'deg)';
       updateAmmoHud();
-      if (state.phase === 'active' && state.readyClock <= 0) ui.centerMessage.classList.remove('visible');
+      const ruleMessage = state.bunkerTagged ? 'MOVE TO SHOOT' : state.peekBlocked ? 'STEP BACK TO PEEK' : '';
+      const showRuleMessage = state.phase === 'active' && state.readyClock <= 0 && !!ruleMessage;
+      if (ui.crosshair) ui.crosshair.classList.toggle('blocked', showRuleMessage);
+      if (paintCheck.clock > 0) showCenter('PAINT CHECK');
+      else if (showRuleMessage) showCenter(ruleMessage);
+      else if (state.phase === 'roundOver' && state.lastRoundMessage) showCenter(state.lastRoundMessage);
+      else if (state.phase === 'active' && state.readyClock <= 0) ui.centerMessage.classList.remove('visible');
     }
 
     function updateAmmoHud() {
@@ -5263,6 +5513,9 @@
         fire() { noise(0.026, 0.25, 2600, 'bandpass'); tone(1050, 0.024, 'square', 0.035, 0.52); tone(190, 0.032, 'triangle', 0.025, 0.55); },
         splat() { noise(0.08, 0.09, 520); tone(80, 0.08, 'sine', 0.03, 0.75); },
         eliminate() { tone(180, 0.16, 'sawtooth', 0.09, 0.42); noise(0.16, 0.08, 360); },
+        victimEliminated() { noise(0.18, 0.14, 220); tone(170, 0.24, 'sawtooth', 0.085, 0.34); },
+        shooterConfirmed() { tone(880, 0.075, 'sine', 0.07, 1.18); setTimeout(() => tone(1320, 0.09, 'triangle', 0.06, 1.12), 72); setTimeout(() => tone(1760, 0.13, 'triangle', 0.052, 1.05), 154); },
+        crowdReaction() { noise(0.42, 0.045, 1250, 'bandpass'); setTimeout(() => noise(0.28, 0.035, 760), 90); },
         empty() { noise(0.018, 0.06, 1800, 'highpass'); tone(120, 0.035, 'square', 0.022, 0.62); },
         reloadOpen() { tone(520, 0.035, 'triangle', 0.03, 1.22); noise(0.025, 0.035, 2400, 'highpass'); },
         reloadClose() { tone(300, 0.04, 'triangle', 0.035, 0.72); noise(0.018, 0.04, 1800, 'highpass'); stopPour(); },
@@ -5342,6 +5595,10 @@
       gun,
       ammo,
       reload,
+      paintCheck,
+      setAiDifficulty: (difficulty) => {
+        if (AI_DIFFICULTIES[difficulty]) state.aiDifficulty = difficulty;
+      },
       coverCullNow: () => {
         updateCoverCullVisibility(gun.group, 0.015);
         updateCoverCullVisibility(ai.group, 0.025);
