@@ -652,8 +652,6 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/postprocessing/RenderPass.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/shaders/SSAOShader.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/postprocessing/SSAOPass.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/shaders/SMAAShader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/postprocessing/SMAAPass.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/environments/RoomEnvironment.js"></script>
@@ -678,7 +676,7 @@
     const PLAYER_RADIUS = 0.42;
     const CROUCH_RADIUS = 0.36;
     const CRAWL_RADIUS = 0.26;
-    const SHOT_COOLDOWN = 0.05;
+    const SHOT_COOLDOWN = 0.1;
     const PAINTBALL_RADIUS = 0.06;
     const PAINTBALL_SPEED = 70;
     const PAINTBALL_GRAVITY = 2.0;
@@ -887,13 +885,10 @@
     let environmentMap = createEnvironmentMap();
     const postModules = {};
     let composer = null;
-    let ssaoPass = null;
-    let saoPass = null;
     let bloomPass = null;
-    let bokehPass = null;
     let codColorPass = null;
     let postEnabled = false;
-    const visualQuality = { sao: true, ssao: true, shadow2048: false, bloom: true, bokeh: true, grassMode: 'medium', crowdMode: 'medium', lastCheck: performance.now() / 1000 };
+    const visualQuality = { shadow2048: false, bloom: true, grassMode: 'medium', crowdMode: 'medium', lastCheck: performance.now() / 1000 };
     let hdrStatus = 'room-fallback';
     let skyStatus = 'loading';
     const eliminatedSplat = { active: false, start: 0, color: '#0055cc', seed: 1, drips: [], drops: [], satellites: [], edgeDots: [] };
@@ -966,7 +961,6 @@
           consumers[name].forEach((entry) => assignTexture(entry, texture));
         }, undefined, () => {
           records[name].status = 'failed';
-          console.log(name + ' texture failed');
         });
         configureTexture(baseTexture, 1, 1, maxAniso, colorSpace);
         records[name] = { texture: baseTexture, url: REAL_TEXTURE_URLS[name], status: 'loading', colorSpace };
@@ -1250,7 +1244,6 @@
         scrapyard: createScrapyardMap(),
         speedball: createSpeedballMap()
       };
-      scene.add(built.scrapyard.group, built.speedball.group);
       return built;
     }
 
@@ -1341,91 +1334,6 @@
       addInflatableBunker(group, colliders, coverPoints, 7, 0, 'small', RED, 1.45, 2.2, 0);
       finalizeMapShadows(group);
       return { group, colliders, coverPoints, sky: 0xbcc5c9, ambient: 'speedball' };
-    }
-
-    function addExpandedScrapyardCover(group, colliders, coverPoints) {
-      const rooms = [
-        [-58, -36, 9, 8, 0.06, true], [-58, 30, 8, 8, 0.14, false], [-38, -40, 10, 7, -0.2, true], [-36, 30, 8, 7, 0.1, true],
-        [-18, -34, 8, 7, Math.PI / 2, false], [-17, 37, 9, 7, -0.08, true], [18, -37, 9, 7, 0.12, false], [20, 34, 8, 8, Math.PI / 2, true],
-        [39, -31, 9, 7, -0.18, true], [42, 36, 8, 7, 0.1, false], [60, -34, 9, 8, 0.08, true], [58, 28, 8, 8, -0.15, false]
-      ];
-      rooms.forEach((r) => addConcreteRoom(group, colliders, coverPoints, r[0], r[1], r[2], r[3], r[4], r[5]));
-
-      const lWalls = [
-        [-66, 10, 7, 5, 0.1], [-47, -9, 6, 5, -0.2], [-28, 8, 7, 5, 0.18], [-7, -20, 6, 4.5, -0.08],
-        [7, 20, 6, 4.5, 0.08], [28, -8, 7, 5, -0.18], [47, 9, 6, 5, 0.2], [66, -10, 7, 5, -0.1]
-      ];
-      lWalls.forEach((w) => addConcreteL(group, colliders, coverPoints, w[0], w[1], w[2], w[3], w[4]));
-
-      const panels = [
-        [-67, -22, 7, 0.18, 0.4, true], [-51, 18, 8, 0.18, -0.32, false], [-31, -28, 7, 0.18, 0.18, true], [-10, 28, 8, 0.18, Math.PI / 2, true],
-        [10, -28, 8, 0.18, Math.PI / 2, true], [31, 28, 7, 0.18, -0.18, true], [51, -18, 8, 0.18, 0.32, false], [67, 22, 7, 0.18, -0.4, true]
-      ];
-      panels.forEach((p) => addConcretePanel(group, colliders, coverPoints, p[0], p[1], p[2], p[3], p[4], p[5]));
-
-      const containers = [
-        [-68, 40, 8.5, 2.5, 2.4, 0.12, materials.containerGreen], [-52, -21, 9, 2.6, 2.5, -0.28, materials.containerRust],
-        [-44, 43, 7.5, 2.4, 2.3, 0.2, materials.containerGreen], [-27, -6, 8, 2.5, 2.4, Math.PI / 2, materials.containerRust],
-        [-6, 43, 9, 2.5, 2.5, -0.15, materials.containerGreen], [8, -43, 9, 2.5, 2.5, 0.15, materials.containerRust],
-        [30, 8, 8, 2.4, 2.4, Math.PI / 2, materials.containerGreen], [45, -42, 7.5, 2.4, 2.3, -0.2, materials.containerRust],
-        [52, 22, 9, 2.6, 2.5, 0.28, materials.containerGreen], [68, -40, 8.5, 2.5, 2.4, -0.12, materials.containerRust]
-      ];
-      containers.forEach((c) => addContainer(group, colliders, coverPoints, c[0], c[1], c[2], c[3], c[4], c[5], c[6]));
-
-      addSchoolBus(group, colliders, coverPoints, -39, -1, 0.08);
-      addSchoolBus(group, colliders, coverPoints, 39, 1, -0.08);
-
-      const vehicles = [
-        [-68, -13, 4.8, 2.1, 2.0, 0.26, true, 'sedan'], [-62, 18, 5.4, 2.2, 2.2, -0.34, true, 'van'], [-47, 5, 5.0, 2.1, 2.0, 0.42, true, 'sedan'],
-        [-31, -20, 5.6, 2.3, 2.3, -0.25, true, 'truck'], [-23, 20, 4.9, 2.1, 2.0, 0.36, true, 'sedan'], [-5, 31, 5.5, 2.2, 2.2, -0.3, true, 'van'],
-        [5, -31, 5.5, 2.2, 2.2, 0.3, false, 'van'], [23, -20, 4.9, 2.1, 2.0, -0.36, false, 'sedan'], [31, 20, 5.6, 2.3, 2.3, 0.25, false, 'truck'],
-        [47, -5, 5.0, 2.1, 2.0, -0.42, false, 'sedan'], [62, -18, 5.4, 2.2, 2.2, 0.34, false, 'van'], [68, 13, 4.8, 2.1, 2.0, -0.26, false, 'sedan']
-      ];
-      vehicles.forEach((c) => addCar(group, colliders, coverPoints, c[0], c[1], c[2], c[3], c[4], c[5], materials.carBody, c[6], c[7], 0));
-
-      const smallCover = [
-        [-68, 2, 'drum'], [-61, -25, 'tire'], [-54, 9, 'sheet'], [-45, 27, 'junk'], [-34, -2, 'crate'], [-25, -43, 'drum'], [-14, 12, 'tire'], [-2, -18, 'junk'],
-        [2, 18, 'junk'], [14, -12, 'tire'], [25, 43, 'drum'], [34, 2, 'crate'], [45, -27, 'junk'], [54, -9, 'sheet'], [61, 25, 'tire'], [68, -2, 'drum']
-      ];
-      smallCover.forEach((c, i) => {
-        if (c[2] === 'drum') addOilDrumCluster(group, colliders, coverPoints, c[0], c[1], 4 + (i % 3));
-        else if (c[2] === 'tire') addTireWall(group, colliders, coverPoints, c[0], c[1], 3 + (i % 2), 0.72, i * 0.24);
-        else if (c[2] === 'sheet') addMetalSheet(group, colliders, coverPoints, c[0], c[1], (i % 2 ? -1 : 1) * 0.42);
-        else if (c[2] === 'crate') addCrateStack(group, colliders, coverPoints, c[0], c[1], 3, 2);
-        else addJunkPile(group, colliders, coverPoints, c[0], c[1], 4.2, 1.4);
-      });
-    }
-
-    function addExpandedSpeedballCover(group, colliders, coverPoints) {
-      const lanes = [-42, -30, -18, -6, 6, 18, 30, 42];
-      const bands = [-66, -56, -46, -36, -26, -16, -7];
-      const types = ['small', 'upright', 'pyramid', 'snake'];
-      for (let ix = 0; ix < bands.length; ix++) {
-        for (let iz = 0; iz < lanes.length; iz++) {
-          const x = bands[ix];
-          const z = lanes[iz];
-          if (Math.abs(x - player.spawn.x) < 9 && Math.abs(z - player.spawn.z) < 11) continue;
-          const pattern = (ix * 7 + iz * 5) % types.length;
-          const type = types[pattern];
-          const size = type === 'snake' ? 5.4 + (ix % 2) * 0.9 : type === 'pyramid' ? 2.35 + (iz % 2) * 0.25 : type === 'upright' ? 1.9 : 1.55;
-          const height = type === 'snake' ? 1.15 : type === 'pyramid' ? 2.5 : type === 'upright' ? 3.45 : 2.25;
-          const yaw = type === 'snake' && (ix + iz) % 2 ? Math.PI / 2 : ((ix - iz) % 3) * 0.08;
-          addInflatableBunker(group, colliders, coverPoints, x, z, type, RED, size, height, yaw);
-          addInflatableBunker(group, colliders, coverPoints, -x, z, type, BLUE, size, height, -yaw);
-        }
-      }
-      [-44, -32, -20, -8, 8, 20, 32, 44].forEach((z, i) => {
-        addCrossBunker(group, colliders, coverPoints, 0, z, i % 2 ? WHITE : 0xf1c94c, 5.2, 1.25);
-      });
-      [-44, 44].forEach((z) => {
-        addInflatableBunker(group, colliders, coverPoints, -34, z, 'snake', RED, 12.0, 1.15, 0);
-        addInflatableBunker(group, colliders, coverPoints, 34, z, 'snake', BLUE, 12.0, 1.15, 0);
-        addInflatableBunker(group, colliders, coverPoints, -58, z * 0.72, 'snake', RED, 10.0, 1.12, Math.PI / 2);
-        addInflatableBunker(group, colliders, coverPoints, 58, z * 0.72, 'snake', BLUE, 10.0, 1.12, -Math.PI / 2);
-      });
-      [-52, -38, -24, 24, 38, 52].forEach((x, i) => {
-        addInflatableBunker(group, colliders, coverPoints, x, 0, i % 2 ? 'upright' : 'pyramid', x < 0 ? RED : BLUE, i % 2 ? 2.0 : 2.55, i % 2 ? 3.55 : 2.6, i * 0.08);
-      });
     }
 
     function makeGround(baseColor, material, noisy) {
@@ -2353,13 +2261,6 @@
         const lx = i < 2 ? -ARENA_HALF_X - 4 : ARENA_HALF_X + 4;
         const lz = i % 2 ? -ARENA_HALF_Z + 4 : ARENA_HALF_Z - 4;
         addCylinder(group, lx, 3.4, lz, 0.07, 6.8, materials.darkGrey, null, 0, false, 1);
-        for (let j = 0; j < 4; j++) {
-          const spot = new THREE.SpotLight(0xfff2d2, 0.18, 42, 0.42, 0.6, 1.5);
-          spot.position.set(lx, 6.7, lz);
-          spot.target.position.set((j - 1.5) * 8, 0, 0);
-          scene.add(spot.target);
-          group.add(spot);
-        }
       }
       for (let i = 0; i < 10; i++) {
         addBox(group, -27 + i * 6, 0.08, -ARENA_HALF_Z - 5.2, 1.8, 0.16, 0.9, i % 2 ? materials.blueDark : materials.redDark, null, i * 0.2);
@@ -2401,7 +2302,6 @@
       for (let i = 0; i < PROJECTILE_POOL_SIZE; i++) {
         const mesh = new THREE.Mesh(geometries.paintball, materials.paintRed);
         mesh.visible = false;
-        scene.add(mesh);
         pool.push({ mesh, active: false, team: 'red', life: 0, radius: PAINTBALL_RADIUS, pos: mesh.position, prev: new THREE.Vector3(), vel: new THREE.Vector3() });
       }
       return pool;
@@ -2424,7 +2324,6 @@
           group.add(dot);
         }
         group.visible = false;
-        scene.add(group);
         pool.push({ group, active: false, age: 0, children: group.children });
       }
       return pool;
@@ -2432,9 +2331,9 @@
 
     function createGunModel() {
       const gunGroup = new THREE.Group();
-      gunGroup.position.set(0.18, -0.22, -0.45);
+      gunGroup.position.set(0.34, -0.34, -0.48);
       gunGroup.rotation.set(-0.04, 0.08, 0);
-      gunGroup.scale.set(1, 1, 1);
+      gunGroup.scale.set(0.6, 0.6, 0.6);
 
       const jerseyMat = materials.redDark;
       const armMat = materials.red;
@@ -2583,9 +2482,6 @@
       podCap.visible = false;
       reloadPod.userData.cap = podCap;
 
-      const gunLight = new THREE.PointLight(0xff8a1c, 0.08, 1.0);
-      gunLight.position.set(-0.08, upperY, -0.5);
-      gunGroup.add(gunLight);
       const paint = new THREE.Mesh(geometries.splat, materials.paintBlue);
       paint.position.set(-0.055, upperY, -0.51);
       paint.scale.set(0.18, 0.13, 1);
@@ -2603,7 +2499,7 @@
         reloadBalls.push(ball);
       }
 
-      return { group: gunGroup, baseX: 0.18, baseY: -0.22, baseZ: -0.45, recoil: 0, paint, reloadLid, reloadBalls, speedFeedPetals, hopperBalls, leftHand, reloadPod, gunLight };
+      return { group: gunGroup, baseX: 0.34, baseY: -0.34, baseZ: -0.48, recoil: 0, paint, reloadLid, reloadBalls, speedFeedPetals, hopperBalls, leftHand, reloadPod };
     }
 
     function createAiModel() {
@@ -2942,6 +2838,7 @@
       hideAllMaps();
       const active = maps[state.selectedMap];
       active.group.visible = true;
+      if (!active.group.parent) scene.add(active.group);
       const speedball = state.selectedMap === 'speedball';
       setVenueSky(speedball ? 'speedball' : 'scrapyard', active.sky);
       scene.fog = speedball ? new THREE.FogExp2(0xe8f4f8, 0.006) : new THREE.FogExp2(0xd4c9b0, 0.006);
@@ -3053,6 +2950,8 @@
     function hideAllMaps() {
       maps.scrapyard.group.visible = false;
       maps.speedball.group.visible = false;
+      if (maps.scrapyard.group.parent) scene.remove(maps.scrapyard.group);
+      if (maps.speedball.group.parent) scene.remove(maps.speedball.group);
     }
 
     function tick(now) {
@@ -3325,7 +3224,6 @@
       gun.group.rotation.x = -0.04 - gun.recoil * 0.052 + Math.sin(state.elapsed * 5.1) * 0.01 * moveMag * sprintLift;
       gun.group.rotation.y = 0.08 + Math.sin(state.elapsed * 4.5) * 0.012 * moveMag;
       gun.group.rotation.z = sway * 0.55 + (player.sprinting ? Math.sin(state.elapsed * 6.8) * 0.018 : 0);
-      if (gun.gunLight) gun.gunLight.intensity = 0.22 + gun.recoil * 0.38;
       if (state.running) updateCoverCullVisibility(gun.group, 0.015);
       else restoreCoverCullVisibility(gun.group);
     }
@@ -3364,6 +3262,7 @@
           p.pos.copy(origin);
           p.prev.copy(origin);
           p.vel.copy(direction).normalize().multiplyScalar(PAINTBALL_SPEED);
+          if (!p.mesh.parent) scene.add(p.mesh);
           p.mesh.visible = true;
           return p;
         }
@@ -3375,6 +3274,7 @@
       for (let i = 0; i < projectiles.length; i++) {
         projectiles[i].active = false;
         projectiles[i].mesh.visible = false;
+        if (projectiles[i].mesh.parent) scene.remove(projectiles[i].mesh);
       }
     }
 
@@ -3450,6 +3350,7 @@
     function deactivateProjectile(p) {
       p.active = false;
       p.mesh.visible = false;
+      if (p.mesh.parent) scene.remove(p.mesh);
     }
 
     function projectileHitsAi(p) {
@@ -3788,6 +3689,7 @@
       }
       splat.active = true;
       splat.age = 0;
+      if (!splat.group.parent) scene.add(splat.group);
       splat.group.visible = true;
       splat.group.position.set(x, y, z);
       orientSplat(splat.group, nx, ny, nz);
@@ -3831,6 +3733,7 @@
         splats[i].active = false;
         splats[i].age = 0;
         splats[i].group.visible = false;
+        if (splats[i].group.parent) scene.remove(splats[i].group);
       }
     }
 
@@ -4391,17 +4294,12 @@
         const EffectComposer = THREE.EffectComposer || postModules.EffectComposer;
         const RenderPass = THREE.RenderPass || postModules.RenderPass;
         const ShaderPass = THREE.ShaderPass || postModules.ShaderPass;
-        const SAOPass = THREE.SAOPass || postModules.SAOPass;
-        const SSAOPass = THREE.SSAOPass || postModules.SSAOPass;
         const UnrealBloomPass = THREE.UnrealBloomPass || postModules.UnrealBloomPass;
-        const BokehPass = THREE.BokehPass || postModules.BokehPass;
         const SMAAPass = THREE.SMAAPass || postModules.SMAAPass;
         const OutputPass = THREE.OutputPass || postModules.OutputPass;
         if (!EffectComposer || !RenderPass) return;
         composer = new EffectComposer(renderer);
         composer.addPass(new RenderPass(scene, camera));
-        saoPass = null;
-        ssaoPass = null;
         if (UnrealBloomPass) {
           bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.3, 0.6, 0.85);
           bloomPass.enabled = visualQuality.bloom;
@@ -4411,11 +4309,6 @@
           codColorPass = new ShaderPass(createCODColorGradeShader());
           composer.addPass(codColorPass);
         }
-        if (BokehPass) {
-          bokehPass = new BokehPass(scene, camera, { focus: 40, aperture: 0.00002, maxblur: 0.004, width: window.innerWidth, height: window.innerHeight });
-          bokehPass.enabled = visualQuality.bokeh;
-          composer.addPass(bokehPass);
-        }
         if (SMAAPass) {
           const smaa = new SMAAPass(window.innerWidth * renderer.getPixelRatio(), window.innerHeight * renderer.getPixelRatio());
           composer.addPass(smaa);
@@ -4424,11 +4317,8 @@
         postEnabled = true;
       } catch (_) {
         composer = null;
-        ssaoPass = null;
-        saoPass = null;
         bloomPass = null;
         codColorPass = null;
-        bokehPass = null;
         postEnabled = false;
       }
     }
@@ -4480,21 +4370,15 @@
         import('three/addons/postprocessing/EffectComposer.js'),
         import('three/addons/postprocessing/RenderPass.js'),
         import('three/addons/postprocessing/ShaderPass.js'),
-        import('three/addons/postprocessing/SAOPass.js'),
-        import('three/addons/postprocessing/SSAOPass.js'),
         import('three/addons/postprocessing/UnrealBloomPass.js'),
-        import('three/addons/postprocessing/BokehPass.js'),
         import('three/addons/postprocessing/SMAAPass.js'),
         import('three/addons/postprocessing/OutputPass.js'),
         import('three/addons/environments/RoomEnvironment.js')
-      ]).then(([composerMod, renderMod, shaderMod, saoMod, ssaoMod, bloomMod, bokehMod, smaaMod, outputMod, roomMod]) => {
+      ]).then(([composerMod, renderMod, shaderMod, bloomMod, smaaMod, outputMod, roomMod]) => {
         postModules.EffectComposer = composerMod.EffectComposer;
         postModules.RenderPass = renderMod.RenderPass;
         postModules.ShaderPass = shaderMod.ShaderPass;
-        postModules.SAOPass = saoMod.SAOPass;
-        postModules.SSAOPass = ssaoMod.SSAOPass;
         postModules.UnrealBloomPass = bloomMod.UnrealBloomPass;
-        postModules.BokehPass = bokehMod.BokehPass;
         postModules.SMAAPass = smaaMod.SMAAPass;
         postModules.OutputPass = outputMod.OutputPass;
         if (!environmentMap && roomMod.RoomEnvironment) {
@@ -4579,18 +4463,6 @@
           bloomPass.enabled = true;
           visualQuality.bloom = true;
         }
-        if (bokehPass && !visualQuality.bokeh) {
-          bokehPass.enabled = true;
-          visualQuality.bokeh = true;
-        }
-        if (saoPass && !visualQuality.sao) {
-          saoPass.enabled = true;
-          visualQuality.sao = true;
-        }
-        if (ssaoPass && !visualQuality.ssao) {
-          ssaoPass.enabled = true;
-          visualQuality.ssao = true;
-        }
         return;
       }
       if (qualityFps < 90 && visualQuality.grassMode !== 'low' && visualQuality.grassMode !== 'minimum') {
@@ -4613,18 +4485,6 @@
         bloomPass.enabled = false;
         visualQuality.bloom = false;
       }
-      if (qualityFps < 80 && bokehPass && visualQuality.bokeh) {
-        bokehPass.enabled = false;
-        visualQuality.bokeh = false;
-      }
-      if (qualityFps < 70 && saoPass && visualQuality.sao) {
-        saoPass.enabled = false;
-        visualQuality.sao = false;
-      }
-      if (qualityFps < 70 && ssaoPass && visualQuality.ssao) {
-        ssaoPass.enabled = false;
-        visualQuality.ssao = false;
-      }
       if (qualityFps < 60 && visualQuality.grassMode !== 'minimum') {
         setGrassDensity('minimum');
       }
@@ -4636,8 +4496,6 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.setPixelRatio(window.devicePixelRatio || 1);
       if (composer) composer.setSize(window.innerWidth, window.innerHeight);
-      if (ssaoPass) ssaoPass.setSize(window.innerWidth, window.innerHeight);
-      if (saoPass) saoPass.setSize(window.innerWidth, window.innerHeight);
       if (codColorPass) codColorPass.uniforms.resolution.value.set(window.innerWidth, window.innerHeight);
     }
 
@@ -4872,7 +4730,16 @@
       },
       textureStatus: () => textureLibrary.status(),
       environmentStatus: () => ({ hdr: hdrStatus, sky: skyStatus, hasEnvironment: !!scene.environment }),
-      visualQuality: () => ({ ...visualQuality, postEnabled })
+      visualQuality: () => ({ ...visualQuality, postEnabled }),
+      sceneStats: () => {
+        const stats = { objects: 0, visible: 0, lights: 0 };
+        scene.traverse((child) => {
+          stats.objects += 1;
+          if (child.visible) stats.visible += 1;
+          if (child.isLight) stats.lights += 1;
+        });
+        return stats;
+      }
     };
   })();
   </script>
