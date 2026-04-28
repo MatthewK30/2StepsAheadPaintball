@@ -1,0 +1,8 @@
+opencode-anthropic-auth/
+.playwright-mcp/
+node_modules/
+.vercel/
+*.log
+*.tmp
+*.temp
+.DS_Store
