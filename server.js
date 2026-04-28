@@ -24,6 +24,14 @@ function generateCode() {
   return Math.random().toString(36).substring(2,6).toUpperCase()
 }
 
+function normalizeCode(code) {
+  return String(code || '').trim().toUpperCase()
+}
+
+function normalizeTeam(team) {
+  return team === 'blue' ? 'blue' : 'red'
+}
+
 io.on('connection', (socket) => {
   console.log('Player connected:', socket.id)
 
@@ -34,7 +42,7 @@ io.on('connection', (socket) => {
       gameMode, map, bestOf,
       players: [{
         id: socket.id, username,
-        team: 'red', ready: false
+        team: 'red', ready: false, connected: true
       }],
       state: 'lobby'
     }
@@ -44,6 +52,7 @@ io.on('connection', (socket) => {
   })
 
   socket.on('join_room', ({ code, username }) => {
+    code = normalizeCode(code)
     const room = rooms[code]
     if (!room) { socket.emit('join_error', 'Room not found'); return }
     if (room.players.length >= (room.gameMode === '2v2' ? 4 : 2)) {
@@ -51,7 +60,7 @@ io.on('connection', (socket) => {
     }
     const team = room.players.filter(p=>p.team==='red').length <=
                  room.players.filter(p=>p.team==='blue').length ? 'red' : 'blue'
-    room.players.push({ id: socket.id, username, team, ready: false })
+    room.players.push({ id: socket.id, username, team, ready: false, connected: true })
     socket.join(code)
     socket.emit('room_joined', { code, room })
     io.to(code).emit('lobby_update', room)
@@ -89,31 +98,72 @@ io.on('connection', (socket) => {
     io.to(code).emit('game_start', room)
   })
 
-  socket.on('player_update', ({ code, position, rotation, state }) => {
+  socket.on('rejoin_room', ({ code, username, team }) => {
+    code = normalizeCode(code)
+    team = normalizeTeam(team)
+    username = String(username || 'Player').slice(0, 16)
+    const room = rooms[code]
+    if (!room) {
+      socket.emit('rejoin_error', 'Room not found')
+      return
+    }
+    socket.join(code)
+    let player = room.players.find(p => p.username === username) || room.players.find(p => p.id === socket.id)
+    if (player) {
+      if (room.host === player.id) room.host = socket.id
+      player.id = socket.id
+      player.team = team
+      player.ready = true
+      player.connected = true
+    } else {
+      player = { id: socket.id, username, team, ready: true, connected: true }
+      room.players.push(player)
+    }
+    socket.emit('game_ready', { room, myTeam: team })
+    io.to(code).emit('player_in_game', { id: socket.id, username, team })
+  })
+
+  socket.on('player_update', ({ code, position, rotation, state, crouching, prone }) => {
+    code = normalizeCode(code)
+    if (!rooms[code]) return
     socket.to(code).emit('opponent_update', {
-      id: socket.id, position, rotation, state
+      id: socket.id, position, rotation, state, crouching, prone
     })
   })
 
   socket.on('player_shoot', ({ code, origin, direction, team }) => {
+    code = normalizeCode(code)
+    if (!rooms[code]) return
     socket.to(code).emit('opponent_shoot', {
       id: socket.id, origin, direction, team
     })
   })
 
   socket.on('player_hit', ({ code, victimId }) => {
+    code = normalizeCode(code)
+    if (!rooms[code]) return
     io.to(code).emit('hit_confirmed', {
       shooterId: socket.id, victimId
     })
   })
 
   socket.on('round_end', ({ code, winner }) => {
+    code = normalizeCode(code)
+    if (!rooms[code]) return
     io.to(code).emit('round_ended', { winner })
   })
 
   socket.on('disconnect', () => {
     Object.keys(rooms).forEach(code => {
       const room = rooms[code]
+      if (room.state === 'playing') {
+        const player = room.players.find(p => p.id === socket.id)
+        if (player) {
+          player.connected = false
+          io.to(code).emit('player_disconnected', { id: socket.id })
+        }
+        return
+      }
       room.players = room.players.filter(p => p.id !== socket.id)
       if (room.players.length === 0) {
         delete rooms[code]

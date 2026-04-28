@@ -104,6 +104,11 @@
       text-transform: uppercase;
     }
 
+    #teamBadge.blue {
+      background: rgba(15, 55, 150, 0.78);
+      border-color: rgba(160, 200, 255, 0.5);
+    }
+
     #cooldownWrap {
       position: absolute;
       left: 50%;
@@ -708,6 +713,7 @@
       }
     }
   </style>
+  <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
   <div id="menu">
@@ -804,7 +810,6 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/shaders/SMAAShader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/postprocessing/SMAAPass.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/environments/RoomEnvironment.js"></script>
-  <script src="/socket.io/socket.io.js"></script>
   <script>
   (() => {
     'use strict';
@@ -865,17 +870,26 @@
     const colliderLocalSize = new THREE.Vector3();
     const colliderAxis = new THREE.Vector3();
     let segmentHitT = 0;
-    const URL_PARAMS = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams(window.location.search);
+    const MULTIPLAYER = urlParams.has('room');
+    const ROOM_CODE = (urlParams.get('room') || '').toUpperCase();
+    const MY_TEAM = urlParams.get('team') === 'blue' ? 'blue' : 'red';
+    const MY_USERNAME = urlParams.get('username') || 'Player';
+    const GAME_MODE = urlParams.get('mode') || '1v1';
+    const SELECTED_MAP = urlParams.get('map') === 'scrapyard' ? 'scrapyard' : 'speedball';
+    const BEST_OF = parseInt(urlParams.get('bestof'), 10) || 3;
+    const OPPONENT_TEAM = MY_TEAM === 'blue' ? 'red' : 'blue';
     const SOCKET_URL = window.location.hostname === 'localhost'
       ? 'http://localhost:3000'
       : 'https://two-steps-ahead-paintball.onrender.com';
     const multiplayer = {
       socket: null,
-      room: URL_PARAMS.get('room') || '',
-      team: URL_PARAMS.get('team') || '',
-      username: URL_PARAMS.get('username') || '',
-      mode: URL_PARAMS.get('mode') || 'singleplayer',
-      connected: false
+      room: ROOM_CODE,
+      team: MY_TEAM,
+      username: MY_USERNAME,
+      mode: GAME_MODE,
+      connected: false,
+      ready: !MULTIPLAYER
     };
 
     const REAL_TEXTURE_URLS = {
@@ -921,8 +935,8 @@
     };
 
     const state = {
-      selectedMap: 'scrapyard',
-      bestOf: 3,
+      selectedMap: MULTIPLAYER ? SELECTED_MAP : 'scrapyard',
+      bestOf: MULTIPLAYER ? BEST_OF : 3,
       roundDuration: ROUND_TIME,
       phase: 'menu',
       round: 1,
@@ -1036,6 +1050,19 @@
       moving: false
     };
 
+    const remotePlayer = {
+      id: '',
+      username: 'Opponent',
+      team: OPPONENT_TEAM,
+      group: ai.group,
+      position: ai.position,
+      lastPosition: new THREE.Vector3(24, 0, 0),
+      nameTag: null,
+      visible: false,
+      crouching: false,
+      prone: false
+    };
+
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(OVERCAST_SKY_COLOR);
     scene.fog = new THREE.Fog(OVERCAST_SKY_COLOR, OVERCAST_FOG_NEAR, OVERCAST_FOG_FAR);
@@ -1097,8 +1124,9 @@
     const gun = createGunModel();
     const audio = createAudio();
     camera.add(gun.group);
-    createAiModel();
+    createAiModel(MULTIPLAYER ? OPPONENT_TEAM : 'blue');
     createPlayerShadowModel();
+    applyMatchSettings();
     setupMenu();
     setupInput();
     setupMultiplayerSocket();
@@ -1107,6 +1135,7 @@
     loadHdrEnvironment();
     updateHud();
     hideAllMaps();
+    if (MULTIPLAYER) startMatch();
 
     let lastTime = performance.now();
     requestAnimationFrame(tick);
@@ -1355,6 +1384,12 @@
         pyramid: createCurvedPyramidGeometry(),
         plane: new THREE.PlaneGeometry(1, 1, 12, 8)
       };
+    }
+
+    function getTeamMaterials(team) {
+      return team === 'blue'
+        ? { primary: materials.blue, dark: materials.blueDark, paint: materials.paintBlue }
+        : { primary: materials.red, dark: materials.redDark, paint: materials.paintRed };
     }
 
     function createCurvedPyramidGeometry() {
@@ -2431,8 +2466,8 @@
       gunGroup.rotation.set(-0.04, 0.08, 0);
       gunGroup.scale.set(0.6, 0.6, 0.6);
 
-      const jerseyMat = materials.redDark;
-      const armMat = materials.red;
+      const jerseyMat = MY_TEAM === 'blue' ? materials.blueDark : materials.redDark;
+      const armMat = MY_TEAM === 'blue' ? materials.blue : materials.red;
       const gloveMat = materials.glove;
       const speedFeedPetals = [];
       const hopperBalls = [];
@@ -2598,10 +2633,11 @@
       return { group: gunGroup, baseX: 0.34, baseY: -0.34, baseZ: -0.48, recoil: 0, paint, reloadLid, reloadBalls, speedFeedPetals, hopperBalls, leftHand, reloadPod };
     }
 
-    function createAiModel() {
+    function createAiModel(team) {
+      const teamMats = getTeamMaterials(team || 'blue');
       ai.group.visible = false;
       ai.limbs = {};
-      ai.body = new THREE.Mesh(geometries.cylinderLow, materials.red);
+      ai.body = new THREE.Mesh(geometries.cylinderLow, teamMats.primary);
       ai.body.position.y = 0.88;
       ai.body.scale.set(0.48, 0.78, 0.42);
       const chest = new THREE.Mesh(geometries.box, materials.black);
@@ -2625,10 +2661,10 @@
       const visor = new THREE.Mesh(geometries.box, materials.hopperGlass);
       visor.position.set(0, 1.71, -0.3);
       visor.scale.set(0.34, 0.07, 0.035);
-      const chin = new THREE.Mesh(geometries.box, materials.redDark);
+      const chin = new THREE.Mesh(geometries.box, teamMats.dark);
       chin.position.set(0, 1.51, -0.27);
       chin.scale.set(0.28, 0.09, 0.08);
-      const maskAccent = new THREE.Mesh(geometries.box, materials.red);
+      const maskAccent = new THREE.Mesh(geometries.box, teamMats.primary);
       maskAccent.position.set(0.22, 1.66, -0.26);
       maskAccent.scale.set(0.04, 0.18, 0.08);
       const gear = [];
@@ -2648,7 +2684,7 @@
       collar.position.y = 1.37;
       collar.scale.set(0.23, 0.055, 0.23);
       gear.push(collar);
-      const protector = new THREE.Mesh(geometries.sphere, materials.redDark);
+      const protector = new THREE.Mesh(geometries.sphere, teamMats.dark);
       protector.position.set(0, 1.02, -0.43);
       protector.scale.set(0.38, 0.35, 0.065);
       gear.push(protector);
@@ -2682,7 +2718,7 @@
         gear.push(vent);
       }
       for (let side = -1; side <= 1; side += 2) {
-        const shoulder = new THREE.Mesh(geometries.sphere, materials.redDark);
+        const shoulder = new THREE.Mesh(geometries.sphere, teamMats.dark);
         shoulder.position.set(side * 0.43, 1.27, -0.04);
         shoulder.scale.set(0.16, 0.12, 0.18);
         gear.push(shoulder);
@@ -2715,10 +2751,10 @@
         ai.group.add(mesh);
         return mesh;
       }
-      limb('leftUpperArm', -0.38, 1.18, -0.08, 0.08, 0.34, 0.08, 1.05, 0.2, 0.55, materials.red);
-      limb('leftForeArm', -0.32, 1.02, -0.42, 0.07, 0.34, 0.07, 1.35, 0, 0.2, materials.redDark);
-      limb('rightUpperArm', 0.38, 1.18, -0.05, 0.08, 0.34, 0.08, 0.95, -0.18, -0.55, materials.red);
-      limb('rightForeArm', 0.36, 0.98, -0.36, 0.07, 0.34, 0.07, 1.25, 0.05, -0.16, materials.redDark);
+      limb('leftUpperArm', -0.38, 1.18, -0.08, 0.08, 0.34, 0.08, 1.05, 0.2, 0.55, teamMats.primary);
+      limb('leftForeArm', -0.32, 1.02, -0.42, 0.07, 0.34, 0.07, 1.35, 0, 0.2, teamMats.dark);
+      limb('rightUpperArm', 0.38, 1.18, -0.05, 0.08, 0.34, 0.08, 0.95, -0.18, -0.55, teamMats.primary);
+      limb('rightForeArm', 0.36, 0.98, -0.36, 0.07, 0.34, 0.07, 1.25, 0.05, -0.16, teamMats.dark);
       limb('leftThigh', -0.18, 0.42, 0.02, 0.1, 0.38, 0.1, 0.04, 0, 0.08, materials.darkGrey);
       limb('rightThigh', 0.18, 0.42, 0.02, 0.1, 0.38, 0.1, -0.04, 0, -0.08, materials.darkGrey);
       limb('leftShin', -0.18, 0.14, -0.02, 0.085, 0.32, 0.085, 0.08, 0, 0.02, materials.grey);
@@ -2767,11 +2803,11 @@
       hopper.position.set(0.38, 1.32, -0.18);
       hopper.scale.set(0.25, 0.2, 0.25);
       ai.marker.add(body, barrel, hopper);
-      ai.splat = new THREE.Mesh(geometries.splat, materials.paintRed);
+      ai.splat = new THREE.Mesh(geometries.splat, getTeamMaterials(MY_TEAM).paint);
       ai.splat.position.set(0, 1.25, -0.43);
       ai.splat.scale.set(0.55, 0.46, 1);
       ai.splat.visible = false;
-      const splat2 = new THREE.Mesh(geometries.splat, materials.paintRed);
+      const splat2 = new THREE.Mesh(geometries.splat, getTeamMaterials(MY_TEAM).paint);
       splat2.position.set(0.22, 1.62, -0.31);
       splat2.scale.set(0.22, 0.18, 1);
       splat2.visible = false;
@@ -2788,6 +2824,7 @@
       splat2.castShadow = false;
       splat2.receiveShadow = false;
       ai.group.position.copy(ai.position);
+      if (MULTIPLAYER) updateRemoteNameTag();
     }
 
     function createPlayerShadowModel() {
@@ -2818,7 +2855,37 @@
       player.root.add(shadowBody);
     }
 
+    function applyMatchSettings() {
+      if (MULTIPLAYER) {
+        state.selectedMap = SELECTED_MAP;
+        state.bestOf = BEST_OF;
+        setTeamSpawns(MY_TEAM);
+      }
+      updateTeamBadge();
+    }
+
+    function setTeamSpawns(team) {
+      const localX = team === 'blue' ? 24 : -24;
+      const remoteX = team === 'blue' ? -24 : 24;
+      player.spawn.set(localX, 0, 0);
+      ai.spawn.set(remoteX, 0, 0);
+      ai.position.copy(ai.spawn);
+      ai.target.copy(ai.spawn);
+      ai.group.position.copy(ai.spawn);
+      remotePlayer.position = ai.position;
+      remotePlayer.lastPosition.copy(ai.spawn);
+    }
+
+    function updateTeamBadge() {
+      ui.teamBadge.textContent = (MY_TEAM === 'blue' ? 'BLUE' : 'RED') + ' TEAM';
+      ui.teamBadge.classList.toggle('blue', MY_TEAM === 'blue');
+    }
+
     function setupMenu() {
+      if (MULTIPLAYER) {
+        ui.menu.style.display = 'none';
+        return;
+      }
       document.querySelectorAll('[data-map]').forEach((card) => {
         const select = () => selectMenuMap(card.dataset.map);
         card.addEventListener('click', select);
@@ -2888,16 +2955,182 @@
     }
 
     function setupMultiplayerSocket() {
-      if (!multiplayer.room || typeof io !== 'function') return;
+      if (!MULTIPLAYER || !ROOM_CODE || typeof io !== 'function') return;
       multiplayer.socket = io(SOCKET_URL, {
         transports: ['websocket', 'polling']
       });
       multiplayer.socket.on('connect', () => {
         multiplayer.connected = true;
+        multiplayer.socket.emit('rejoin_room', {
+          code: ROOM_CODE,
+          username: MY_USERNAME,
+          team: MY_TEAM
+        });
       });
       multiplayer.socket.on('disconnect', () => {
         multiplayer.connected = false;
       });
+      multiplayer.socket.on('game_ready', ({ room, myTeam }) => {
+        multiplayer.ready = true;
+        multiplayer.team = myTeam || MY_TEAM;
+        configureMultiplayerRoom(room);
+      });
+      multiplayer.socket.on('rejoin_error', (message) => {
+        showCenter(message || 'Room not found');
+      });
+      multiplayer.socket.on('player_in_game', (playerInfo) => {
+        setRemotePlayerInfo(playerInfo);
+      });
+      multiplayer.socket.on('player_disconnected', ({ id }) => {
+        if (id === remotePlayer.id) {
+          remotePlayer.visible = false;
+          ai.group.visible = false;
+        }
+      });
+      multiplayer.socket.on('opponent_update', updateRemotePlayerFromNetwork);
+      multiplayer.socket.on('opponent_shoot', ({ origin, direction, team, id }) => {
+        if (id && id !== remotePlayer.id) remotePlayer.id = id;
+        spawnRemotePaintball(origin, direction, team || remotePlayer.team);
+      });
+      multiplayer.socket.on('hit_confirmed', ({ shooterId, victimId }) => {
+        if (victimId === multiplayer.socket.id) hitPlayer();
+        else if (!remotePlayer.id || victimId === remotePlayer.id || shooterId === multiplayer.socket.id) hitOpponent();
+      });
+      multiplayer.socket.on('round_ended', ({ winner }) => {
+        endRound(winner, roundMessage(winner), false);
+      });
+    }
+
+    function configureMultiplayerRoom(room) {
+      if (!room || !Array.isArray(room.players)) return;
+      const opponent = room.players.find((p) => p.id !== multiplayer.socket.id && p.team !== MY_TEAM)
+        || room.players.find((p) => p.id !== multiplayer.socket.id && p.username !== MY_USERNAME);
+      if (opponent) setRemotePlayerInfo(opponent);
+    }
+
+    function setRemotePlayerInfo(playerInfo) {
+      if (!MULTIPLAYER || !playerInfo || playerInfo.id === multiplayer.socket?.id) return;
+      remotePlayer.id = playerInfo.id || remotePlayer.id;
+      remotePlayer.username = playerInfo.username || remotePlayer.username || 'Opponent';
+      remotePlayer.team = playerInfo.team === 'red' || playerInfo.team === 'blue' ? playerInfo.team : remotePlayer.team;
+      applyRemoteTeamMaterials(remotePlayer.team);
+      updateRemoteNameTag();
+      remotePlayer.visible = true;
+      if (!state.aiEliminated) ai.group.visible = true;
+    }
+
+    function createNameTag(username, team) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 64;
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false });
+      const sprite = new THREE.Sprite(material);
+      sprite.position.set(0, 2.34, 0);
+      sprite.scale.set(2.4, 0.6, 1);
+      sprite.userData.canvas = canvas;
+      sprite.userData.texture = texture;
+      sprite.userData.coverCull = false;
+      drawNameTag(sprite, username, team);
+      return sprite;
+    }
+
+    function applyRemoteTeamMaterials(team) {
+      const teamMats = getTeamMaterials(team);
+      ai.group.traverse((child) => {
+        if (!child.isMesh || child === ai.splat || child === ai.limbs?.splat2) return;
+        if (child.material === materials.red || child.material === materials.blue) child.material = teamMats.primary;
+        else if (child.material === materials.redDark || child.material === materials.blueDark) child.material = teamMats.dark;
+      });
+    }
+
+    function updateRemoteNameTag() {
+      if (!remotePlayer.nameTag) {
+        remotePlayer.nameTag = createNameTag(remotePlayer.username, remotePlayer.team);
+        ai.group.add(remotePlayer.nameTag);
+        return;
+      }
+      drawNameTag(remotePlayer.nameTag, remotePlayer.username, remotePlayer.team);
+    }
+
+    function drawNameTag(sprite, username, team) {
+      const canvas = sprite.userData.canvas;
+      const ctx = canvas.getContext('2d');
+      const color = team === 'blue' ? '#2f87ff' : '#ff3442';
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'rgba(4, 6, 10, 0.72)';
+      roundRect(ctx, 10, 8, canvas.width - 20, canvas.height - 16, 18);
+      ctx.fill();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 4;
+      ctx.stroke();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '700 24px Rajdhani, Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(username || 'Opponent').toUpperCase().slice(0, 14), canvas.width / 2, 32);
+      sprite.userData.texture.needsUpdate = true;
+    }
+
+    function roundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+
+    function updateRemotePlayerFromNetwork({ id, position, rotation, crouching, prone }) {
+      if (!MULTIPLAYER || !position) return;
+      if (id) remotePlayer.id = id;
+      remotePlayer.visible = true;
+      remotePlayer.crouching = !!crouching;
+      remotePlayer.prone = !!prone;
+      remotePlayer.lastPosition.copy(ai.position);
+      ai.position.set(Number(position.x) || 0, Number(position.y) || 0, Number(position.z) || 0);
+      ai.group.position.copy(ai.position);
+      if (rotation && Number.isFinite(Number(rotation.y))) ai.group.rotation.y = Number(rotation.y);
+      ai.tacticalHeight = remotePlayer.prone ? 0.5 : remotePlayer.crouching ? 0.95 : ai.height;
+      ai.bodyCenter.set(ai.position.x, ai.tacticalHeight * 0.5, ai.position.z);
+      if (!state.aiEliminated) ai.group.visible = true;
+    }
+
+    function updateRemotePlayer(dt) {
+      if (!MULTIPLAYER || !remotePlayer.visible || state.aiEliminated) return;
+      const moving = ai.position.distanceToSquared(remotePlayer.lastPosition) > 0.0004;
+      updateAiVisual(dt, moving, false);
+      remotePlayer.lastPosition.copy(ai.position);
+    }
+
+    function sendMultiplayerUpdate() {
+      if (!MULTIPLAYER || !multiplayer.socket || !multiplayer.socket.connected) return;
+      multiplayer.socket.emit('player_update', {
+        code: ROOM_CODE,
+        position: {
+          x: player.root.position.x,
+          y: player.root.position.y,
+          z: player.root.position.z
+        },
+        rotation: { y: player.yaw },
+        crouching: input.crouch,
+        prone: input.crawl || player.diving
+      });
+    }
+
+    function spawnRemotePaintball(origin, direction, team) {
+      if (!origin || !direction) return;
+      tmpVecA.set(Number(origin.x) || 0, Number(origin.y) || 0, Number(origin.z) || 0);
+      tmpVecB.set(Number(direction.x) || 0, Number(direction.y) || 0, Number(direction.z) || 0);
+      if (tmpVecB.lengthSq() <= 0.000001) return;
+      fireProjectile(team === 'red' || team === 'blue' ? team : remotePlayer.team, tmpVecA, tmpVecB);
+      audio.fire();
     }
 
     function setupDronePreviews() {
@@ -3128,7 +3361,7 @@
       state.playerEliminated = false;
       state.aiEliminated = false;
       state.lastRoundMessage = '';
-      player.yaw = -Math.PI / 2;
+      player.yaw = MULTIPLAYER && MY_TEAM === 'blue' ? Math.PI / 2 : -Math.PI / 2;
       player.pitch = 0;
       player.root.position.copy(player.spawn);
       player.root.position.y = 0;
@@ -3157,7 +3390,7 @@
       ai.group.scale.set(1, 1, 1);
       restoreCoverCullVisibility(ai.group);
       restoreCoverCullVisibility(gun.group);
-      ai.group.visible = true;
+      ai.group.visible = !MULTIPLAYER || remotePlayer.visible;
       ai.splat.visible = false;
       if (ai.limbs && ai.limbs.splat2) ai.limbs.splat2.visible = false;
       ai.tacticalHeight = ai.height;
@@ -3168,7 +3401,7 @@
       hideEliminatedOverlay();
       clearProjectiles();
       clearSplats();
-      chooseAiCover(true);
+      if (!MULTIPLAYER) chooseAiCover(true);
       audio.beep();
       updateHud();
     }
@@ -3203,12 +3436,14 @@
       }
       state.shotClock = Math.max(0, state.nextShotTime - performance.now() / 1000);
       updatePlayer(dt);
+      sendMultiplayerUpdate();
       updateReload(dt);
       updateGun(dt, state.phase === 'active' && !state.playerEliminated);
       updateProjectiles(dt);
       updateSplats(dt);
       updateClouds(dt);
       updateSpectators();
+      updateRemotePlayer(dt);
       if (state.phase === 'countdown') updateCountdown(dt);
       else if (state.phase === 'active') updateActiveRound(dt);
       else if (state.phase === 'roundOver') updateRoundOver(dt);
@@ -3234,7 +3469,7 @@
     function updateActiveRound(dt) {
       state.roundClock -= dt;
       updateReadyDelay(dt);
-      updateAi(dt);
+      if (!MULTIPLAYER) updateAi(dt);
       if (input.shotRequests > 0 && state.shotClock <= 0 && state.readyClock <= 0) {
         if (tryShootPlayer()) input.shotRequests -= 1;
       }
@@ -3465,7 +3700,16 @@
       camera.getWorldDirection(tmpVecB);
       tmpVecA.addScaledVector(tmpVecB, 0.78);
       tmpVecA.y -= 0.08;
-      fireProjectile('red', tmpVecA, tmpVecB);
+      const shotTeam = MULTIPLAYER ? MY_TEAM : 'red';
+      fireProjectile(shotTeam, tmpVecA, tmpVecB);
+      if (MULTIPLAYER && multiplayer.socket && multiplayer.socket.connected) {
+        multiplayer.socket.emit('player_shoot', {
+          code: ROOM_CODE,
+          origin: { x: tmpVecA.x, y: tmpVecA.y, z: tmpVecA.z },
+          direction: { x: tmpVecB.x, y: tmpVecB.y, z: tmpVecB.z },
+          team: MY_TEAM
+        });
+      }
       ammo.hopper -= 1;
       state.nextShotTime = now + SHOT_COOLDOWN;
       state.shotClock = SHOT_COOLDOWN;
@@ -3526,12 +3770,12 @@
         let bodyHit = false;
         let bodyT = 2;
         let bodyTarget = 0;
-        if (p.team === 'red' && !state.aiEliminated && projectileHitsAi(p)) {
+        if (projectileCanHitOpponent(p) && projectileHitsAi(p)) {
           bodyHit = true;
           bodyT = segmentHitT;
           bodyTarget = 1;
         }
-        if (p.team === 'blue' && !state.playerEliminated && projectileHitsPlayer(p)) {
+        if (projectileCanHitLocalPlayer(p) && projectileHitsPlayer(p)) {
           bodyHit = true;
           bodyT = segmentHitT;
           bodyTarget = 2;
@@ -3546,20 +3790,25 @@
         if (bodyTarget === 1) {
           tmpVecA.copy(p.pos);
           p.pos.copy(p.prev).lerp(tmpVecA, bodyT);
-          aiEliminated(p.pos);
-          spawnSplat('red', ai.position.x, 1.25, ai.position.z - 0.45, 0, 0, -1, 0.72);
+          if (MULTIPLAYER) confirmOpponentHit(p.pos);
+          else {
+            aiEliminated(p.pos);
+            spawnSplat('red', ai.position.x, 1.25, ai.position.z - 0.45, 0, 0, -1, 0.72);
+          }
           deactivateProjectile(p);
           continue;
         }
-        if (p.team === 'red' && !state.aiEliminated && segmentHitsBody(p.prev, p.pos, ai.position.x, ai.position.z, 2.2, 0, ai.height + 0.5)) {
+        if (!MULTIPLAYER && p.team === 'red' && !state.aiEliminated && segmentHitsBody(p.prev, p.pos, ai.position.x, ai.position.z, 2.2, 0, ai.height + 0.5)) {
           ai.reactClock = 0.45;
           state.aiMoveClock = 0;
         }
         if (bodyTarget === 2) {
           tmpVecA.copy(p.pos);
           p.pos.copy(p.prev).lerp(tmpVecA, bodyT);
-          playerEliminated();
-          spawnSplat('blue', player.bodyCenter.x, player.height * 0.82, player.bodyCenter.z, 0, 0, 1, 0.72);
+          if (!MULTIPLAYER) {
+            playerEliminated();
+            spawnSplat('blue', player.bodyCenter.x, player.height * 0.82, player.bodyCenter.z, 0, 0, 1, 0.72);
+          }
           deactivateProjectile(p);
           continue;
         }
@@ -3574,6 +3823,25 @@
       p.active = false;
       p.mesh.visible = false;
       if (p.mesh.parent) scene.remove(p.mesh);
+    }
+
+    function projectileCanHitOpponent(p) {
+      if (MULTIPLAYER) return p.team === MY_TEAM && remotePlayer.visible && !state.aiEliminated;
+      return p.team === 'red' && !state.aiEliminated;
+    }
+
+    function projectileCanHitLocalPlayer(p) {
+      if (MULTIPLAYER) return p.team !== MY_TEAM && !state.playerEliminated;
+      return p.team === 'blue' && !state.playerEliminated;
+    }
+
+    function confirmOpponentHit(hitPos) {
+      if (!remotePlayer.id || !multiplayer.socket || !multiplayer.socket.connected) return;
+      spawnSplat(MY_TEAM, hitPos.x, Math.max(0.6, ai.tacticalHeight * 0.82), hitPos.z, 0, 0, -1, 0.72);
+      multiplayer.socket.emit('player_hit', {
+        code: ROOM_CODE,
+        victimId: remotePlayer.id
+      });
     }
 
     function projectileHitsAi(p) {
@@ -3629,7 +3897,7 @@
       tmpVecA.copy(p.pos);
       p.pos.copy(p.prev).lerp(tmpVecA, hitT);
       spawnSplat(p.team, p.pos.x - tmpVecB.x * 0.035, p.pos.y - tmpVecB.y * 0.035, p.pos.z - tmpVecB.z * 0.035, tmpVecB.x, tmpVecB.y, tmpVecB.z, 0.45);
-      if (p.team === 'red' && ai.position.distanceToSquared(p.pos) < 28) {
+      if (!MULTIPLAYER && p.team === 'red' && ai.position.distanceToSquared(p.pos) < 28) {
         ai.reactClock = 0.35;
         state.aiMoveClock = 0;
       }
@@ -4080,7 +4348,7 @@
       ai.group.rotation.x = -1.15;
       ai.group.position.y = 0.08;
       audio.eliminate();
-      state.scoreRed += 1;
+      scoreTeam('red');
       endRound('Red', 'Red wins the round');
     }
 
@@ -4089,8 +4357,54 @@
       gun.paint.visible = true;
       showEliminatedOverlay('blue');
       audio.eliminate();
-      state.scoreBlue += 1;
+      scoreTeam('blue');
       endRound('Blue', 'Blue wins the round');
+    }
+
+    function hitOpponent() {
+      if (state.aiEliminated || state.phase === 'roundOver' || state.phase === 'matchOver') return;
+      const localMats = getTeamMaterials(MY_TEAM);
+      state.aiEliminated = true;
+      ai.splat.material = localMats.paint;
+      ai.splat.visible = true;
+      if (ai.limbs && ai.limbs.splat2) {
+        ai.limbs.splat2.material = localMats.paint;
+        ai.limbs.splat2.visible = true;
+      }
+      ai.group.rotation.x = -1.15;
+      ai.group.position.y = 0.08;
+      remotePlayer.visible = false;
+      audio.eliminate();
+      scoreTeam(MY_TEAM);
+      endRound(MY_TEAM, formatTeam(MY_TEAM) + ' wins the round', false);
+    }
+
+    function hitPlayer() {
+      if (state.playerEliminated || state.phase === 'roundOver' || state.phase === 'matchOver') return;
+      const winner = remotePlayer.team || OPPONENT_TEAM;
+      gun.paint.material = getTeamMaterials(winner).paint;
+      state.playerEliminated = true;
+      gun.paint.visible = true;
+      showEliminatedOverlay(winner);
+      audio.eliminate();
+      scoreTeam(winner);
+      endRound(winner, formatTeam(winner) + ' wins the round', false);
+    }
+
+    function scoreTeam(team) {
+      if (String(team).toLowerCase() === 'blue') state.scoreBlue += 1;
+      else state.scoreRed += 1;
+    }
+
+    function formatTeam(team) {
+      const value = String(team || '').toLowerCase();
+      if (value === 'blue') return 'Blue';
+      if (value === 'red') return 'Red';
+      return 'Time';
+    }
+
+    function roundMessage(winner) {
+      return formatTeam(winner) === 'Time' ? 'No point. Resetting round.' : formatTeam(winner) + ' wins the round';
     }
 
     function seededNoise(seed) {
@@ -4246,15 +4560,19 @@
       if (eliminatedCtx) eliminatedCtx.clearRect(0, 0, window.innerWidth, window.innerHeight);
     }
 
-    function endRound(winner, message) {
+    function endRound(winner, message, sync = true) {
       if (state.phase === 'roundOver' || state.phase === 'matchOver') return;
+      const finalMessage = message || roundMessage(winner);
       state.phase = 'roundOver';
       stopReload(false);
       audio.updateRattle(false, false);
       state.roundOverClock = ROUND_OVER_TIME;
-      state.lastRoundMessage = message;
-      showCenter(message);
-      if (winner !== 'Time') audio.roundWin();
+      state.lastRoundMessage = finalMessage;
+      showCenter(finalMessage);
+      if (formatTeam(winner) !== 'Time') audio.roundWin();
+      if (MULTIPLAYER && sync && multiplayer.socket && multiplayer.socket.connected) {
+        multiplayer.socket.emit('round_end', { code: ROOM_CODE, winner });
+      }
     }
 
     function endMatch(winner) {
@@ -4459,7 +4777,7 @@
 
     function updateAmmoHud() {
       const podCount = ammo.pods.filter((p) => p > 0).length;
-      if (ai.podTubes) {
+      if (!MULTIPLAYER && ai.podTubes) {
         for (let i = 0; i < ai.podTubes.length; i++) ai.podTubes[i].visible = i < podCount;
       }
       const hopperText = ammo.hopper <= 0 ? 'EMPTY' : String(ammo.hopper);

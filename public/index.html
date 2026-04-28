@@ -953,7 +953,9 @@
           room: room.code,
           team,
           username: state.username,
-          mode: room.gameMode
+          mode: room.gameMode,
+          map: room.map,
+          bestof: String(room.bestOf)
         })
         window.location.href = '/game.html?' + params.toString()
       }
