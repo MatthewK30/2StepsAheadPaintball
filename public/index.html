@@ -159,6 +159,30 @@
     .cornerBracket.bl { left: 22px; bottom: 22px; transform: scaleY(-1); }
     .cornerBracket.br { right: 22px; bottom: 22px; transform: scale(-1); }
 
+    .navBackBtn {
+      position: fixed;
+      left: 18px;
+      top: 18px;
+      z-index: 5;
+      min-width: auto;
+      padding: 9px 14px 8px;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(13,17,23,0.64);
+      color: rgba(237,242,247,0.82);
+      clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: 18px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 12px 34px rgba(0,0,0,0.4);
+    }
+
+    .navBackBtn:hover {
+      color: #ffffff;
+      border-color: rgba(255,255,255,0.3);
+    }
+
     .heroHeader {
       text-align: center;
     }
@@ -800,6 +824,7 @@
     <div class="cornerBracket tr"></div>
     <div class="cornerBracket bl"></div>
     <div class="cornerBracket br"></div>
+    <button id="menuBackBtn" class="navBackBtn hidden" type="button">BACK</button>
 
     <section id="heroView" class="view heroView active">
       <div class="heroStack">
@@ -1032,7 +1057,8 @@
         switchTeamBtn: $('#switchTeamBtn'),
         readyBtn: $('#readyBtn'),
         startMatchBtn: $('#startMatchBtn'),
-        leaveLobbyBtn: $('#leaveLobbyBtn')
+        leaveLobbyBtn: $('#leaveLobbyBtn'),
+        menuBackBtn: $('#menuBackBtn')
       }
 
       function init() {
@@ -1045,6 +1071,7 @@
       function bindUi() {
         $('#playMultiplayerBtn').addEventListener('click', () => showView('lobby'))
         $('#playPracticeBtn').addEventListener('click', startPractice)
+        ui.menuBackBtn.addEventListener('click', navigateBack)
         $('#showCreateBtn').addEventListener('click', () => {
           if (!captureUsername(ui.entryError)) return
           showPanel('create')
@@ -1076,6 +1103,10 @@
         })
         ui.usernameInput.addEventListener('input', () => {
           ui.usernameInput.value = ui.usernameInput.value.toUpperCase().slice(0, 16)
+        })
+        document.addEventListener('keydown', (event) => {
+          if (event.code !== 'Backspace' || isTextEntryTarget(event.target)) return
+          if (navigateBack()) event.preventDefault()
         })
       }
 
@@ -1110,12 +1141,43 @@
       function showView(name) {
         Object.keys(views).forEach((key) => views[key].classList.toggle('active', key === name))
         if (name === 'lobby') showPanel('entry')
+        updateBackButton()
       }
 
       function showPanel(name) {
         Object.keys(panels).forEach((key) => panels[key].classList.toggle('active', key === name))
         ui.leaveLobbyBtn.classList.toggle('hidden', name !== 'arena')
+        updateBackButton()
         clearErrors()
+      }
+
+      function activePanelName() {
+        return Object.keys(panels).find((key) => panels[key].classList.contains('active')) || 'entry'
+      }
+
+      function navigateBack() {
+        if (!views.lobby.classList.contains('active')) return false
+        const panel = activePanelName()
+        if (panel === 'arena') {
+          leaveLobby()
+          return true
+        }
+        if (panel !== 'entry') {
+          showPanel('entry')
+          return true
+        }
+        showView('hero')
+        return true
+      }
+
+      function updateBackButton() {
+        ui.menuBackBtn.classList.toggle('hidden', !views.lobby.classList.contains('active'))
+      }
+
+      function isTextEntryTarget(target) {
+        if (!target) return false
+        const tag = target.tagName
+        return target.isContentEditable || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
       }
 
       function captureUsername(errorEl) {

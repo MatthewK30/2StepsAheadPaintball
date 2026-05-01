@@ -503,10 +503,16 @@
       pointer-events: none;
       z-index: 9;
       overflow: hidden;
+      --hit-color: var(--blue);
+      --hit-rgb: 21, 102, 204;
+      --impact-x: 50%;
+      --impact-y: 42%;
+      --splatter-wobble: 0px;
     }
 
     #eliminatedOverlay.visible {
       display: block;
+      animation: lensImpact 0.34s cubic-bezier(.18, .86, .28, 1) both;
     }
 
     #eliminatedOverlay::before {
@@ -514,9 +520,86 @@
       position: absolute;
       inset: 0;
       background:
-        radial-gradient(circle at 50% 48%, transparent 0 46%, rgba(0, 0, 0, 0.42) 78%, rgba(0, 0, 0, 0.72) 100%),
-        linear-gradient(90deg, rgba(0, 0, 0, 0.32), transparent 20%, transparent 80%, rgba(0, 0, 0, 0.32));
+        radial-gradient(circle at var(--impact-x) var(--impact-y), transparent 0 30%, rgba(0,0,0,0.28) 55%, rgba(0,0,0,0.82) 100%),
+        linear-gradient(90deg, rgba(0,0,0,0.42), transparent 22%, transparent 78%, rgba(0,0,0,0.42));
+      z-index: 4;
+    }
+
+    #eliminatedOverlay::after {
+      content: "";
+      position: absolute;
+      inset: -4%;
+      z-index: 3;
+      background:
+        radial-gradient(circle at var(--impact-x) var(--impact-y), rgba(255,255,255,0.7) 0 1.5%, transparent 7%),
+        radial-gradient(circle at calc(var(--impact-x) + 8%) calc(var(--impact-y) - 6%), rgba(255,255,255,0.26) 0 1%, transparent 5%),
+        radial-gradient(circle at calc(var(--impact-x) - 11%) calc(var(--impact-y) + 8%), rgba(255,255,255,0.18) 0 0.9%, transparent 4%);
+      mix-blend-mode: screen;
+      opacity: 0.72;
+      filter: blur(0.5px);
+    }
+
+    .lensPaint {
+      position: absolute;
+      inset: -7%;
       z-index: 1;
+      transform: translateY(var(--splatter-wobble));
+      pointer-events: none;
+    }
+
+    .lensPaint.primary {
+      background:
+        radial-gradient(ellipse at var(--impact-x) var(--impact-y), rgba(var(--hit-rgb),0.98) 0 7%, rgba(var(--hit-rgb),0.82) 9%, rgba(var(--hit-rgb),0.22) 18%, transparent 29%),
+        radial-gradient(circle at calc(var(--impact-x) - 14%) calc(var(--impact-y) - 9%), rgba(var(--hit-rgb),0.82) 0 5%, transparent 12%),
+        radial-gradient(circle at calc(var(--impact-x) + 18%) calc(var(--impact-y) - 5%), rgba(var(--hit-rgb),0.75) 0 4%, transparent 10%),
+        radial-gradient(circle at calc(var(--impact-x) - 22%) calc(var(--impact-y) + 17%), rgba(var(--hit-rgb),0.62) 0 3%, transparent 8%),
+        radial-gradient(circle at calc(var(--impact-x) + 14%) calc(var(--impact-y) + 18%), rgba(var(--hit-rgb),0.7) 0 4%, transparent 10%);
+      filter: drop-shadow(0 0 24px rgba(var(--hit-rgb),0.7)) saturate(1.25);
+      animation: paintSmear 1.2s cubic-bezier(.16,.9,.24,1) both;
+    }
+
+    .lensPaint.secondary {
+      z-index: 2;
+      background:
+        radial-gradient(circle at 22% 22%, rgba(var(--hit-rgb),0.55) 0 2.5%, transparent 7%),
+        radial-gradient(circle at 74% 26%, rgba(var(--hit-rgb),0.5) 0 2.2%, transparent 6%),
+        radial-gradient(circle at 18% 64%, rgba(var(--hit-rgb),0.42) 0 1.9%, transparent 6%),
+        radial-gradient(circle at 84% 68%, rgba(var(--hit-rgb),0.46) 0 2%, transparent 6%),
+        radial-gradient(circle at 42% 73%, rgba(var(--hit-rgb),0.36) 0 1.5%, transparent 5%);
+      opacity: 0.92;
+      filter: blur(0.2px);
+      animation: mistSettle 0.74s ease-out both;
+    }
+
+    .lensPaint.mist {
+      z-index: 0;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(255,255,255,0.1), transparent 40%),
+        repeating-radial-gradient(circle at var(--impact-x) var(--impact-y), rgba(var(--hit-rgb),0.11) 0 1px, transparent 1px 12px);
+      opacity: 0.7;
+      mix-blend-mode: screen;
+      animation: mistSettle 1s ease-out both;
+    }
+
+    .lensDrips {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .lensDrips span {
+      position: absolute;
+      top: var(--top, 45%);
+      left: var(--left, 50%);
+      width: var(--width, 14px);
+      height: var(--height, 28vh);
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(var(--hit-rgb),0.92), rgba(var(--hit-rgb),0.72) 48%, rgba(var(--hit-rgb),0.08));
+      box-shadow: 0 0 18px rgba(var(--hit-rgb),0.42), inset 2px 0 5px rgba(255,255,255,0.18);
+      transform: translateX(-50%) scaleY(0);
+      transform-origin: top;
+      animation: realisticDrip 1.65s cubic-bezier(.18,.86,.24,1) var(--delay, 0s) forwards;
     }
 
     .eliminatedSplatSvg {
@@ -524,8 +607,10 @@
       inset: 0;
       width: 100%;
       height: 100%;
-      z-index: 0;
+      z-index: 2;
       overflow: visible;
+      opacity: 0.82;
+      mix-blend-mode: multiply;
     }
 
     .splatShape,
@@ -559,13 +644,36 @@
       to { transform: scaleY(1); opacity: 0.72; }
     }
 
+    @keyframes lensImpact {
+      0% { transform: scale(1.05); filter: brightness(1.6) blur(3px); }
+      42% { transform: scale(0.992); filter: brightness(1.15) blur(0.5px); }
+      100% { transform: scale(1); filter: brightness(1) blur(0); }
+    }
+
+    @keyframes paintSmear {
+      0% { transform: translateY(-10px) scale(1.18); opacity: 0; }
+      24% { opacity: 1; }
+      100% { transform: translateY(var(--splatter-wobble)) scale(1); opacity: 1; }
+    }
+
+    @keyframes mistSettle {
+      from { opacity: 0; transform: scale(1.24); }
+      to { opacity: 0.9; transform: scale(1); }
+    }
+
+    @keyframes realisticDrip {
+      0% { transform: translateX(-50%) scaleY(0); opacity: 0; }
+      18% { opacity: 1; }
+      100% { transform: translateX(-50%) scaleY(1); opacity: 0.88; }
+    }
+
     .eliminatedTextWrap {
       position: absolute;
       left: 50%;
       top: 42%;
       transform: translate(-50%, -50%);
       text-align: center;
-      z-index: 2;
+      z-index: 5;
       opacity: 0;
     }
 
@@ -609,6 +717,32 @@
     @keyframes hitSubtext {
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes victoryFlash {
+      0% { opacity: 0; }
+      8% { opacity: 0.95; }
+      100% { opacity: 0; }
+    }
+
+    @keyframes letterboxTop {
+      to { transform: translateY(0); }
+    }
+
+    @keyframes letterboxBottom {
+      to { transform: translateY(0); }
+    }
+
+    @keyframes victoryPanel {
+      0% { opacity: 0; transform: translateY(32px) scale(0.9); filter: blur(8px); }
+      20% { opacity: 1; filter: blur(0); }
+      100% { opacity: 1; transform: translateY(-12px) scale(1.04); }
+    }
+
+    @keyframes confettiFall {
+      0% { opacity: 0; transform: translate3d(0, -12vh, 0) rotate(var(--r, 0deg)); }
+      12% { opacity: 1; }
+      100% { opacity: 0.9; transform: translate3d(var(--sway, 30px), 118vh, 0) rotate(calc(var(--r, 0deg) + 540deg)); }
     }
 
     #menu,
@@ -662,6 +796,120 @@
       background:
         radial-gradient(circle at 50% 46%, rgba(204,21,21,0.18), transparent 34%),
         rgba(0,0,0,0.82);
+      overflow: hidden;
+      --winner-color: var(--red);
+      --winner-rgb: 204, 21, 21;
+    }
+
+    #matchScreen.cinematic {
+      background:
+        radial-gradient(circle at 50% 48%, rgba(var(--winner-rgb),0.32), transparent 33%),
+        radial-gradient(circle at 50% 50%, transparent 0 48%, rgba(0,0,0,0.78) 100%),
+        rgba(0,0,0,0.9);
+    }
+
+    .victoryFlash {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background: #ffffff;
+      opacity: 0;
+    }
+
+    #matchScreen.cinematic .victoryFlash {
+      animation: victoryFlash 0.72s ease-out both;
+    }
+
+    .victoryBar {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: clamp(52px, 9vh, 108px);
+      z-index: 2;
+      background: #020304;
+      box-shadow: 0 0 28px rgba(0,0,0,0.74);
+      pointer-events: none;
+    }
+
+    .victoryBar.top { top: 0; transform: translateY(-100%); }
+    .victoryBar.bottom { bottom: 0; transform: translateY(100%); }
+
+    #matchScreen.cinematic .victoryBar.top { animation: letterboxTop 0.46s ease-out forwards; }
+    #matchScreen.cinematic .victoryBar.bottom { animation: letterboxBottom 0.46s ease-out forwards; }
+
+    .victoryConfetti {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .victoryConfetti span {
+      position: absolute;
+      top: -10%;
+      left: var(--x, 50%);
+      width: var(--w, 7px);
+      height: var(--h, 16px);
+      background: var(--c, var(--winner-color));
+      box-shadow: 0 0 10px rgba(var(--winner-rgb),0.4);
+      transform: rotate(var(--r, 0deg));
+      opacity: 0;
+      animation: confettiFall var(--d, 2.6s) ease-in var(--delay, 0s) forwards;
+    }
+
+    .victoryBadge {
+      position: relative;
+      z-index: 1;
+      width: fit-content;
+      margin: 0 auto 14px;
+      padding: 7px 12px 5px;
+      border: 1px solid rgba(255,255,255,0.3);
+      background: rgba(var(--winner-rgb),0.22);
+      color: #ffffff;
+      font-weight: 900;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      box-shadow: 0 0 24px rgba(var(--winner-rgb),0.32);
+    }
+
+    #matchScreen.cinematic .matchPanel {
+      animation: victoryPanel 3s cubic-bezier(.17,.88,.23,1) both;
+    }
+
+    #matchScreen.cinematic .overlayActions {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(14px);
+      transition: opacity 0.34s ease, transform 0.34s ease;
+    }
+
+    #matchScreen.cinematic.actionsReady .overlayActions {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+
+    .menuBackButton {
+      position: fixed;
+      top: 18px;
+      left: 18px;
+      z-index: 10;
+      padding: 9px 14px 8px;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(13,17,23,0.64);
+      color: rgba(238,243,248,0.82);
+      clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+      font-size: 18px;
+      letter-spacing: 0.14em;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 12px 34px rgba(0,0,0,0.4);
+    }
+
+    .menuBackButton:hover {
+      color: #ffffff;
+      border-color: rgba(255,255,255,0.3);
     }
 
     #pauseScreen {
@@ -691,6 +939,12 @@
       top: 0;
       height: 3px;
       background: linear-gradient(90deg, transparent, var(--red), transparent);
+    }
+
+    .matchPanel {
+      z-index: 3;
+      border-color: rgba(var(--winner-rgb),0.4);
+      box-shadow: 0 26px 90px rgba(0,0,0,0.62), 0 0 46px rgba(var(--winner-rgb),0.24), inset 0 1px 0 rgba(255,255,255,0.05);
     }
 
     .menuShell {
@@ -1093,6 +1347,7 @@
 </head>
 <body>
   <div id="menu">
+    <button id="gameMenuBackBtn" class="menuBackButton" type="button">BACK</button>
     <div class="menuShell">
       <div class="menuHeader">
         <h1 class="menuTitle" aria-label="2 Steps Ahead">
@@ -1176,7 +1431,12 @@
   </div>
 
   <div id="matchScreen">
+    <div id="victoryFlash" class="victoryFlash" aria-hidden="true"></div>
+    <div class="victoryBar top" aria-hidden="true"></div>
+    <div class="victoryBar bottom" aria-hidden="true"></div>
+    <div id="victoryConfetti" class="victoryConfetti" aria-hidden="true"></div>
     <div class="panel matchPanel">
+      <div id="victoryBadge" class="victoryBadge">WINNER</div>
       <h2 id="matchTitle">MATCH COMPLETE</h2>
       <div id="matchWinner">Red Team</div>
       <p id="matchCopy">Final score: Red 0 - Blue 0.</p>
@@ -1237,6 +1497,15 @@
     <div id="perf">FPS --</div>
   </div>
   <div id="eliminatedOverlay">
+    <div class="lensPaint mist" aria-hidden="true"></div>
+    <div class="lensPaint primary" aria-hidden="true"></div>
+    <div class="lensPaint secondary" aria-hidden="true"></div>
+    <div class="lensDrips" aria-hidden="true">
+      <span style="--left: 38%; --top: 48%; --width: 13px; --height: 34vh; --delay: 0.12s;"></span>
+      <span style="--left: 50%; --top: 49%; --width: 18px; --height: 42vh; --delay: 0.02s;"></span>
+      <span style="--left: 62%; --top: 46%; --width: 11px; --height: 30vh; --delay: 0.2s;"></span>
+      <span style="--left: 70%; --top: 52%; --width: 8px; --height: 24vh; --delay: 0.34s;"></span>
+    </div>
     <svg class="eliminatedSplatSvg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
       <ellipse class="splatShape" cx="50" cy="42" rx="18" ry="12"></ellipse>
       <ellipse class="splatShape" cx="36" cy="35" rx="10" ry="7"></ellipse>
@@ -1281,8 +1550,9 @@
     const SPRINT_MULTIPLIER = 1.5;
     const CROUCH_SPEED = 3.6;
     const CRAWL_SPEED = 2.0;
-    const LEAN_DISTANCE = 0.6;
-    const LEAN_ANGLE = Math.PI * 8 / 180;
+    const LEAN_DISTANCE = 1.8;
+    const LEAN_ANGLE = Math.PI * 18 / 180;
+    const LEAN_TRANSITION = 0.12;
     const HOPPER_CAPACITY = 50;
     const POD_CAPACITY = 50;
     const STARTING_PODS = 3;
@@ -1387,6 +1657,7 @@
     const ui = {
       menu: document.getElementById('menu'),
       matchScreen: document.getElementById('matchScreen'),
+      gameMenuBackBtn: document.getElementById('gameMenuBackBtn'),
       deployBtn: document.getElementById('deployBtn'),
       matchAgainBtn: document.getElementById('matchAgainBtn'),
       matchLobbyBtn: document.getElementById('matchLobbyBtn'),
@@ -1413,6 +1684,8 @@
       matchTitle: document.getElementById('matchTitle'),
       matchWinner: document.getElementById('matchWinner'),
       matchCopy: document.getElementById('matchCopy'),
+      victoryBadge: document.getElementById('victoryBadge'),
+      victoryConfetti: document.getElementById('victoryConfetti'),
       miniMapName: document.getElementById('miniMapName'),
       miniLayout: document.getElementById('miniLayout'),
       miniPlayer: document.getElementById('miniPlayer'),
@@ -1526,6 +1799,7 @@
       body: null,
       head: null,
       marker: null,
+      markerBarrelTip: null,
       splat: null,
       position: new THREE.Vector3(24, 0, 0),
       spawn: new THREE.Vector3(24, 0, 0),
@@ -1563,6 +1837,24 @@
       visible: false,
       crouching: false,
       prone: false
+    };
+
+    const victoryCam = {
+      active: false,
+      timer: 0,
+      duration: 3,
+      startPos: new THREE.Vector3(),
+      startRot: new THREE.Euler(),
+      startFov: 64,
+      buttonTimer: 0
+    };
+
+    const deathCam = {
+      active: false,
+      timer: 0,
+      duration: 1.15,
+      startPos: new THREE.Vector3(),
+      startRot: new THREE.Euler()
     };
 
     const scene = new THREE.Scene();
@@ -3292,7 +3584,7 @@
 
       addCylinder(materials.gunMetal, 0, upperY, -0.46, 0.028, 0.18, Math.PI / 2, 0, 0, null, 'barrelBack', 32);
       addCylinder(materials.gunMetal, 0, upperY, -0.79, 0.019, 0.48, Math.PI / 2, 0, 0, null, 'barrelFront', 32);
-      addCylinder(materials.foam, 0, upperY, -1.045, 0.022, 0.035, Math.PI / 2, 0, 0, null, 'barrelTip', 32);
+      const barrelTip = addCylinder(materials.foam, 0, upperY, -1.045, 0.022, 0.035, Math.PI / 2, 0, 0, null, 'barrelTip', 32);
       addCylinder(materials.black, 0, upperY, -1.069, 0.012, 0.006, Math.PI / 2, 0, 0, null, 'barrelOpening', 24);
       for (let i = 0; i < 12; i++) {
         const z = -0.65 - i * 0.03;
@@ -3306,18 +3598,24 @@
         addMesh(ring, null, i ? 'frontBarrelSeam' : 'backBoreSeam');
       });
 
-      addCylinder(materials.gunMetal, 0, 0.18, -0.25, 0.019, 0.105, 0, 0, 0, null, 'feedNeck', 24);
-      addCylinder(materials.gunRubber, 0, 0.238, -0.25, 0.03, 0.018, 0, 0, 0, null, 'feedClamp', 24);
-      addBoxPart(materials.gunRubber, 0.042, 0.238, -0.25, 0.035, 0.01, 0.024, 0, 0, 0.12, null, 'feedClampLever');
+      const hopperGroup = new THREE.Group();
+      hopperGroup.name = 'connectedHopper';
+      gunGroup.add(hopperGroup);
+      addCylinder(materials.gunMetal, 0, 0.19, -0.25, 0.021, 0.13, 0, 0, 0, null, 'feedNeck', 24);
+      addCylinder(materials.gunRubber, 0, 0.252, -0.25, 0.031, 0.022, 0, 0, 0, hopperGroup, 'feedClamp', 24);
+      addBoxPart(materials.gunRubber, 0.043, 0.252, -0.25, 0.035, 0.012, 0.024, 0, 0, 0.12, hopperGroup, 'feedClampLever');
 
-      const hopperCenterY = 0.345;
-      const hopperTopY = 0.43;
-      addBoxPart(materials.hopper, 0, hopperCenterY, -0.3, 0.27, 0.15, 0.24, 0, 0, 0, null, 'rotorLoaderShell');
-      addSpherePart(materials.hopper, -0.1, hopperCenterY + 0.005, -0.31, 0.105, 0.074, 0.11, null, 'loaderLeftRound');
-      addSpherePart(materials.hopperDrive, 0.105, hopperCenterY, -0.28, 0.075, 0.075, 0.09, null, 'loaderRightDrive');
-      addBoxPart(materials.hopperGlass, 0.028, hopperCenterY + 0.008, -0.43, 0.12, 0.063, 0.012, 0, 0, 0, null, 'loaderWindow');
-      for (let i = 0; i < 5; i++) addBoxPart(materials.gunRubber, -0.09 + i * 0.045, hopperTopY + 0.018, -0.3, 0.018, 0.014, 0.17, 0, 0, 0.06, null, 'loaderTopRib');
-      const reloadLid = addBoxPart(materials.gunRubber, 0, hopperTopY + 0.046, -0.3, 0.22, 0.022, 0.17, 0, 0, 0, null, 'reloadLid');
+      const hopperCenterY = 0.34;
+      const hopperTopY = 0.435;
+      addSpherePart(materials.hopper, -0.012, hopperCenterY, -0.305, 0.215, 0.112, 0.185, hopperGroup, 'connectedHopperBody');
+      addBoxPart(materials.hopper, 0, hopperCenterY - 0.012, -0.3, 0.28, 0.17, 0.245, 0, 0, 0, hopperGroup, 'hopperCoreBridge');
+      addSpherePart(materials.hopper, -0.118, hopperCenterY + 0.002, -0.315, 0.098, 0.079, 0.112, hopperGroup, 'loaderLeftRound');
+      addSpherePart(materials.hopperDrive, 0.112, hopperCenterY - 0.002, -0.283, 0.084, 0.08, 0.095, hopperGroup, 'loaderRightDrive');
+      addBoxPart(materials.hopper, 0, 0.262, -0.267, 0.108, 0.038, 0.078, 0, 0, 0, hopperGroup, 'hopperFeedBridge');
+      addBoxPart(materials.hopperGlass, 0.028, hopperCenterY + 0.008, -0.43, 0.12, 0.063, 0.012, 0, 0, 0, hopperGroup, 'loaderWindow');
+      addBoxPart(materials.gunRubber, 0, hopperTopY, -0.3, 0.235, 0.024, 0.176, 0, 0, 0, hopperGroup, 'loaderTopPlate');
+      for (let i = 0; i < 5; i++) addBoxPart(materials.gunRubber, -0.09 + i * 0.045, hopperTopY + 0.018, -0.3, 0.018, 0.014, 0.17, 0, 0, 0.06, hopperGroup, 'loaderTopRib');
+      const reloadLid = addBoxPart(materials.gunRubber, 0, hopperTopY + 0.038, -0.3, 0.22, 0.022, 0.17, 0, 0, 0, hopperGroup, 'reloadLid');
       reloadLid.userData.baseY = reloadLid.position.y;
       for (let i = 0; i < 6; i++) {
         const pivot = new THREE.Group();
@@ -3331,7 +3629,7 @@
         shadowMesh(petal, true, true);
         petal.frustumCulled = false;
         pivot.add(petal);
-        gunGroup.add(pivot);
+        hopperGroup.add(pivot);
         speedFeedPetals.push(pivot);
       }
       for (let i = 0; i < 18; i++) {
@@ -3340,7 +3638,7 @@
         ball.position.set(Math.cos(a) * (0.034 + (i % 3) * 0.012), hopperCenterY - 0.04 + (i % 6) * 0.011, -0.415 + Math.sin(a) * 0.012);
         ball.scale.setScalar(0.48);
         ball.userData.baseY = ball.position.y;
-        addMesh(ball);
+        addMesh(ball, hopperGroup);
         hopperBalls.push(ball);
       }
 
@@ -3408,7 +3706,7 @@
         reloadBalls.push(ball);
       }
 
-      return { group: gunGroup, baseX: 0.34, baseY: -0.34, baseZ: -0.48, recoil: 0, paint, reloadLid, reloadBalls, speedFeedPetals, hopperBalls, leftHand, reloadPod };
+      return { group: gunGroup, baseX: 0.34, baseY: -0.34, baseZ: -0.48, recoil: 0, barrelTip, paint, reloadLid, reloadBalls, speedFeedPetals, hopperBalls, leftHand, reloadPod };
     }
 
     function createAiModel(team) {
@@ -3416,6 +3714,7 @@
       ai.group.visible = false;
       ai.group.clear();
       ai.limbs = {};
+      ai.markerBarrelTip = null;
       const root = new THREE.Group();
       root.name = 'paintballPlayerRoot';
       ai.limbs.root = root;
@@ -3558,10 +3857,14 @@
       barrel.position.set(0.02, 0.015, -0.35);
       barrel.scale.set(0.024, 0.38, 0.024);
       barrel.rotation.x = Math.PI / 2;
+      ai.markerBarrelTip = new THREE.Object3D();
+      ai.markerBarrelTip.name = 'markerBarrelTip';
+      ai.markerBarrelTip.position.set(0.02, 0.015, -0.54);
       const hopper = new THREE.Mesh(geometries.sphere, materials.hopper);
       hopper.position.set(0.02, 0.15, -0.03);
       hopper.scale.set(0.13, 0.09, 0.12);
       [markerBody, markerReg, barrel, hopper].forEach((part) => addMesh(part, ai.marker));
+      ai.marker.add(ai.markerBarrelTip);
 
       ai.splat = new THREE.Mesh(geometries.splat, getTeamMaterials(MY_TEAM).paint);
       ai.splat.position.set(0, 1.22, -0.19);
@@ -3645,6 +3948,7 @@
     }
 
     function setupMenu() {
+      ui.gameMenuBackBtn.addEventListener('click', goMainMenu);
       ui.matchAgainBtn.addEventListener('click', () => {
         if (MULTIPLAYER) {
           goBackToLobby();
@@ -4034,6 +4338,20 @@
 
     function setKey(e, down) {
       const code = e.code;
+      if (code === 'Backspace' && down && !e.repeat && !input.pointerLocked && !isTextEntryTarget(e.target)) {
+        let handled = false;
+        if (ui.pauseScreen.style.display === 'grid') {
+          hidePauseMenu();
+          handled = true;
+        } else if (state.phase === 'menu' || state.phase === 'matchOver') {
+          goMainMenu();
+          handled = true;
+        }
+        if (handled) {
+          e.preventDefault();
+          return;
+        }
+      }
       if (code === 'Escape' && down && !e.repeat) {
         if (ui.pauseScreen.style.display === 'grid') hidePauseMenu();
         else showPauseMenu();
@@ -4065,6 +4383,12 @@
       else if (code === 'KeyE') input.peekRight = down;
       else if (code === 'KeyR') handleReloadKey(down, e.repeat);
       if (['KeyW', 'KeyS', 'KeyA', 'KeyD', 'ShiftLeft', 'ShiftRight', 'KeyC', 'KeyX', 'Space', 'KeyQ', 'KeyE', 'KeyR'].includes(code)) e.preventDefault();
+    }
+
+    function isTextEntryTarget(target) {
+      if (!target) return false;
+      const tag = target.tagName;
+      return target.isContentEditable || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
     }
 
     function handleReloadKey(down, repeat) {
@@ -4141,12 +4465,14 @@
       ui.menu.style.display = 'none';
       ui.hud.classList.add('visible');
       ui.matchScreen.style.display = 'none';
+      ui.matchScreen.classList.remove('cinematic', 'actionsReady');
       ui.pauseScreen.style.display = 'none';
       startRound();
       startAmbient(active.ambient);
     }
 
     function startRound() {
+      resetCameraEffects();
       state.phase = 'countdown';
       state.countdownClock = COUNTDOWN_TIME;
       state.roundClock = state.roundDuration || ROUND_TIME;
@@ -4252,6 +4578,7 @@
     }
 
     function updateGame(dt) {
+      updateVictoryCinematic(dt);
       if (!state.running) {
         updateGun(dt, false);
         audio.updateRattle(false, false);
@@ -4333,7 +4660,7 @@
       player.radius = input.crawl || player.diving ? CRAWL_RADIUS : player.sliding || input.crouch ? CROUCH_RADIUS : PLAYER_RADIUS;
       const rawPeek = (input.peekLeft ? -LEAN_DISTANCE : 0) + (input.peekRight ? LEAN_DISTANCE : 0);
       player.targetPeek = clampLeanOffset(rawPeek);
-      player.peek += (player.targetPeek - player.peek) * Math.min(1, dt / 0.15);
+      player.peek += (player.targetPeek - player.peek) * Math.min(1, dt / LEAN_TRANSITION);
       player.peek = clampLeanOffset(player.peek);
       const yaw = player.yaw;
       const sin = Math.sin(yaw);
@@ -4354,7 +4681,8 @@
         player.sprinting = false;
         player.bobOffset = 0;
         player.sprintBlend = 0;
-        camera.position.set(player.peek, player.height, 0);
+        if (deathCam.active) updateDeathCamera(dt);
+        else camera.position.set(player.peek, player.height, 0);
         audio.updateRattle(false, false);
         return;
       }
@@ -4626,8 +4954,9 @@
         audio.empty();
         return true;
       }
-      camera.getWorldPosition(tmpVecA);
       camera.getWorldDirection(tmpVecB);
+      if (gun.barrelTip) gun.barrelTip.getWorldPosition(tmpVecA);
+      else camera.getWorldPosition(tmpVecA);
       const shotTeam = MULTIPLAYER ? MY_TEAM : 'red';
       fireProjectile(shotTeam, tmpVecA, tmpVecB);
       if (MULTIPLAYER && multiplayer.socket && multiplayer.socket.connected) {
@@ -5376,7 +5705,8 @@
       tmpVecB.set(player.bodyCenter.x - ai.position.x, 0, player.bodyCenter.z - ai.position.z);
       if (tmpVecB.lengthSq() > 0.001) tmpVecB.normalize();
       tmpVecC.set(-tmpVecB.z, 0, tmpVecB.x).multiplyScalar(ai.peekSide * 0.42);
-      tmpVecA.set(ai.position.x + tmpVecC.x, Math.max(0.55, Math.min(ai.tacticalHeight, ai.height) * 0.82), ai.position.z + tmpVecC.z);
+      if (ai.markerBarrelTip) ai.markerBarrelTip.getWorldPosition(tmpVecA);
+      else tmpVecA.set(ai.position.x + tmpVecC.x, Math.max(0.55, Math.min(ai.tacticalHeight, ai.height) * 0.82), ai.position.z + tmpVecC.z);
       tmpVecB.set(player.bodyCenter.x, player.height * 0.78, player.bodyCenter.z).sub(tmpVecA);
       const shotDistance = Math.hypot(tmpVecB.x, tmpVecB.z);
       tmpVecB.y += 0.5 * PAINTBALL_GRAVITY * Math.pow(shotDistance / PAINTBALL_SPEED, 2) * (0.58 + config.accuracy * 0.28);
@@ -5390,7 +5720,6 @@
         tmpVecB.z += Math.cos(state.elapsed * 2.7) * spread;
       }
       tmpVecB.normalize();
-      tmpVecA.addScaledVector(tmpVecB, 0.62);
       fireProjectile('blue', tmpVecA, tmpVecB);
       audio.fire();
       return true;
@@ -5418,6 +5747,7 @@
     function playerEliminated() {
       state.playerEliminated = true;
       gun.paint.visible = true;
+      startDeathCamera();
       showEliminatedOverlay('blue');
       playEliminationAudio('victim');
       scoreTeam('blue');
@@ -5447,6 +5777,7 @@
       gun.paint.material = getTeamMaterials(winner).paint;
       state.playerEliminated = true;
       gun.paint.visible = true;
+      startDeathCamera();
       showEliminatedOverlay(winner);
       playEliminationAudio('victim');
       scoreTeam(winner);
@@ -5477,13 +5808,25 @@
 
     function showEliminatedOverlay(team) {
       const color = team === 'red' ? '#cc1515' : '#1566cc';
+      const rgb = team === 'red' ? '204, 21, 21' : '21, 102, 204';
+      const impactX = 46 + Math.sin(state.elapsed * 5.7) * 7;
+      const impactY = 39 + Math.cos(state.elapsed * 4.9) * 5;
       ui.eliminatedOverlay.style.setProperty('--hit-color', color);
+      ui.eliminatedOverlay.style.setProperty('--hit-rgb', rgb);
+      ui.eliminatedOverlay.style.setProperty('--impact-x', impactX.toFixed(1) + '%');
+      ui.eliminatedOverlay.style.setProperty('--impact-y', impactY.toFixed(1) + '%');
+      ui.eliminatedOverlay.style.setProperty('--splatter-wobble', '0px');
       ui.eliminatedTitle.textContent = 'HIT';
       ui.eliminatedSubtext.textContent = 'Round ends in 2 seconds...';
       ui.eliminatedOverlay.classList.add('visible');
     }
 
-    function updateEliminatedSplat() {}
+    function updateEliminatedSplat() {
+      if (!ui.eliminatedOverlay.classList.contains('visible')) return;
+      const decay = deathCam.active ? Math.max(0, 1 - deathCam.timer / deathCam.duration) : 0;
+      const wobble = Math.sin(state.elapsed * 24) * 3.5 * decay;
+      ui.eliminatedOverlay.style.setProperty('--splatter-wobble', wobble.toFixed(2) + 'px');
+    }
 
     function hideEliminatedOverlay() {
       ui.eliminatedOverlay.classList.remove('visible');
@@ -5512,14 +5855,110 @@
       ui.hud.classList.remove('visible');
       hideEliminatedOverlay();
       ui.pauseScreen.style.display = 'none';
+      ui.matchScreen.classList.remove('actionsReady');
+      ui.matchScreen.classList.add('cinematic');
       ui.matchTitle.textContent = 'MATCH COMPLETE';
+      ui.victoryBadge.textContent = winner.toUpperCase() + ' TEAM';
       ui.matchWinner.textContent = winner.toUpperCase() + ' TEAM WINS';
       ui.matchWinner.style.color = winner === 'Blue' ? '#1566cc' : '#cc1515';
       ui.matchCopy.textContent = 'Score ' + state.scoreRed + ' - ' + state.scoreBlue + ' | Average FPS ' + Math.round(state.fpsAverage);
       ui.matchScreen.style.display = 'grid';
+      startVictoryCinematic(winner);
       audio.matchWin();
       stopAmbient();
       document.exitPointerLock?.();
+    }
+
+    function resetCameraEffects() {
+      victoryCam.active = false;
+      victoryCam.timer = 0;
+      deathCam.active = false;
+      deathCam.timer = 0;
+      if (victoryCam.buttonTimer) clearTimeout(victoryCam.buttonTimer);
+      victoryCam.buttonTimer = 0;
+      camera.fov = 64;
+      camera.updateProjectionMatrix();
+      ui.matchScreen.classList.remove('cinematic', 'actionsReady');
+    }
+
+    function startVictoryCinematic(winner) {
+      const blueWin = winner === 'Blue';
+      const color = blueWin ? '#1566cc' : '#cc1515';
+      const rgb = blueWin ? '21, 102, 204' : '204, 21, 21';
+      ui.matchScreen.style.setProperty('--winner-color', color);
+      ui.matchScreen.style.setProperty('--winner-rgb', rgb);
+      renderVictoryConfetti(blueWin);
+      victoryCam.active = true;
+      victoryCam.timer = 0;
+      victoryCam.startPos.copy(camera.position);
+      victoryCam.startRot.copy(camera.rotation);
+      victoryCam.startFov = camera.fov;
+      if (victoryCam.buttonTimer) clearTimeout(victoryCam.buttonTimer);
+      victoryCam.buttonTimer = setTimeout(() => {
+        ui.matchScreen.classList.add('actionsReady');
+      }, victoryCam.duration * 1000);
+    }
+
+    function renderVictoryConfetti(blueWin) {
+      ui.victoryConfetti.textContent = '';
+      const colors = blueWin ? ['#1566cc', '#3f8cff', '#ffffff', '#e8a020'] : ['#cc1515', '#ff3333', '#ffffff', '#e8a020'];
+      const fragment = document.createDocumentFragment();
+      for (let i = 0; i < 54; i++) {
+        const piece = document.createElement('span');
+        const x = 3 + ((i * 19) % 94);
+        const sway = Math.sin(i * 1.7) * 80;
+        piece.style.setProperty('--x', x + '%');
+        piece.style.setProperty('--w', 5 + (i % 4) * 2 + 'px');
+        piece.style.setProperty('--h', 12 + (i % 5) * 4 + 'px');
+        piece.style.setProperty('--r', ((i * 37) % 180) + 'deg');
+        piece.style.setProperty('--d', (2.1 + (i % 7) * 0.16).toFixed(2) + 's');
+        piece.style.setProperty('--delay', (0.12 + (i % 13) * 0.07).toFixed(2) + 's');
+        piece.style.setProperty('--sway', sway.toFixed(1) + 'px');
+        piece.style.setProperty('--c', colors[i % colors.length]);
+        fragment.appendChild(piece);
+      }
+      ui.victoryConfetti.appendChild(fragment);
+    }
+
+    function updateVictoryCinematic(dt) {
+      if (!victoryCam.active) return;
+      victoryCam.timer += dt;
+      const t = clamp(victoryCam.timer / victoryCam.duration, 0, 1);
+      const ease = 1 - Math.pow(1 - t, 3);
+      const settleShake = Math.sin(victoryCam.timer * 12) * 0.018 * (1 - t);
+      camera.position.set(
+        victoryCam.startPos.x + settleShake,
+        victoryCam.startPos.y + ease * 1.15,
+        victoryCam.startPos.z + ease * 2.15
+      );
+      camera.rotation.x = victoryCam.startRot.x - ease * 0.16;
+      camera.rotation.y = victoryCam.startRot.y;
+      camera.rotation.z = victoryCam.startRot.z * (1 - ease);
+      camera.fov = victoryCam.startFov + ease * 7;
+      camera.updateProjectionMatrix();
+      if (t >= 1) victoryCam.active = false;
+    }
+
+    function startDeathCamera() {
+      deathCam.active = true;
+      deathCam.timer = 0;
+      deathCam.startPos.copy(camera.position);
+      deathCam.startRot.copy(camera.rotation);
+    }
+
+    function updateDeathCamera(dt) {
+      deathCam.timer += dt;
+      const t = clamp(deathCam.timer / deathCam.duration, 0, 1);
+      const fall = 1 - Math.pow(1 - t, 3);
+      const impact = deathCam.timer > 0.36 ? Math.sin(deathCam.timer * 78) * Math.max(0, 1 - (deathCam.timer - 0.36) / 0.7) : 0;
+      camera.position.set(
+        deathCam.startPos.x + impact * 0.025,
+        deathCam.startPos.y + (0.34 - deathCam.startPos.y) * fall + Math.abs(impact) * 0.02,
+        deathCam.startPos.z + fall * 0.24
+      );
+      camera.rotation.x = deathCam.startRot.x + fall * 0.52 + impact * 0.025;
+      camera.rotation.y = deathCam.startRot.y + impact * 0.018;
+      camera.rotation.z = deathCam.startRot.z + fall * 0.46 + impact * 0.04;
     }
 
     function showCenter(text) {
@@ -5929,24 +6368,6 @@
     }
 
     function applyMapLighting(active) {
-      if (active && active.ambient === 'ghosttown') {
-        scene.background = new THREE.Color(0x87CEEB);
-        scene.fog = new THREE.Fog(0xd4c8a8, 120, 240);
-        skyStatus = 'ghost-town-desert';
-        ambientLight.color.setHex(0xffffff);
-        ambientLight.intensity = 0.6;
-        hemiLight.color.setHex(0x87CEEB);
-        hemiLight.groundColor.setHex(0xc8a870);
-        hemiLight.intensity = 1.8;
-        keyLight.color.setHex(0xfff5e0);
-        keyLight.intensity = 3.0;
-        keyLight.castShadow = true;
-        keyLight.shadow.mapSize.set(4096, 4096);
-        keyLight.position.set(60, 80, 40);
-        keyLight.target.position.set(0, 0, 0);
-        keyLight.target.updateMatrixWorld();
-        return;
-      }
       setVenueSky();
       ambientLight.color.setHex(0xd8e0e8);
       ambientLight.intensity = 0.8;
