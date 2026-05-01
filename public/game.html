@@ -1018,6 +1018,28 @@
       transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
     }
 
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background: linear-gradient(180deg, rgba(2,4,7,0.05), rgba(2,4,7,0.72)), repeating-linear-gradient(90deg, rgba(255,255,255,0.035) 0 1px, transparent 1px 16px);
+      pointer-events: none;
+    }
+
+    .cardPreview {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.48;
+      filter: saturate(1.12) contrast(1.06);
+      transform: scale(1.03);
+      transition: opacity 180ms ease, filter 180ms ease, transform 180ms ease;
+      pointer-events: none;
+    }
+
     .card:hover,
     .card.previewing,
     .card.selected {
@@ -1027,9 +1049,18 @@
       background: linear-gradient(180deg, rgba(204, 21, 21, 0.13), rgba(255, 255, 255, 0.028));
     }
 
+    .card:hover .cardPreview,
+    .card.previewing .cardPreview,
+    .card.selected .cardPreview {
+      opacity: 0.82;
+      filter: saturate(1.28) contrast(1.12) brightness(1.08);
+      transform: scale(1);
+    }
+
     .card.selected::after {
       content: "";
       position: absolute;
+      z-index: 3;
       top: 16px;
       right: 16px;
       width: 9px;
@@ -1046,7 +1077,7 @@
 
     .cardText {
       position: relative;
-      z-index: 1;
+      z-index: 2;
       padding: 18px 20px 22px;
     }
 
@@ -1359,6 +1390,7 @@
       </div>
       <div class="cards" aria-label="Map selection">
         <div class="card" data-map="speedball" tabindex="0">
+          <canvas class="cardPreview" data-preview="speedball" aria-hidden="true"></canvas>
           <div class="cardText">
             <p class="cardTag">Tournament</p>
             <p class="cardTitle">SPEEDBALL</p>
@@ -1366,6 +1398,7 @@
           </div>
         </div>
         <div class="card selected" data-map="funland" tabindex="0">
+          <canvas class="cardPreview" data-preview="funland" aria-hidden="true"></canvas>
           <div class="cardText">
             <p class="cardTag">Scenario</p>
             <p class="cardTitle">ABANDONED FUNLAND</p>
@@ -1373,6 +1406,7 @@
           </div>
         </div>
         <div class="card" data-map="ghosttown" tabindex="0">
+          <canvas class="cardPreview" data-preview="ghosttown" aria-hidden="true"></canvas>
           <div class="cardText">
             <p class="cardTag">Scenario</p>
             <p class="cardTitle">GHOST TOWN</p>
@@ -2278,9 +2312,11 @@
       addFunlandCoasterRemnants(group, colliders, coverPoints, fun);
       addFunlandStatues(group, colliders, coverPoints, fun);
       addFunhouseMirrors(group, colliders, coverPoints, fun);
+      addFunlandExtraCover(group, colliders, coverPoints, fun);
+      addFunlandFloodlights(group, fun);
       addFunlandFerrisWheel(group, fun);
       finalizeMapShadows(group);
-      return { group, colliders, shootables, coverPoints, sky: 0x667799, fog: 0x667799, ambient: 'funland', carousel };
+      return { group, colliders, shootables, coverPoints, sky: 0x8ec9ff, fog: 0x8ec9ff, ambient: 'funland', carousel };
     }
 
     function createFunlandMaterials() {
@@ -2310,7 +2346,8 @@
         white: standard(0xd8d4c8, { roughness: 0.82, metalness: 0 }),
         orange: standard(0xb8733c),
         gold: standard(0x97845f, { roughness: 0.78, metalness: 0.18 }),
-        silver: standard(0x8f9698, { roughness: 0.66, metalness: 0.35 })
+        silver: standard(0x8f9698, { roughness: 0.66, metalness: 0.35 }),
+        lamp: standard(0xffefb0, { emissive: 0xffe08a, emissiveIntensity: 0.62, roughness: 0.52, metalness: 0.04 })
       };
     }
 
@@ -2350,6 +2387,7 @@
 
     function addFunlandCarousel(group, colliders, points, fun, x, z) {
       const carousel = new THREE.Group();
+      carousel.name = 'funlandCarousel';
       carousel.position.set(x, 0, z);
       group.add(carousel);
       const base = new THREE.Mesh(new THREE.CylinderGeometry(4, 4, 0.5, 16, 1), fun.fadedRed);
@@ -2375,7 +2413,7 @@
       const colors = [0xff4444, 0x4477ff, 0xffdd44, 0x55cc66];
       for (let i = 0; i < 4; i++) {
         const angle = i / 4 * Math.PI * 2 + Math.PI / 4;
-        const light = new THREE.PointLight(colors[i], 0.8, 5);
+        const light = new THREE.PointLight(colors[i], 1.25, 7.5);
         light.position.set(Math.cos(angle) * 3.55, 2.35, Math.sin(angle) * 3.55);
         light.castShadow = false;
         carousel.add(light);
@@ -2501,6 +2539,78 @@
       addCoverPoints(points, x, z, 2.2, 0.7, 'any', 3.0);
     }
 
+    function addFunlandExtraCover(group, colliders, points, fun) {
+      addTicketKiosk(group, colliders, points, fun, -16, -3.2, 0.35, fun.fadedYellow, 'red');
+      addTicketKiosk(group, colliders, points, fun, 16, 2.6, -0.28, fun.fadedBlue, 'blue');
+      addPrizeCounter(group, colliders, points, fun, -1.5, -17.2, 0.08, fun.fadedGreen, 'any');
+      addPrizeCounter(group, colliders, points, fun, -2.5, 17.0, Math.PI - 0.12, fun.fadedPink, 'any');
+
+      [[-15.5, -16.4, 0.58, fun.fadedRed, 'red'], [-4.5, -15.2, -0.42, fun.fadedBlue, 'any'], [7.0, 15.8, 0.38, fun.fadedGreen, 'any'], [17.2, 15.0, -0.55, fun.fadedPurple, 'blue']].forEach((c) => {
+        addBumperCarCover(group, colliders, points, fun, c[0], c[1], c[2], c[3], c[4]);
+      });
+
+      [[-24.0, 4.1, -0.24, fun.fadedPink, 'red'], [24.0, -4.0, 0.26, fun.fadedGreen, 'blue'], [1.2, 7.4, Math.PI / 2, fun.fadedPurple, 'any'], [-11.0, -8.0, -Math.PI / 2, fun.fadedYellow, 'any']].forEach((s) => {
+        addFallenFunlandSign(group, colliders, points, fun, s[0], s[1], s[2], s[3], s[4]);
+      });
+
+      [[-10.4, 5.2, 0.34, 'any'], [9.8, -5.4, -0.34, 'any'], [-22.5, 15.2, 0.08, 'red'], [22.5, -15.0, -0.08, 'blue']].forEach((r) => {
+        addQueueRailCover(group, colliders, points, fun, r[0], r[1], r[2], r[3]);
+      });
+    }
+
+    function addTicketKiosk(group, colliders, points, fun, x, z, yaw, mat, team) {
+      addLocalColliderBox(group, colliders, x, z, yaw, 0, 1.05, 0.95, 3.0, 2.1, 0.22, mat);
+      addLocalColliderBox(group, colliders, x, z, yaw, -1.44, 0.95, 0, 0.18, 1.9, 1.9, mat);
+      addLocalColliderBox(group, colliders, x, z, yaw, 1.44, 0.95, 0, 0.18, 1.9, 1.9, mat);
+      addLocalColliderBox(group, colliders, x, z, yaw, 0, 0.48, -0.92, 2.65, 0.96, 0.2, materials.woodDark);
+      addLocalBox(group, x, 0, z, yaw, 0, 2.2, -0.98, 2.4, 0.44, 0.08, fun.lamp);
+      addCoverPoints(points, x, z, 3.3, 2.3, team, 2.2);
+    }
+
+    function addPrizeCounter(group, colliders, points, fun, x, z, yaw, mat, team) {
+      addLocalColliderBox(group, colliders, x, z, yaw, 0, 0.72, 0, 5.2, 1.44, 0.36, mat);
+      addLocalColliderBox(group, colliders, x, z, yaw, -2.35, 1.72, 0.08, 0.22, 2.0, 1.0, mat);
+      addLocalColliderBox(group, colliders, x, z, yaw, 2.35, 1.72, 0.08, 0.22, 2.0, 1.0, mat);
+      addLocalBox(group, x, 0, z, yaw, 0, 2.55, 0.08, 5.0, 0.18, 1.1, fun.fadedYellow);
+      for (let i = -2; i <= 2; i++) addLocalBox(group, x, 0, z, yaw, i * 0.82, 1.7, -0.18, 0.34, 0.34, 0.18, i % 2 ? fun.fadedBlue : fun.fadedRed);
+      addCoverPoints(points, x, z, 5.5, 1.2, team, 2.6);
+    }
+
+    function addBumperCarCover(group, colliders, points, fun, x, z, yaw, mat, team) {
+      addBox(group, x, 0.42, z, 2.6, 0.78, 1.55, mat, colliders, yaw);
+      addLocalBox(group, x, 0, z, yaw, 0.15, 0.9, 0, 1.0, 0.42, 0.76, fun.black);
+      addLocalBox(group, x, 0, z, yaw, -0.65, 0.26, -0.82, 0.48, 0.24, 0.08, fun.lamp);
+      addLocalBox(group, x, 0, z, yaw, 0.65, 0.26, -0.82, 0.48, 0.24, 0.08, fun.lamp);
+      addCoverPoints(points, x, z, 2.8, 1.8, team, 1.15);
+    }
+
+    function addFallenFunlandSign(group, colliders, points, fun, x, z, yaw, mat, team) {
+      addBox(group, x, 0.95, z, 3.6, 1.65, 0.2, mat, colliders, yaw);
+      addLocalBox(group, x, 0, z, yaw, -1.0, 1.0, -0.14, 0.65, 0.18, 0.06, fun.lamp);
+      addLocalBox(group, x, 0, z, yaw, 1.0, 0.74, -0.14, 0.72, 0.16, 0.06, fun.lamp);
+      addLocalBox(group, x, 0, z, yaw, -1.65, 0.36, 0.14, 0.12, 0.72, 0.12, fun.darkMetal);
+      addLocalBox(group, x, 0, z, yaw, 1.65, 0.36, 0.14, 0.12, 0.72, 0.12, fun.darkMetal);
+      addCoverPoints(points, x, z, 3.8, 0.8, team, 1.7);
+    }
+
+    function addQueueRailCover(group, colliders, points, fun, x, z, yaw, team) {
+      addBox(group, x, 0.78, z, 5.4, 0.18, 0.18, fun.darkMetal, colliders, yaw);
+      addBox(group, x, 1.18, z, 5.4, 0.15, 0.15, fun.metal, null, yaw);
+      for (let i = -2; i <= 2; i++) addLocalBox(group, x, 0, z, yaw, i * 1.25, 0.58, 0, 0.1, 1.16, 0.1, fun.metal);
+      addCoverPoints(points, x, z, 5.6, 0.8, team, 1.2);
+    }
+
+    function addFunlandFloodlights(group, fun) {
+      [[-28, -18, 0xfff0c0], [28, 18, 0xc8e8ff]].forEach((l) => {
+        addCylinder(group, l[0], 2.8, l[1], 0.08, 5.6, fun.darkMetal, null, 0, false, 1);
+        addBox(group, l[0], 5.65, l[1], 1.05, 0.45, 0.24, fun.lamp, null, 0.35);
+        const light = new THREE.PointLight(l[2], 1.25, 22);
+        light.position.set(l[0], 5.3, l[1]);
+        light.castShadow = false;
+        group.add(light);
+      });
+    }
+
     function addFunlandFerrisWheel(group, fun) {
       const ferris = new THREE.Group();
       ferris.position.set(8, 9.5, -ARENA_HALF_Z - 14);
@@ -2614,7 +2724,7 @@
 
       addGhostTownAtmosphere(group);
       finalizeMapShadows(group);
-      return { group, colliders, shootables, coverPoints, sky: 0x87ceeb, fog: 0xd4c8a8, ambient: 'ghosttown' };
+      return { group, colliders, shootables, coverPoints, sky: 0x62bdf7, fog: 0x62bdf7, ambient: 'ghosttown' };
     }
 
     function makeGhostTownGround() {
@@ -4330,7 +4440,7 @@
         const previewRenderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'low-power' });
         previewRenderer.outputColorSpace = THREE.SRGBColorSpace;
         previewRenderer.toneMapping = THREE.ACESFilmicToneMapping;
-        previewRenderer.toneMappingExposure = 0.7;
+        previewRenderer.toneMappingExposure = mapName === 'ghosttown' ? 1.08 : mapName === 'funland' ? 0.86 : 0.7;
         previewRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
 
         const mapClone = map.group.clone(true);
@@ -4342,15 +4452,39 @@
           child.frustumCulled = false;
         });
         previewScene.add(mapClone);
-        previewScene.add(new THREE.AmbientLight(0xd8e0e8, 0.8));
-        const previewKey = new THREE.DirectionalLight(0xe8eef0, 0.6);
-        previewKey.position.set(36, 52, 34);
-        previewScene.add(previewKey);
-        previewScene.add(new THREE.HemisphereLight(0xd0dce8, 0x8a9a7a, 1.2));
+        applyDronePreviewLighting(previewScene, mapName);
 
-        dronePreviews.push({ mapName, canvas, card: canvas.closest('[data-map]'), scene: previewScene, camera: previewCamera, renderer: previewRenderer, time: mapName === 'speedball' ? 0 : 1.4 });
+        dronePreviews.push({ mapName, canvas, card: canvas.closest('[data-map]'), scene: previewScene, camera: previewCamera, renderer: previewRenderer, carousel: mapClone.getObjectByName('funlandCarousel'), time: mapName === 'speedball' ? 0 : 1.4 });
       });
       resizeDronePreviews();
+    }
+
+    function applyDronePreviewLighting(previewScene, mapName) {
+      if (mapName === 'ghosttown') {
+        previewScene.background = new THREE.Color(0x62bdf7);
+        previewScene.fog = null;
+        previewScene.add(new THREE.AmbientLight(0xffffff, 1.2));
+        const key = new THREE.DirectionalLight(0xfff4c8, 2.8);
+        key.position.set(38, 58, 28);
+        previewScene.add(key);
+        previewScene.add(new THREE.HemisphereLight(0x9fdcff, 0xd7b36e, 1.8));
+        return;
+      }
+      if (mapName === 'funland') {
+        previewScene.background = new THREE.Color(0x8ec9ff);
+        previewScene.fog = new THREE.Fog(0x8ec9ff, 64, 150);
+        previewScene.add(new THREE.AmbientLight(0xc8d7ff, 0.92));
+        const key = new THREE.DirectionalLight(0xfff0cf, 2.0);
+        key.position.set(36, 62, 26);
+        previewScene.add(key);
+        previewScene.add(new THREE.HemisphereLight(0xa8d8ff, 0xc2ad86, 1.25));
+        return;
+      }
+      previewScene.add(new THREE.AmbientLight(0xd8e0e8, 0.8));
+      const previewKey = new THREE.DirectionalLight(0xe8eef0, 0.6);
+      previewKey.position.set(36, 52, 34);
+      previewScene.add(previewKey);
+      previewScene.add(new THREE.HemisphereLight(0xd0dce8, 0x8a9a7a, 1.2));
     }
 
     function updateDronePreviewSelection() {
@@ -4380,6 +4514,18 @@
         const radius = 30 + Math.sin(t * 0.58) * 4;
         preview.camera.position.set(Math.cos(angle) * radius, 31 - descend * 13, Math.sin(angle) * radius);
         tmpVecA.set(Math.sin(angle * 0.7) * 2.5, 1.2, Math.cos(angle * 0.8) * 2.5);
+      } else if (preview.mapName === 'funland') {
+        const angle = t * 0.34;
+        const radius = 28 + Math.sin(t * 0.5) * 5;
+        preview.camera.position.set(-3 + Math.cos(angle) * radius, 14 + Math.sin(t * 0.62) * 2.4, Math.sin(angle) * 22);
+        tmpVecA.set(-3 + Math.sin(angle * 1.4) * 5, 1.35, Math.cos(angle * 1.2) * 5);
+        if (preview.carousel) preview.carousel.rotation.y += 0.012;
+      } else if (preview.mapName === 'ghosttown') {
+        const phase = (t * 0.105) % 1;
+        const sweep = 0.5 - 0.5 * Math.cos(phase * Math.PI * 2);
+        const side = Math.sin(phase * Math.PI * 2);
+        preview.camera.position.set(-32 + sweep * 64, 12 + (1 - Math.abs(side)) * 7.5, -18 + side * 18);
+        tmpVecA.set(-8 + sweep * 16, 1.6, side * 3.5);
       } else {
         const phase = (t * 0.085) % 1;
         const sweep = 0.5 - 0.5 * Math.cos(phase * Math.PI * 2);
@@ -6387,6 +6533,10 @@
       html += miniRect(17, ARENA_HALF_Z - 6.3, 4.2, 1.6, '#7762a0', '#231f2e', -0.18, 0.98);
       [[-8,-4,'#1c1c1f'],[16,5,'#d8d4c8'],[-19,6,'#b8733c']].forEach((s) => { html += miniCircle(s[0], s[1], 4.0, s[2], '#111111', 0.95); });
       [[20,-12,0.2],[24,-8,-0.42],[17,-7,Math.PI/2],[25,-14,Math.PI/2]].forEach((m) => { html += miniRect(m[0], m[1], 2, 0.35, '#97845f', '#f0ece1', m[2], 0.95); });
+      [[-16,-3.2,3.3,2.3,0.35,'#bba24a'],[16,2.6,3.3,2.3,-0.28,'#4d73aa'],[-1.5,-17.2,5.5,1.2,0.08,'#5b9367'],[-2.5,17,5.5,1.2,Math.PI - 0.12,'#b06b90']].forEach((c) => { html += miniRect(c[0], c[1], c[2], c[3], c[5], '#1e2428', c[4], 0.95); });
+      [[-15.5,-16.4,0.58,'#b85050'],[-4.5,-15.2,-0.42,'#4d73aa'],[7,15.8,0.38,'#5b9367'],[17.2,15,-0.55,'#7762a0']].forEach((c) => { html += miniRect(c[0], c[1], 2.8, 1.8, c[3], '#1a1a1e', c[2], 0.96); });
+      [[-24,4.1,-0.24,'#b06b90'],[24,-4,0.26,'#5b9367'],[1.2,7.4,Math.PI/2,'#7762a0'],[-11,-8,-Math.PI/2,'#bba24a']].forEach((s) => { html += miniRect(s[0], s[1], 3.8, 0.8, s[3], '#f0e3ab', s[2], 0.95); });
+      [[-10.4,5.2,0.34],[9.8,-5.4,-0.34],[-22.5,15.2,0.08],[22.5,-15,-0.08]].forEach((r) => { html += miniRect(r[0], r[1], 5.6, 0.8, '#2e3438', '#8f9698', r[2], 0.96); });
       return html;
     }
 
@@ -6508,16 +6658,18 @@
       renderer.shadowMap.enabled = false;
       if (active && active.ambient === 'ghosttown') {
         scene.remove(ambientLight, keyLight, keyLight.target, hemiLight);
-        setVenueSky();
-        const ambient = new THREE.AmbientLight(0xffffff, 1.0);
+        scene.background = new THREE.Color(0x62bdf7);
+        scene.fog = null;
+        skyStatus = 'ghosttown-clear-blue';
+        const ambient = new THREE.AmbientLight(0xffffff, 1.28);
         scene.add(ambient);
         const hemi = new THREE.HemisphereLight(
-          0x87CEEB, 0x4a7c4a, 1.5
+          0x9fdcff, 0xd7b36e, 2.05
         );
         scene.add(hemi);
-        const sun = new THREE.DirectionalLight(0xfff5e0, 3.0);
-        sun.position.set(50, 80, 30);
-        sun.castShadow = true;
+        const sun = new THREE.DirectionalLight(0xfff4c8, 3.6);
+        sun.position.set(42, 86, 24);
+        sun.castShadow = false;
         sun.shadow.mapSize.width = 2048;
         sun.shadow.mapSize.height = 2048;
         sun.shadow.camera.left = -60;
@@ -6528,8 +6680,7 @@
         sun.shadow.bias = -0.0001;
         scene.add(sun);
         ghostTownLights = [ambient, hemi, sun];
-        scene.fog = null;
-        renderer.toneMappingExposure = 0.9;
+        renderer.toneMappingExposure = 1.15;
         return;
       }
       restoreBaseLighting();
@@ -6537,14 +6688,15 @@
       renderer.toneMappingExposure = 0.55;
       if (active && active.ambient === 'funland') {
         renderer.shadowMap.enabled = true;
-        scene.background = new THREE.Color(0x667799);
-        scene.fog = new THREE.Fog(0x667799, 45, 110);
+        scene.background = new THREE.Color(0x8ec9ff);
+        scene.fog = new THREE.Fog(0x8ec9ff, 72, 170);
         skyStatus = 'funland-color';
-        ambientLight.color.setHex(0x8899aa);
-        ambientLight.intensity = 0.5;
-        keyLight.color.setHex(0xaabbcc);
-        keyLight.intensity = 1.4;
-        keyLight.position.set(40, 80, 30);
+        renderer.toneMappingExposure = 0.88;
+        ambientLight.color.setHex(0xc8d7ff);
+        ambientLight.intensity = 0.92;
+        keyLight.color.setHex(0xfff0cf);
+        keyLight.intensity = 2.05;
+        keyLight.position.set(36, 78, 26);
         keyLight.castShadow = true;
         keyLight.shadow.mapSize.set(2048, 2048);
         keyLight.shadow.camera.left = -60;
@@ -6555,9 +6707,9 @@
         keyLight.shadow.bias = -0.0001;
         keyLight.target.position.set(0, 0, 0);
         keyLight.target.updateMatrixWorld();
-        hemiLight.color.setHex(0x667788);
-        hemiLight.groundColor.setHex(0x443344);
-        hemiLight.intensity = 0.8;
+        hemiLight.color.setHex(0xa8d8ff);
+        hemiLight.groundColor.setHex(0xc2ad86);
+        hemiLight.intensity = 1.35;
         return;
       }
       setVenueSky();

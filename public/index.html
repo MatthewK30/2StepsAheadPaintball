@@ -266,10 +266,25 @@
       content: "";
       position: absolute;
       inset: 0;
+      z-index: 1;
       background:
         linear-gradient(145deg, rgba(204,21,21,0.16), transparent 42%),
         repeating-linear-gradient(90deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 16px);
       opacity: 0.64;
+      pointer-events: none;
+    }
+
+    .mapPreviewCanvas {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.45;
+      filter: saturate(1.08) contrast(1.05);
+      transform: scale(1.04);
+      transition: opacity 170ms ease, filter 170ms ease, transform 170ms ease;
+      pointer-events: none;
     }
 
     .mapCard.selected,
@@ -280,9 +295,18 @@
       box-shadow: 0 0 0 1px rgba(204,21,21,0.3), 0 0 34px rgba(204,21,21,0.32), 0 24px 70px rgba(0,0,0,0.58);
     }
 
+    .mapCard.selected .mapPreviewCanvas,
+    .mapCard:hover .mapPreviewCanvas,
+    .mapCard:focus-visible .mapPreviewCanvas {
+      opacity: 0.82;
+      filter: saturate(1.25) contrast(1.1) brightness(1.08);
+      transform: scale(1);
+    }
+
     .mapCard.selected::after {
       content: "";
       position: absolute;
+      z-index: 3;
       top: 16px;
       right: 16px;
       width: 9px;
@@ -299,7 +323,12 @@
 
     .mapCard > * {
       position: relative;
-      z-index: 1;
+      z-index: 2;
+    }
+
+    .mapCard > .mapPreviewCanvas {
+      position: absolute;
+      z-index: 0;
     }
 
     .cardTag {
@@ -840,16 +869,19 @@
         <div class="menuGrid" aria-label="Match setup">
           <div class="mapGrid" data-option-group="map" aria-label="Map selection">
             <button class="mapCard choice selected" data-value="speedball" type="button">
+              <canvas class="mapPreviewCanvas" data-map-preview="speedball" aria-hidden="true"></canvas>
               <span class="cardTag">Tournament</span>
               <span class="cardName">Speedball</span>
               <span class="cardSub">Clean lanes / fast breakouts</span>
             </button>
             <button class="mapCard choice" data-value="funland" type="button">
+              <canvas class="mapPreviewCanvas" data-map-preview="funland" aria-hidden="true"></canvas>
               <span class="cardTag">Scenario</span>
               <span class="cardName">Abandoned Funland</span>
               <span class="cardSub">Theme park / eerie lanes</span>
             </button>
             <button class="mapCard choice" data-value="ghosttown" type="button">
+              <canvas class="mapPreviewCanvas" data-map-preview="ghosttown" aria-hidden="true"></canvas>
               <span class="cardTag">Scenario</span>
               <span class="cardName">Ghost Town</span>
               <span class="cardSub">Desert streets / western cover</span>
@@ -915,16 +947,19 @@
         <p class="sectionCopy">Confirm the selected field, mode, and win condition before generating the private room code.</p>
         <div class="mapGrid" data-option-group="map" aria-label="Room map selection">
           <button class="mapCard choice selected" data-value="speedball" type="button">
+            <canvas class="mapPreviewCanvas" data-map-preview="speedball" aria-hidden="true"></canvas>
             <span class="cardTag">Tournament</span>
             <span class="cardName">Speedball</span>
             <span class="cardSub">Clean lanes / fast breakouts</span>
           </button>
           <button class="mapCard choice" data-value="funland" type="button">
+            <canvas class="mapPreviewCanvas" data-map-preview="funland" aria-hidden="true"></canvas>
             <span class="cardTag">Scenario</span>
             <span class="cardName">Abandoned Funland</span>
             <span class="cardSub">Theme park / eerie lanes</span>
           </button>
           <button class="mapCard choice" data-value="ghosttown" type="button">
+            <canvas class="mapPreviewCanvas" data-map-preview="ghosttown" aria-hidden="true"></canvas>
             <span class="cardTag">Scenario</span>
             <span class="cardName">Ghost Town</span>
             <span class="cardSub">Desert streets / western cover</span>
@@ -1027,6 +1062,9 @@
         }
       }
 
+      const mapPreviews = []
+      let previewLastTime = 0
+
       const views = {
         hero: $('#heroView'),
         lobby: $('#lobbyView')
@@ -1065,6 +1103,7 @@
         if (state.username) ui.usernameInput.value = state.username
         if (state.pendingRoom) showView('lobby')
         bindUi()
+        setupMapCardPreviews()
         connectSocket()
       }
 
@@ -1198,6 +1237,163 @@
         document.querySelectorAll('[data-option-group="' + groupName + '"]').forEach((group) => {
           group.querySelectorAll('.choice').forEach((item) => item.classList.toggle('selected', item.dataset.value === value))
         })
+      }
+
+      function setupMapCardPreviews() {
+        document.querySelectorAll('[data-map-preview]').forEach((canvas) => {
+          const ctx = canvas.getContext('2d')
+          if (!ctx) return
+          mapPreviews.push({ canvas, ctx, card: canvas.closest('.mapCard'), map: canvas.dataset.mapPreview, width: 1, height: 1, ratio: 1, time: Math.random() * 20 })
+        })
+        resizeMapCardPreviews()
+        window.addEventListener('resize', resizeMapCardPreviews)
+        requestAnimationFrame(updateMapCardPreviews)
+      }
+
+      function resizeMapCardPreviews() {
+        mapPreviews.forEach((preview) => {
+          const rect = preview.canvas.getBoundingClientRect()
+          const width = Math.max(1, Math.floor(rect.width))
+          const height = Math.max(1, Math.floor(rect.height))
+          const ratio = Math.min(window.devicePixelRatio || 1, 1.5)
+          if (preview.canvas.width === Math.floor(width * ratio) && preview.canvas.height === Math.floor(height * ratio)) return
+          preview.canvas.width = Math.floor(width * ratio)
+          preview.canvas.height = Math.floor(height * ratio)
+          preview.width = width
+          preview.height = height
+          preview.ratio = ratio
+          preview.ctx.setTransform(ratio, 0, 0, ratio, 0, 0)
+        })
+      }
+
+      function updateMapCardPreviews(now) {
+        const dt = previewLastTime ? Math.min(0.05, (now - previewLastTime) / 1000) : 0.016
+        previewLastTime = now
+        resizeMapCardPreviews()
+        mapPreviews.forEach((preview) => {
+          const active = preview.card && (preview.card.matches(':hover') || preview.card.classList.contains('selected') || document.activeElement === preview.card)
+          preview.time += dt * (active ? 1.25 : 0.36)
+          drawMapPreview(preview, active)
+        })
+        requestAnimationFrame(updateMapCardPreviews)
+      }
+
+      function drawMapPreview(preview, active) {
+        const ctx = preview.ctx
+        const w = preview.width
+        const h = preview.height
+        const t = preview.time
+        ctx.clearRect(0, 0, w, h)
+        if (preview.map === 'ghosttown') drawGhostTownPreview(ctx, w, h, t)
+        else if (preview.map === 'funland') drawFunlandPreview(ctx, w, h, t)
+        else drawSpeedballPreview(ctx, w, h, t)
+        drawDroneOverlay(ctx, w, h, t, active)
+      }
+
+      function drawSpeedballPreview(ctx, w, h, t) {
+        const sky = ctx.createLinearGradient(0, 0, 0, h)
+        sky.addColorStop(0, '#78b9ff')
+        sky.addColorStop(0.45, '#d8eef8')
+        sky.addColorStop(0.46, '#378c37')
+        sky.addColorStop(1, '#1c5f23')
+        ctx.fillStyle = sky
+        ctx.fillRect(0, 0, w, h)
+        const drift = (t * 38) % 64
+        ctx.strokeStyle = 'rgba(255,255,255,0.22)'
+        ctx.lineWidth = 2
+        for (let x = -64 + drift; x < w + 64; x += 32) {
+          ctx.beginPath()
+          ctx.moveTo(x, h * 0.48)
+          ctx.lineTo(x + 62, h)
+          ctx.stroke()
+        }
+        ;[[0.24,0.64,24,12,'#cc1515'],[0.39,0.53,18,18,'#ffffff'],[0.55,0.68,34,10,'#f1c94c'],[0.72,0.57,24,12,'#1155ee']].forEach((b, i) => {
+          drawRotatedRect(ctx, w * b[0], h * b[1], b[2], b[3], Math.sin(t + i) * 0.18, b[4])
+        })
+      }
+
+      function drawFunlandPreview(ctx, w, h, t) {
+        const sky = ctx.createLinearGradient(0, 0, 0, h)
+        sky.addColorStop(0, '#8ec9ff')
+        sky.addColorStop(0.46, '#e5f4ff')
+        sky.addColorStop(0.47, '#9ca5ac')
+        sky.addColorStop(1, '#666d76')
+        ctx.fillStyle = sky
+        ctx.fillRect(0, 0, w, h)
+        const sweep = Math.sin(t * 0.8) * w * 0.09
+        drawRotatedRect(ctx, w * 0.38 + sweep, h * 0.72, w * 0.62, 16, 0.16, 'rgba(174,68,68,0.55)')
+        drawRotatedRect(ctx, w * 0.62 - sweep, h * 0.62, w * 0.48, 13, -0.42, 'rgba(64,95,134,0.55)')
+        ctx.save()
+        ctx.translate(w * 0.47, h * 0.58)
+        ctx.rotate(t * 0.48)
+        ctx.fillStyle = '#b85050'
+        ctx.beginPath()
+        ctx.arc(0, 0, 30, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.strokeStyle = '#f2d46f'
+        ctx.lineWidth = 5
+        ctx.stroke()
+        for (let i = 0; i < 8; i++) {
+          const a = i / 8 * Math.PI * 2
+          ctx.fillStyle = ['#b85050', '#4d73aa', '#bba24a', '#5b9367'][i % 4]
+          ctx.fillRect(Math.cos(a) * 19 - 5, Math.sin(a) * 19 - 3, 10, 6)
+        }
+        ctx.restore()
+        ;[[0.2,0.7,'#9c4545'],[0.73,0.72,'#48698f'],[0.62,0.43,'#5b9367'],[0.3,0.45,'#b06b90']].forEach((s, i) => {
+          drawRotatedRect(ctx, w * s[0], h * s[1], 42, 18, Math.sin(t + i) * 0.24, s[2])
+        })
+      }
+
+      function drawGhostTownPreview(ctx, w, h, t) {
+        const sky = ctx.createLinearGradient(0, 0, 0, h)
+        sky.addColorStop(0, '#38a9ff')
+        sky.addColorStop(0.48, '#bdeaff')
+        sky.addColorStop(0.49, '#d9b36e')
+        sky.addColorStop(1, '#946433')
+        ctx.fillStyle = sky
+        ctx.fillRect(0, 0, w, h)
+        ctx.fillStyle = 'rgba(255,255,255,0.82)'
+        ctx.beginPath()
+        ctx.arc(w * 0.78, h * 0.18, 18, 0, Math.PI * 2)
+        ctx.fill()
+        const road = (t * 34) % 54
+        ctx.fillStyle = 'rgba(232,194,120,0.76)'
+        ctx.beginPath()
+        ctx.moveTo(w * 0.34, h)
+        ctx.lineTo(w * 0.45, h * 0.48)
+        ctx.lineTo(w * 0.55, h * 0.48)
+        ctx.lineTo(w * 0.68, h)
+        ctx.closePath()
+        ctx.fill()
+        for (let i = -1; i < 6; i++) {
+          drawRotatedRect(ctx, w * 0.2 + i * 58 - road, h * 0.56, 42, 30, 0, '#6e4827')
+          drawRotatedRect(ctx, w * 0.82 - i * 58 + road, h * 0.58, 38, 28, 0, '#805229')
+        }
+      }
+
+      function drawDroneOverlay(ctx, w, h, t, active) {
+        ctx.strokeStyle = active ? 'rgba(255,255,255,0.46)' : 'rgba(255,255,255,0.18)'
+        ctx.lineWidth = 1
+        ctx.beginPath()
+        ctx.moveTo(w * 0.5 - 18, h * 0.5)
+        ctx.lineTo(w * 0.5 + 18, h * 0.5)
+        ctx.moveTo(w * 0.5, h * 0.5 - 12)
+        ctx.lineTo(w * 0.5, h * 0.5 + 12)
+        ctx.stroke()
+        ctx.fillStyle = active ? 'rgba(255,70,70,0.82)' : 'rgba(255,70,70,0.4)'
+        ctx.fillRect(12, 12, 6, 6)
+        ctx.fillStyle = active ? 'rgba(255,255,255,0.72)' : 'rgba(255,255,255,0.32)'
+        ctx.font = '700 10px Rajdhani, sans-serif'
+        ctx.fillText('DRONE ' + String(Math.floor(t * 10) % 100).padStart(2, '0'), 24, 19)
+      }
+
+      function drawRotatedRect(ctx, x, y, w, h, angle, fill) {
+        ctx.save()
+        ctx.translate(x, y)
+        ctx.rotate(angle || 0)
+        ctx.fillStyle = fill
+        ctx.fillRect(-w / 2, -h / 2, w, h)
+        ctx.restore()
       }
 
       function createRoom() {
