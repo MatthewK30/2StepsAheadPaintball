@@ -20,6 +20,19 @@ app.get('/', (req, res) => {
 
 const rooms = {}
 
+const skins = [
+  { id: 'skin1', file: 'IMG_3472.PNG', name: 'D Ohmie' },
+  { id: 'skin2', file: 'IMG_7865.PNG', name: 'Freaky Indian' },
+  { id: 'skin3', file: 'IMG_7866.PNG', name: 'Yam Guy' },
+  { id: 'skin4', file: 'IMG_7868.PNG', name: 'Sleepy Ogre' },
+  { id: 'skin5', file: 'IMG_7869.PNG', name: 'Sexy Ogre' },
+  { id: 'skin6', file: 'IMG_7870.PNG', name: 'Yam ahh' },
+  { id: 'skin7', file: 'IMG_7871.PNG', name: 'AD pizza man' },
+  { id: 'skin8', file: 'IMG_7872.PNG', name: 'Afro Mf' },
+  { id: 'skin9', file: 'IMG_7873.PNG', name: 'DubC' },
+  { id: 'skin10', file: 'IMG_7874.PNG', name: 'Cool Matt' }
+]
+
 function generateCode() {
   return Math.random().toString(36).substring(2,6).toUpperCase()
 }
@@ -42,6 +55,17 @@ function normalizeGameMode(gameMode) {
 
 function normalizeFirstTo(firstTo) {
   return Number(firstTo) === 10 ? 10 : 5
+}
+
+function normalizeSkin({ skinId, skinFile, skinName } = {}) {
+  const id = String(skinId || '').trim()
+  const file = String(skinFile || '').trim()
+  const name = String(skinName || '').trim().toLowerCase()
+  const skin = skins.find(item => item.id === id)
+    || skins.find(item => item.file === file)
+    || skins.find(item => item.name.toLowerCase() === name)
+    || skins[0]
+  return { skinId: skin.id, skinFile: skin.file, skinName: skin.name }
 }
 
 function isValidMap(map) {
@@ -75,14 +99,15 @@ function removePlayerFromRoom(socket, code) {
 io.on('connection', (socket) => {
   console.log('Player connected:', socket.id)
 
-  socket.on('create_room', ({ username, gameMode, map, firstTo } = {}) => {
+  socket.on('create_room', ({ username, gameMode, map, firstTo, skinId, skinFile, skinName } = {}) => {
     const code = generateCode()
+    const skin = normalizeSkin({ skinId, skinFile, skinName })
     rooms[code] = {
       code, host: socket.id,
       gameMode: normalizeGameMode(gameMode), map: normalizeMap(map), firstTo: normalizeFirstTo(firstTo),
       players: [{
         id: socket.id, username: String(username || 'Player').slice(0, 16),
-        team: 'red', ready: false, connected: true, returningToLobby: false
+        team: 'red', ready: false, connected: true, returningToLobby: false, ...skin
       }],
       state: 'lobby'
     }
@@ -91,7 +116,7 @@ io.on('connection', (socket) => {
     console.log('Room created:', code)
   })
 
-  socket.on('join_room', ({ code, username }) => {
+  socket.on('join_room', ({ code, username, skinId, skinFile, skinName }) => {
     code = normalizeCode(code)
     const room = rooms[code]
     if (!room) { socket.emit('join_error', 'Room not found'); return }
@@ -100,16 +125,18 @@ io.on('connection', (socket) => {
     }
     const team = room.players.filter(p=>p.team==='red').length <=
                  room.players.filter(p=>p.team==='blue').length ? 'red' : 'blue'
-    room.players.push({ id: socket.id, username, team, ready: false, connected: true, returningToLobby: false })
+    const skin = normalizeSkin({ skinId, skinFile, skinName })
+    room.players.push({ id: socket.id, username: String(username || 'Player').slice(0, 16), team, ready: false, connected: true, returningToLobby: false, ...skin })
     socket.join(code)
     socket.emit('room_joined', { code, room })
     io.to(code).emit('lobby_update', room)
   })
 
-  socket.on('rejoin_lobby', ({ code, username, team }) => {
+  socket.on('rejoin_lobby', ({ code, username, team, skinId, skinFile, skinName }) => {
     code = normalizeCode(code)
     team = normalizeTeam(team)
     username = String(username || 'Player').slice(0, 16)
+    const skin = normalizeSkin({ skinId, skinFile, skinName })
     const room = rooms[code]
     if (!room) { socket.emit('join_error', 'Room not found'); return }
     room.state = 'lobby'
@@ -121,10 +148,11 @@ io.on('connection', (socket) => {
       player.team = team
       player.connected = true
       player.returningToLobby = false
+      Object.assign(player, skin)
     } else {
       const maxPlayers = room.gameMode === '2v2' ? 4 : 2
       if (room.players.length >= maxPlayers) { socket.emit('join_error', 'Room is full'); return }
-      player = { id: socket.id, username, team, ready: false, connected: true, returningToLobby: false }
+      player = { id: socket.id, username, team, ready: false, connected: true, returningToLobby: false, ...skin }
       room.players.push(player)
     }
     socket.emit('room_joined', { code, room })
@@ -207,10 +235,11 @@ io.on('connection', (socket) => {
     io.to(code).emit('game_start', room)
   })
 
-  socket.on('rejoin_room', ({ code, username, team }) => {
+  socket.on('rejoin_room', ({ code, username, team, skinId, skinFile, skinName }) => {
     code = normalizeCode(code)
     team = normalizeTeam(team)
     username = String(username || 'Player').slice(0, 16)
+    const skin = normalizeSkin({ skinId, skinFile, skinName })
     const room = rooms[code]
     if (!room) {
       socket.emit('rejoin_error', 'Room not found')
@@ -225,12 +254,13 @@ io.on('connection', (socket) => {
       player.ready = true
       player.connected = true
       player.returningToLobby = false
+      Object.assign(player, skin)
     } else {
-      player = { id: socket.id, username, team, ready: true, connected: true, returningToLobby: false }
+      player = { id: socket.id, username, team, ready: true, connected: true, returningToLobby: false, ...skin }
       room.players.push(player)
     }
     socket.emit('game_ready', { room, myTeam: team })
-    io.to(code).emit('player_in_game', { id: socket.id, username, team })
+    io.to(code).emit('player_in_game', { id: socket.id, username, team, ...skin })
   })
 
   socket.on('player_update', ({ code, position, rotation, state, crouching, prone }) => {

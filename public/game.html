@@ -491,6 +491,79 @@
       z-index: 3;
     }
 
+    #killFeed {
+      position: absolute;
+      top: 228px;
+      right: 16px;
+      width: min(310px, calc(100vw - 32px));
+      display: grid;
+      gap: 7px;
+      pointer-events: none;
+    }
+
+    .killFeedItem {
+      min-height: 34px;
+      padding: 8px 10px 7px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(8,12,16,0.78);
+      backdrop-filter: blur(10px);
+      color: #ffffff;
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: 14px;
+      line-height: 1;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      box-shadow: 0 12px 34px rgba(0,0,0,0.36), inset 0 1px 0 rgba(255,255,255,0.05);
+      animation: killFeedIn 0.2s ease-out both;
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    .killFeedItem.fading {
+      opacity: 0;
+      transform: translateX(18px);
+    }
+
+    .killFeedPaintball {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 10px currentColor;
+      flex: 0 0 auto;
+    }
+
+    .killFeedName {
+      max-width: 112px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .killFeedName.red,
+    .killFeedPaintball.red {
+      color: var(--red);
+    }
+
+    .killFeedName.blue,
+    .killFeedPaintball.blue {
+      color: var(--blue);
+    }
+
+    .killFeedArrow {
+      color: rgba(255,255,255,0.72);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 13px;
+    }
+
+    @keyframes killFeedIn {
+      from { opacity: 0; transform: translateX(18px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
     @keyframes ammoPulse {
       from { opacity: 0.62; }
       to { opacity: 1; }
@@ -746,6 +819,7 @@
     }
 
     #menu,
+    #skinSelect,
     #matchScreen,
     #pauseScreen {
       position: fixed;
@@ -788,6 +862,166 @@
     @keyframes menuScan {
       from { transform: translateY(-20px); }
       to { transform: translateY(20px); }
+    }
+
+    #skinSelect {
+      display: none;
+      overflow: auto;
+      background: #080a0e;
+      color: #ffffff;
+    }
+
+    #skinSelect.visible {
+      display: block;
+    }
+
+    #skinSelect::before,
+    #skinSelect::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    #skinSelect::before {
+      background:
+        repeating-linear-gradient(0deg, rgba(255,255,255,0.036) 0 1px, transparent 1px 4px),
+        linear-gradient(90deg, rgba(204,21,21,0.08), transparent 22%, transparent 78%, rgba(21,102,204,0.05));
+      mix-blend-mode: screen;
+      opacity: 0.52;
+      animation: menuScan 7s linear infinite;
+    }
+
+    #skinSelect::after {
+      background:
+        radial-gradient(circle at 50% -12%, rgba(204,21,21,0.28), transparent 36%),
+        radial-gradient(circle at 10% 28%, rgba(21,102,204,0.12), transparent 26%),
+        radial-gradient(circle at 88% 78%, rgba(204,21,21,0.16), transparent 30%);
+    }
+
+    .skinSelectShell {
+      position: relative;
+      z-index: 1;
+      width: min(1060px, calc(100vw - 40px));
+      min-height: 100%;
+      margin: 0 auto;
+      padding: clamp(30px, 4vw, 54px) 0 34px;
+      display: grid;
+      align-content: center;
+      justify-items: center;
+      gap: 18px;
+    }
+
+    .skinSelectHeader {
+      text-align: center;
+    }
+
+    .skinSelectTitle {
+      margin: 0;
+      color: #ffffff;
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: clamp(56px, 9vw, 112px);
+      line-height: 0.85;
+      letter-spacing: 0.11em;
+      text-shadow: 0 0 22px rgba(204,21,21,0.35), 0 18px 48px rgba(0,0,0,0.95);
+    }
+
+    .skinSelectSubtitle {
+      margin-top: 12px;
+      color: var(--text-dim);
+      font-size: clamp(14px, 2vw, 21px);
+      font-weight: 700;
+      letter-spacing: 0.34em;
+      text-transform: uppercase;
+    }
+
+    .skinGrid {
+      display: grid;
+      grid-template-columns: repeat(5, 180px);
+      gap: 16px;
+      justify-content: center;
+    }
+
+    .skinCard {
+      width: 180px;
+      height: 240px;
+      padding: 0;
+      display: grid;
+      grid-template-rows: 144px 1fr;
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+      color: #ffffff;
+      clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px));
+      overflow: hidden;
+      transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+    }
+
+    .skinCard:hover,
+    .skinCard:focus-visible {
+      transform: translateY(-3px);
+      border-color: rgba(204,21,21,0.5);
+      outline: none;
+      box-shadow: 0 0 22px rgba(204,21,21,0.22), 0 18px 48px rgba(0,0,0,0.48);
+    }
+
+    .skinCard.selected {
+      border-color: #cc1515;
+      background: linear-gradient(180deg, rgba(204,21,21,0.18), rgba(255,255,255,0.025));
+      box-shadow: 0 0 0 1px rgba(204,21,21,0.48), 0 0 34px rgba(204,21,21,0.42), 0 24px 60px rgba(0,0,0,0.56);
+    }
+
+    .skinPreview {
+      width: 180px;
+      height: 144px;
+      background:
+        radial-gradient(circle at 50% 38%, rgba(204,21,21,0.18), transparent 48%),
+        linear-gradient(180deg, rgba(255,255,255,0.055), rgba(0,0,0,0.36));
+    }
+
+    .skinCardName {
+      align-self: center;
+      padding: 0 12px;
+      color: #ffffff;
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: 18px;
+      line-height: 1.05;
+      letter-spacing: 3px;
+      text-align: center;
+      text-transform: uppercase;
+      text-shadow: 0 0 14px rgba(0,0,0,0.78);
+    }
+
+    .skinSelectFooter {
+      display: grid;
+      justify-items: center;
+      gap: 12px;
+    }
+
+    #selectedSkinName {
+      color: #ffffff;
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: clamp(26px, 4vw, 42px);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      text-shadow: 0 0 18px rgba(204,21,21,0.36);
+    }
+
+    #skinLockBtn {
+      width: min(360px, calc(100vw - 64px));
+      padding: 15px 26px 13px;
+      color: #ffffff;
+      background: linear-gradient(135deg, #7d0808 0%, #cc1515 52%, #ff3333 100%);
+      clip-path: polygon(16px 0, 100% 0, calc(100% - 16px) 100%, 0 100%);
+      border: 1px solid rgba(255,255,255,0.18);
+      font-size: clamp(28px, 4vw, 42px);
+      line-height: 0.9;
+      letter-spacing: 0.18em;
+      box-shadow: 0 16px 44px rgba(0,0,0,0.55), 0 0 28px rgba(204,21,21,0.32);
+    }
+
+    #skinLockBtn:hover {
+      filter: brightness(1.08);
+      box-shadow: 0 20px 58px rgba(0,0,0,0.66), 0 0 42px rgba(204,21,21,0.58);
     }
 
     #matchScreen {
@@ -1344,6 +1578,10 @@
     }
 
     @media (max-width: 720px) {
+      .skinGrid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 180px));
+      }
+
       .cards,
       .menuOptions,
       .difficultyGrid {
@@ -1371,6 +1609,12 @@
       #minimap {
         left: 12px;
         bottom: 18px;
+      }
+
+      #killFeed {
+        top: 16px;
+        right: 12px;
+        width: min(260px, calc(100vw - 24px));
       }
     }
   </style>
@@ -1472,6 +1716,62 @@
     </div>
   </div>
 
+  <div id="skinSelect" aria-label="Skin selection">
+    <button id="skinBackBtn" class="menuBackButton" type="button">BACK</button>
+    <div class="skinSelectShell">
+      <div class="skinSelectHeader">
+        <h2 class="skinSelectTitle">SELECT YOUR OPERATOR</h2>
+        <div class="skinSelectSubtitle">CHOOSE YOUR FIGHTER</div>
+      </div>
+      <div id="skinGrid" class="skinGrid" aria-label="Operator skins">
+        <button class="skinCard selected" data-skin="skin1" type="button">
+          <canvas class="skinPreview" width="180" height="144" data-skin-preview="skin1" aria-hidden="true"></canvas>
+          <span class="skinCardName">D Ohmie</span>
+        </button>
+        <button class="skinCard" data-skin="skin2" type="button">
+          <canvas class="skinPreview" width="180" height="144" data-skin-preview="skin2" aria-hidden="true"></canvas>
+          <span class="skinCardName">Freaky Indian</span>
+        </button>
+        <button class="skinCard" data-skin="skin3" type="button">
+          <canvas class="skinPreview" width="180" height="144" data-skin-preview="skin3" aria-hidden="true"></canvas>
+          <span class="skinCardName">Yam Guy</span>
+        </button>
+        <button class="skinCard" data-skin="skin4" type="button">
+          <canvas class="skinPreview" width="180" height="144" data-skin-preview="skin4" aria-hidden="true"></canvas>
+          <span class="skinCardName">Sleepy Ogre</span>
+        </button>
+        <button class="skinCard" data-skin="skin5" type="button">
+          <canvas class="skinPreview" width="180" height="144" data-skin-preview="skin5" aria-hidden="true"></canvas>
+          <span class="skinCardName">Sexy Ogre</span>
+        </button>
+        <button class="skinCard" data-skin="skin6" type="button">
+          <canvas class="skinPreview" width="180" height="144" data-skin-preview="skin6" aria-hidden="true"></canvas>
+          <span class="skinCardName">Yam ahh</span>
+        </button>
+        <button class="skinCard" data-skin="skin7" type="button">
+          <canvas class="skinPreview" width="180" height="144" data-skin-preview="skin7" aria-hidden="true"></canvas>
+          <span class="skinCardName">AD pizza man</span>
+        </button>
+        <button class="skinCard" data-skin="skin8" type="button">
+          <canvas class="skinPreview" width="180" height="144" data-skin-preview="skin8" aria-hidden="true"></canvas>
+          <span class="skinCardName">Afro Mf</span>
+        </button>
+        <button class="skinCard" data-skin="skin9" type="button">
+          <canvas class="skinPreview" width="180" height="144" data-skin-preview="skin9" aria-hidden="true"></canvas>
+          <span class="skinCardName">DubC</span>
+        </button>
+        <button class="skinCard" data-skin="skin10" type="button">
+          <canvas class="skinPreview" width="180" height="144" data-skin-preview="skin10" aria-hidden="true"></canvas>
+          <span class="skinCardName">Cool Matt</span>
+        </button>
+      </div>
+      <div class="skinSelectFooter">
+        <div id="selectedSkinName">D OHMIE</div>
+        <button id="skinLockBtn" type="button">LOCK IN</button>
+      </div>
+    </div>
+  </div>
+
   <div id="matchScreen">
     <div id="victoryFlash" class="victoryFlash" aria-hidden="true"></div>
     <div class="victoryBar top" aria-hidden="true"></div>
@@ -1521,6 +1821,7 @@
         <div id="miniOpponent"></div>
       </div>
     </div>
+    <div id="killFeed" aria-label="Kill feed"></div>
     <div id="cooldownWrap"></div>
     <div id="ammoHud">
       <div class="ammoLabel">HOPPER</div>
@@ -1669,6 +1970,20 @@
     const SOCKET_URL = window.location.hostname === 'localhost'
       ? 'http://localhost:3000'
       : 'https://two-steps-ahead-paintball.onrender.com';
+    const SKINS = Object.freeze([
+      { id: 'skin1', file: 'IMG_3472.PNG', name: 'D Ohmie' },
+      { id: 'skin2', file: 'IMG_7865.PNG', name: 'Freaky Indian' },
+      { id: 'skin3', file: 'IMG_7866.PNG', name: 'Yam Guy' },
+      { id: 'skin4', file: 'IMG_7868.PNG', name: 'Sleepy Ogre' },
+      { id: 'skin5', file: 'IMG_7869.PNG', name: 'Sexy Ogre' },
+      { id: 'skin6', file: 'IMG_7870.PNG', name: 'Yam ahh' },
+      { id: 'skin7', file: 'IMG_7871.PNG', name: 'AD pizza man' },
+      { id: 'skin8', file: 'IMG_7872.PNG', name: 'Afro Mf' },
+      { id: 'skin9', file: 'IMG_7873.PNG', name: 'DubC' },
+      { id: 'skin10', file: 'IMG_7874.PNG', name: 'Cool Matt' }
+    ]);
+    const DEFAULT_SKIN = SKINS[0];
+    const SELECTED_SKIN = readSelectedSkin();
     const multiplayer = {
       socket: null,
       room: ROOM_CODE,
@@ -1699,6 +2014,11 @@
 
     const ui = {
       menu: document.getElementById('menu'),
+      skinSelect: document.getElementById('skinSelect'),
+      skinBackBtn: document.getElementById('skinBackBtn'),
+      skinGrid: document.getElementById('skinGrid'),
+      skinLockBtn: document.getElementById('skinLockBtn'),
+      selectedSkinName: document.getElementById('selectedSkinName'),
       matchScreen: document.getElementById('matchScreen'),
       gameMenuBackBtn: document.getElementById('gameMenuBackBtn'),
       deployBtn: document.getElementById('deployBtn'),
@@ -1732,7 +2052,8 @@
       miniMapName: document.getElementById('miniMapName'),
       miniLayout: document.getElementById('miniLayout'),
       miniPlayer: document.getElementById('miniPlayer'),
-      miniOpponent: document.getElementById('miniOpponent')
+      miniOpponent: document.getElementById('miniOpponent'),
+      killFeed: document.getElementById('killFeed')
     };
 
     const state = {
@@ -1756,6 +2077,7 @@
       playerEliminated: false,
       aiEliminated: false,
       aiDifficulty: PRACTICE_MODE ? SELECTED_DIFFICULTY : 'pro',
+      selectedSkin: SELECTED_SKIN,
       lastRoundMessage: '',
       running: false,
       fps: 60,
@@ -1874,6 +2196,8 @@
       id: '',
       username: 'Opponent',
       team: OPPONENT_TEAM,
+      skin: DEFAULT_SKIN,
+      skinName: DEFAULT_SKIN.name,
       group: ai.group,
       position: ai.position,
       lastPosition: new THREE.Vector3(24, 0, 0),
@@ -1914,6 +2238,8 @@
     renderer.toneMappingExposure = 0.55;
     document.body.appendChild(renderer.domElement);
     const textureLibrary = createRealTextures();
+    const skinTextureLoader = new THREE.TextureLoader();
+    skinTextureLoader.crossOrigin = 'anonymous';
     let environmentMap = createEnvironmentMap();
     const postModules = {};
     let composer = null;
@@ -1955,6 +2281,7 @@
     const projectiles = createProjectilePool();
     const splats = createSplatPool();
     const dronePreviews = [];
+    const skinPreviews = [];
     let hoveredPreviewMap = null;
     const gun = createGunModel();
     const audio = createAudio();
@@ -1973,7 +2300,8 @@
       loadHdrEnvironment();
       updateHud();
       hideAllMaps();
-      if (MULTIPLAYER || PRACTICE_MODE) startMatch();
+      if (MULTIPLAYER) startMatch();
+      else if (PRACTICE_MODE) showSkinSelect();
     }
 
     let lastTime = performance.now();
@@ -2034,6 +2362,85 @@
       texture.colorSpace = colorSpace || THREE.SRGBColorSpace;
       if (texture.image) texture.needsUpdate = true;
       return texture;
+    }
+
+    function readSelectedSkin() {
+      const urlSkin = normalizeSkin(urlParams.get('skin') || urlParams.get('skinId'), urlParams.get('skinFile'), urlParams.get('skinName'));
+      if (urlSkin) return urlSkin;
+      return normalizeSkin(safeStorageGet(localStorage, 'selectedSkin'), safeStorageGet(localStorage, 'selectedSkinFile'), safeStorageGet(localStorage, 'selectedSkinName')) || DEFAULT_SKIN;
+    }
+
+    function normalizeSkin(id, file, name) {
+      const skinId = String(id || '').trim();
+      const skinFile = String(file || '').trim();
+      const skinName = String(name || '').trim();
+      const skin = SKINS.find((item) => item.id === skinId)
+        || SKINS.find((item) => item.file === skinFile)
+        || SKINS.find((item) => item.name.toLowerCase() === skinName.toLowerCase());
+      return skin ? { ...skin } : null;
+    }
+
+    function safeStorageGet(storage, key) {
+      try { return storage.getItem(key); } catch (_) { return ''; }
+    }
+
+    function safeStorageSet(storage, key, value) {
+      try { storage.setItem(key, value); } catch (_) {}
+    }
+
+    function persistSelectedSkin(skin) {
+      const selected = normalizeSkin(skin?.id, skin?.file, skin?.name) || DEFAULT_SKIN;
+      safeStorageSet(localStorage, 'selectedSkin', selected.id);
+      safeStorageSet(localStorage, 'selectedSkinFile', selected.file);
+      safeStorageSet(localStorage, 'selectedSkinName', selected.name);
+      safeStorageSet(sessionStorage, 'paintballSkinId', selected.id);
+      safeStorageSet(sessionStorage, 'paintballSkinFile', selected.file);
+      safeStorageSet(sessionStorage, 'paintballSkinName', selected.name);
+      return selected;
+    }
+
+    function getSelectedSkin() {
+      return state.selectedSkin || DEFAULT_SKIN;
+    }
+
+    function skinImageUrl(skin) {
+      return '/skins/' + encodeURIComponent((skin || DEFAULT_SKIN).file);
+    }
+
+    function configureSkinTexture(texture) {
+      texture.wrapS = THREE.ClampToEdgeWrapping;
+      texture.wrapT = THREE.ClampToEdgeWrapping;
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.flipY = true;
+      texture.needsUpdate = true;
+      return texture;
+    }
+
+    function createSkinVisorMaterial(skin) {
+      const selected = normalizeSkin(skin?.id, skin?.file, skin?.name) || DEFAULT_SKIN;
+      const material = new THREE.MeshStandardMaterial({
+        color: 0x203748,
+        roughness: 0.24,
+        metalness: 0,
+        transparent: false,
+        side: THREE.DoubleSide,
+        envMap: environmentMap,
+        envMapIntensity: 0.45
+      });
+      material.userData.skinMaterial = true;
+      const texture = skinTextureLoader.load(skinImageUrl(selected), (loaded) => {
+        configureSkinTexture(loaded);
+        material.color.setHex(0xffffff);
+        material.map = loaded;
+        material.needsUpdate = true;
+      }, undefined, () => {
+        material.map = null;
+        material.color.setHex(0x203748);
+        material.needsUpdate = true;
+      });
+      configureSkinTexture(texture);
+      material.map = texture;
+      return material;
     }
 
     function createEnvironmentMap() {
@@ -4699,7 +5106,7 @@
       addCylinder('neck', pad, 0, 1.47, 0, 0.045, 0.04, 0.1, root, 16);
       ai.head = addSphere('helmetShell', helmet, 0, 1.62, -0.005, 0.17, 0.16, 0.15, root, 'helmet');
       addSphere('maskShell', helmet, 0, 1.57, -0.095, 0.17, 0.135, 0.095, root, 'helmet');
-      addBox('visor', materials.hopperGlass, 0, 1.61, -0.18, 0.145, 0.038, 0.018, root);
+      ai.limbs.visor = addBox('visor', materials.hopperGlass, 0, 1.61, -0.18, 0.145, 0.038, 0.018, root);
       addBox('maskFrame', rim, 0, 1.61, -0.193, 0.17, 0.058, 0.012, root, 0, 0, 0, 'rim');
       addBox('chinGuard', pad, 0, 1.495, -0.17, 0.13, 0.055, 0.03, root);
       for (let i = -2; i <= 2; i++) addBox('ventSlot' + i, materials.darkGrey, i * 0.026, 1.495, -0.193, 0.014, 0.008, 0.01, root);
@@ -4830,6 +5237,7 @@
     }
 
     function applyMatchSettings() {
+      state.selectedSkin = persistSelectedSkin(state.selectedSkin || DEFAULT_SKIN);
       if (MULTIPLAYER) {
         state.selectedMap = SELECTED_MAP;
         state.firstTo = FIRST_TO;
@@ -4874,6 +5282,7 @@
       ui.resumeBtn.addEventListener('click', hidePauseMenu);
       ui.pauseLobbyBtn.addEventListener('click', goBackToLobby);
       ui.pauseMenuBtn.addEventListener('click', leaveGame);
+      setupSkinSelectUi();
       if (MULTIPLAYER) {
         ui.menu.style.display = 'none';
         return;
@@ -4930,11 +5339,206 @@
       });
       ui.deployBtn.addEventListener('click', () => {
         unlockAudio();
-        startMatch();
-        renderer.domElement.requestPointerLock?.();
+        showSkinSelect();
       });
-      setupDronePreviews();
+      if (!PRACTICE_MODE) setupDronePreviews();
       selectMenuMap(state.selectedMap);
+    }
+
+    function setupSkinSelectUi() {
+      if (!ui.skinGrid || ui.skinGrid.dataset.bound === '1') return;
+      ui.skinGrid.dataset.bound = '1';
+      ui.skinBackBtn.addEventListener('click', () => hideSkinSelect(true));
+      ui.skinLockBtn.addEventListener('click', lockSelectedSkinAndStart);
+      document.querySelectorAll('[data-skin]').forEach((card) => {
+        const select = () => chooseSkin(card.dataset.skin);
+        card.addEventListener('click', select);
+        card.addEventListener('keydown', (e) => activateMenuChoice(e, select));
+      });
+      updateSkinSelectionUi();
+    }
+
+    function chooseSkin(skinId) {
+      state.selectedSkin = normalizeSkin(skinId) || DEFAULT_SKIN;
+      updateSkinSelectionUi();
+    }
+
+    function updateSkinSelectionUi() {
+      const selected = getSelectedSkin();
+      document.querySelectorAll('[data-skin]').forEach((card) => {
+        card.classList.toggle('selected', card.dataset.skin === selected.id);
+      });
+      if (ui.selectedSkinName) ui.selectedSkinName.textContent = selected.name;
+    }
+
+    function showSkinSelect() {
+      state.selectedSkin = normalizeSkin(getSelectedSkin().id, getSelectedSkin().file, getSelectedSkin().name) || DEFAULT_SKIN;
+      updateSkinSelectionUi();
+      ui.menu.style.display = 'none';
+      ui.skinSelect.classList.add('visible');
+      setupSkinSelectPreviews();
+    }
+
+    function hideSkinSelect(returnToMenu) {
+      disposeSkinPreviews();
+      ui.skinSelect.classList.remove('visible');
+      if (returnToMenu && state.phase === 'menu' && !MULTIPLAYER) {
+        ui.menu.style.display = 'block';
+        if (!dronePreviews.length) setupDronePreviews();
+        selectMenuMap(state.selectedMap);
+      }
+    }
+
+    function lockSelectedSkinAndStart() {
+      unlockAudio();
+      state.selectedSkin = persistSelectedSkin(getSelectedSkin());
+      hideSkinSelect(false);
+      startMatch();
+      renderer.domElement.requestPointerLock?.();
+    }
+
+    function setupSkinSelectPreviews() {
+      if (skinPreviews.length || !ui.skinSelect.classList.contains('visible')) return;
+      document.querySelectorAll('[data-skin-preview]').forEach((canvas) => {
+        const skin = normalizeSkin(canvas.dataset.skinPreview) || DEFAULT_SKIN;
+        const previewScene = new THREE.Scene();
+        previewScene.background = new THREE.Color(0x080a0e);
+        const previewCamera = new THREE.PerspectiveCamera(34, 180 / 144, 0.1, 20);
+        previewCamera.position.set(0, 1.08, -4.35);
+        previewCamera.lookAt(0, 1.02, 0);
+        let previewRenderer;
+        try {
+          previewRenderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'low-power' });
+        } catch (_) {
+          canvas.style.opacity = '0.2';
+          return;
+        }
+        previewRenderer.outputColorSpace = THREE.SRGBColorSpace;
+        previewRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+        previewRenderer.toneMappingExposure = 1.1;
+        previewRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+        previewScene.add(new THREE.AmbientLight(0xffffff, 0.82));
+        const key = new THREE.DirectionalLight(0xffffff, 2.1);
+        key.position.set(-2.5, 3.8, -3.2);
+        previewScene.add(key);
+        const rim = new THREE.DirectionalLight(0xcc1515, 1.2);
+        rim.position.set(2.4, 2.4, 2.8);
+        previewScene.add(rim);
+        const operator = createSkinPreviewOperator(skin, 'red');
+        previewScene.add(operator);
+        skinPreviews.push({ skin, canvas, card: canvas.closest('[data-skin]'), scene: previewScene, camera: previewCamera, renderer: previewRenderer, operator, rotation: Math.PI * 0.08 });
+      });
+      resizeSkinPreviews();
+    }
+
+    function createSkinPreviewOperator(skin, team) {
+      const root = new THREE.Group();
+      root.position.y = -0.08;
+      const redTeam = team !== 'blue';
+      const mats = {
+        jersey: new THREE.MeshStandardMaterial({ color: redTeam ? 0xdd1111 : 0x1155ee, roughness: 0.72, metalness: 0, emissive: redTeam ? 0x550000 : 0x001d66, emissiveIntensity: 0.2 }),
+        jerseyDark: new THREE.MeshStandardMaterial({ color: redTeam ? 0x8b0000 : 0x003a9f, roughness: 0.78, metalness: 0 }),
+        rim: new THREE.MeshStandardMaterial({ color: redTeam ? 0xff3a3a : 0x3f8cff, roughness: 0.54, metalness: 0, emissive: redTeam ? 0x661010 : 0x103066, emissiveIntensity: 0.35 }),
+        black: new THREE.MeshStandardMaterial({ color: 0x08090b, roughness: 0.68, metalness: 0.1 }),
+        rubber: new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.88, metalness: 0 }),
+        white: new THREE.MeshStandardMaterial({ color: 0xf0f0ea, roughness: 0.35, metalness: 0 }),
+        metal: new THREE.MeshStandardMaterial({ color: 0xd87718, roughness: 0.22, metalness: 0.7 }),
+        visor: createSkinVisorMaterial(skin)
+      };
+      const geos = {
+        box: new THREE.BoxGeometry(1, 1, 1),
+        sphere: new THREE.SphereGeometry(1, 16, 16),
+        cylinder: new THREE.CylinderGeometry(1, 1, 1, 16, 1),
+        cylinderLow: new THREE.CylinderGeometry(1, 1, 1, 10, 1),
+        visor: new THREE.PlaneGeometry(0.34, 0.16)
+      };
+      const add = (geo, mat, x, y, z, sx, sy, sz, rx, ry, rz, parent) => {
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(x, y, z);
+        mesh.scale.set(sx, sy, sz);
+        mesh.rotation.set(rx || 0, ry || 0, rz || 0);
+        (parent || root).add(mesh);
+        return mesh;
+      };
+      add(geos.box, mats.rubber, 0, 0.56, 0.02, 0.46, 0.18, 0.26);
+      add(geos.cylinder, mats.jersey, 0, 1.02, 0, 0.32, 0.66, 0.24);
+      add(geos.box, mats.black, 0, 0.72, -0.19, 0.36, 0.05, 0.035);
+      add(geos.box, mats.white, -0.13, 1.03, -0.23, 0.035, 0.42, 0.018, 0, 0, -0.22);
+      add(geos.box, mats.white, 0.13, 1.03, -0.23, 0.035, 0.42, 0.018, 0, 0, 0.22);
+      add(geos.cylinderLow, mats.black, 0, 1.42, 0, 0.07, 0.12, 0.07);
+      add(geos.sphere, mats.jerseyDark, 0, 1.62, -0.01, 0.25, 0.24, 0.22);
+      add(geos.sphere, mats.jerseyDark, 0, 1.53, -0.14, 0.23, 0.16, 0.13);
+      add(geos.visor, mats.visor, 0, 1.58, -0.265, 1, 1, 1);
+      add(geos.box, mats.rim, 0, 1.67, -0.275, 0.39, 0.018, 0.018);
+      add(geos.box, mats.rim, 0, 1.49, -0.275, 0.39, 0.018, 0.018);
+      add(geos.box, mats.rim, -0.195, 1.58, -0.275, 0.018, 0.1, 0.018);
+      add(geos.box, mats.rim, 0.195, 1.58, -0.275, 0.018, 0.1, 0.018);
+      add(geos.box, mats.black, 0, 1.46, -0.245, 0.24, 0.08, 0.055);
+      for (let side = -1; side <= 1; side += 2) {
+        add(geos.sphere, mats.jersey, side * 0.34, 1.22, 0, 0.09, 0.1, 0.1);
+        add(geos.cylinderLow, mats.jersey, side * 0.47, 0.96, -0.03, 0.065, 0.34, 0.065, 0, 0, side * 0.34);
+        add(geos.cylinderLow, mats.jersey, side * 0.42, 0.66, -0.13, 0.058, 0.31, 0.058, 0, 0, side * -0.18);
+        add(geos.box, mats.black, side * 0.38, 0.42, -0.18, 0.09, 0.08, 0.1);
+        add(geos.cylinderLow, mats.rubber, side * 0.16, 0.27, 0.02, 0.095, 0.44, 0.095, 0, 0, side * 0.05);
+        add(geos.cylinderLow, mats.rubber, side * 0.15, -0.14, -0.03, 0.08, 0.42, 0.08, 0, 0, side * -0.03);
+        add(geos.box, mats.black, side * 0.15, -0.42, -0.12, 0.16, 0.08, 0.26);
+      }
+      const marker = new THREE.Group();
+      marker.position.set(0.34, 0.93, -0.42);
+      marker.rotation.set(0.05, -0.16, -0.1);
+      root.add(marker);
+      add(geos.box, mats.metal, 0, 0, 0, 0.26, 0.12, 0.28, 0, 0, 0, marker);
+      add(geos.cylinderLow, mats.black, 0, 0.02, -0.42, 0.035, 0.62, 0.035, Math.PI / 2, 0, 0, marker);
+      add(geos.sphere, mats.black, 0, 0.22, 0.02, 0.17, 0.13, 0.15, 0, 0, 0, marker);
+      root.userData.previewMaterials = mats;
+      root.userData.previewGeometries = geos;
+      return root;
+    }
+
+    function resizeSkinPreviews() {
+      for (let i = 0; i < skinPreviews.length; i++) {
+        const preview = skinPreviews[i];
+        const rect = preview.canvas.getBoundingClientRect();
+        const width = Math.max(1, Math.round(rect.width || 180));
+        const height = Math.max(1, Math.round(rect.height || 144));
+        preview.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+        preview.renderer.setSize(width, height, false);
+        preview.camera.aspect = width / height;
+        preview.camera.updateProjectionMatrix();
+      }
+    }
+
+    function updateSkinPreviews(dt) {
+      if (!ui.skinSelect || !ui.skinSelect.classList.contains('visible') || skinPreviews.length === 0) return;
+      resizeSkinPreviews();
+      for (let i = 0; i < skinPreviews.length; i++) {
+        const preview = skinPreviews[i];
+        const active = preview.card && (preview.card.matches(':hover') || preview.card.classList.contains('selected') || document.activeElement === preview.card);
+        preview.rotation += dt * (active ? 0.9 : 0.45);
+        preview.operator.rotation.y = preview.rotation;
+        preview.renderer.render(preview.scene, preview.camera);
+      }
+    }
+
+    function disposeSkinPreviews() {
+      while (skinPreviews.length) {
+        const preview = skinPreviews.pop();
+        const geometriesToDispose = new Set();
+        const materialsToDispose = new Set();
+        preview.scene.traverse((child) => {
+          if (!child.isMesh) return;
+          if (child.geometry) geometriesToDispose.add(child.geometry);
+          if (Array.isArray(child.material)) child.material.forEach((material) => materialsToDispose.add(material));
+          else if (child.material) materialsToDispose.add(child.material);
+        });
+        materialsToDispose.forEach((material) => {
+          if (material.map) material.map.dispose();
+          material.dispose();
+        });
+        geometriesToDispose.forEach((geometry) => geometry.dispose());
+        preview.renderer.dispose();
+        preview.renderer.forceContextLoss?.();
+      }
     }
 
     function showPauseMenu() {
@@ -4960,6 +5564,9 @@
       sessionStorage.setItem('paintballRoom', ROOM_CODE);
       sessionStorage.setItem('paintballUsername', MY_USERNAME);
       sessionStorage.setItem('paintballTeam', MY_TEAM);
+      sessionStorage.setItem('paintballSkinId', getSelectedSkin().id);
+      sessionStorage.setItem('paintballSkinFile', getSelectedSkin().file);
+      sessionStorage.setItem('paintballSkinName', getSelectedSkin().name);
       const navigate = () => { window.location.href = '/?room=' + encodeURIComponent(ROOM_CODE); };
       if (multiplayer.socket && multiplayer.socket.connected) {
         let navigated = false;
@@ -5020,7 +5627,10 @@
         multiplayer.socket.emit('rejoin_room', {
           code: ROOM_CODE,
           username: MY_USERNAME,
-          team: MY_TEAM
+          team: MY_TEAM,
+          skinId: getSelectedSkin().id,
+          skinFile: getSelectedSkin().file,
+          skinName: getSelectedSkin().name
         });
       });
       multiplayer.socket.on('disconnect', () => {
@@ -5069,9 +5679,22 @@
       remotePlayer.id = playerInfo.id || remotePlayer.id;
       remotePlayer.username = playerInfo.username || remotePlayer.username || 'Opponent';
       remotePlayer.team = playerInfo.team === 'red' || playerInfo.team === 'blue' ? playerInfo.team : remotePlayer.team;
+      remotePlayer.skin = normalizeSkin(playerInfo.skinId, playerInfo.skinFile, playerInfo.skinName) || remotePlayer.skin || DEFAULT_SKIN;
+      remotePlayer.skinName = remotePlayer.skin.name;
       applyRemoteTeamMaterials(remotePlayer.team);
+      applyRemoteSkinToAi(remotePlayer.skin);
       remotePlayer.visible = true;
       if (!state.aiEliminated) ai.group.visible = true;
+    }
+
+    function applyRemoteSkinToAi(skin) {
+      if (!ai.limbs || !ai.limbs.visor) return;
+      const previous = ai.limbs.visor.material;
+      ai.limbs.visor.material = createSkinVisorMaterial(skin || DEFAULT_SKIN);
+      if (previous && previous.userData && previous.userData.skinMaterial) {
+        if (previous.map) previous.map.dispose();
+        previous.dispose();
+      }
     }
 
     function applyRemoteTeamMaterials(team) {
@@ -5406,6 +6029,10 @@
     }
 
     function startMatch() {
+      state.selectedSkin = persistSelectedSkin(getSelectedSkin());
+      disposeSkinPreviews();
+      if (ui.skinSelect) ui.skinSelect.classList.remove('visible');
+      clearKillFeed();
       hideAllMaps();
       const active = maps[state.selectedMap];
       active.group.visible = true;
@@ -5568,6 +6195,7 @@
       updateGame(dt);
       updateEliminatedSplat();
       updateDronePreviews(dt);
+      updateSkinPreviews(dt);
       if (postEnabled && composer) composer.render();
       else renderer.render(scene, camera);
       requestAnimationFrame(tick);
@@ -6788,11 +7416,55 @@
       return true;
     }
 
+    function addKillFeedEntry(killerName, killerTeam, victimName, victimTeam) {
+      if (!ui.killFeed || state.phase !== 'active') return;
+      const item = document.createElement('div');
+      item.className = 'killFeedItem';
+      const icon = document.createElement('span');
+      icon.className = 'killFeedPaintball ' + normalizeKillFeedTeam(killerTeam);
+      const killer = document.createElement('span');
+      killer.className = 'killFeedName ' + normalizeKillFeedTeam(killerTeam);
+      killer.textContent = killerName || 'Player';
+      const arrow = document.createElement('span');
+      arrow.className = 'killFeedArrow';
+      arrow.textContent = '→';
+      const victim = document.createElement('span');
+      victim.className = 'killFeedName ' + normalizeKillFeedTeam(victimTeam);
+      victim.textContent = victimName || 'Player';
+      item.append(icon, killer, arrow, victim);
+      ui.killFeed.prepend(item);
+      while (ui.killFeed.children.length > 5) ui.killFeed.lastElementChild.remove();
+      setTimeout(() => item.classList.add('fading'), 4000);
+      setTimeout(() => item.remove(), 4500);
+    }
+
+    function normalizeKillFeedTeam(team) {
+      return String(team || '').toLowerCase() === 'blue' ? 'blue' : 'red';
+    }
+
+    function clearKillFeed() {
+      if (ui.killFeed) ui.killFeed.innerHTML = '';
+    }
+
+    function selectedSkinName() {
+      return getSelectedSkin().name;
+    }
+
+    function remoteSkinName() {
+      return remotePlayer.skinName || remotePlayer.skin?.name || DEFAULT_SKIN.name;
+    }
+
+    function aiDifficultyName() {
+      const key = AI_DIFFICULTIES[state.aiDifficulty] ? state.aiDifficulty : SELECTED_DIFFICULTY;
+      return key.charAt(0).toUpperCase() + key.slice(1);
+    }
+
     function aiEliminated(hitPos) {
       state.aiEliminated = true;
       ai.splat.visible = true;
       if (ai.limbs && ai.limbs.splat2) ai.limbs.splat2.visible = true;
       startAiDeathVisual();
+      addKillFeedEntry(selectedSkinName(), 'red', aiDifficultyName(), 'blue');
       playEliminationAudio('shooter');
       scoreTeam('red');
       endRound('Red', 'Red wins the round');
@@ -6803,6 +7475,7 @@
       gun.paint.visible = true;
       startDeathCamera();
       showEliminatedOverlay('blue');
+      addKillFeedEntry(aiDifficultyName(), 'blue', selectedSkinName(), 'red');
       playEliminationAudio('victim');
       scoreTeam('blue');
       endRound('Blue', 'Blue wins the round');
@@ -6820,6 +7493,7 @@
       }
       startAiDeathVisual();
       remotePlayer.visible = false;
+      addKillFeedEntry(selectedSkinName(), MY_TEAM, remoteSkinName(), remotePlayer.team || OPPONENT_TEAM);
       playEliminationAudio('shooter');
       scoreTeam(MY_TEAM);
       endRound(MY_TEAM, formatTeam(MY_TEAM) + ' wins the round', false);
@@ -6833,6 +7507,7 @@
       gun.paint.visible = true;
       startDeathCamera();
       showEliminatedOverlay(winner);
+      addKillFeedEntry(remoteSkinName(), winner, selectedSkinName(), MY_TEAM);
       playEliminationAudio('victim');
       scoreTeam(winner);
       endRound(winner, formatTeam(winner) + ' wins the round', false);
@@ -6906,6 +7581,7 @@
       state.running = false;
       stopReload(false);
       audio.updateRattle(false, false);
+      clearKillFeed();
       ui.hud.classList.remove('visible');
       hideEliminatedOverlay();
       ui.pauseScreen.style.display = 'none';
@@ -7616,6 +8292,7 @@
       renderer.setPixelRatio(window.devicePixelRatio || 1);
       if (composer) composer.setSize(window.innerWidth, window.innerHeight);
       resizeDronePreviews();
+      resizeSkinPreviews();
     }
 
     function createAudio() {

@@ -714,6 +714,14 @@
       letter-spacing: 0.05em;
     }
 
+    .avatar.skinAvatar {
+      color: #ffffff;
+      background-size: cover;
+      background-position: center;
+      text-shadow: 0 1px 5px #000;
+      box-shadow: inset 0 0 0 999px rgba(0,0,0,0.08), 0 0 18px rgba(204,21,21,0.18);
+    }
+
     .redColumn .avatar { background: rgba(204,21,21,0.2); }
     .blueColumn .avatar { background: rgba(21,102,204,0.24); }
 
@@ -1123,6 +1131,19 @@
       const SOCKET_URL = window.location.hostname === 'localhost'
         ? 'http://localhost:3000'
         : 'https://two-steps-ahead-paintball.onrender.com'
+      const SKINS = [
+        { id: 'skin1', file: 'IMG_3472.PNG', name: 'D Ohmie' },
+        { id: 'skin2', file: 'IMG_7865.PNG', name: 'Freaky Indian' },
+        { id: 'skin3', file: 'IMG_7866.PNG', name: 'Yam Guy' },
+        { id: 'skin4', file: 'IMG_7868.PNG', name: 'Sleepy Ogre' },
+        { id: 'skin5', file: 'IMG_7869.PNG', name: 'Sexy Ogre' },
+        { id: 'skin6', file: 'IMG_7870.PNG', name: 'Yam ahh' },
+        { id: 'skin7', file: 'IMG_7871.PNG', name: 'AD pizza man' },
+        { id: 'skin8', file: 'IMG_7872.PNG', name: 'Afro Mf' },
+        { id: 'skin9', file: 'IMG_7873.PNG', name: 'DubC' },
+        { id: 'skin10', file: 'IMG_7874.PNG', name: 'Cool Matt' }
+      ]
+      const DEFAULT_SKIN = SKINS[0]
       const state = {
         socket: null,
         username: sessionStorage.getItem('paintballUsername') || '',
@@ -1239,7 +1260,7 @@
         state.socket.on('connect', () => {
           setStatus('Connected')
           if (state.pendingRoom && state.username) {
-            state.socket.emit('rejoin_lobby', { code: state.pendingRoom, username: state.username, team: state.team })
+            state.socket.emit('rejoin_lobby', { code: state.pendingRoom, username: state.username, team: state.team, ...selectedSkinPayload() })
           } else if (state.pendingRoom) {
             ui.roomCodeInput.value = state.pendingRoom
             showPanel('join')
@@ -1343,7 +1364,8 @@
           return
         }
         state.socket.emit('create_room', {
-          username: state.username
+          username: state.username,
+          ...selectedSkinPayload()
         })
       }
 
@@ -1358,15 +1380,19 @@
           setError(ui.joinError, 'Enter a 4 character code')
           return
         }
-        state.socket.emit('join_room', { code, username: state.username })
+        state.socket.emit('join_room', { code, username: state.username, ...selectedSkinPayload() })
       }
 
       function startPractice() {
+        const skin = getSelectedSkin()
         const params = new URLSearchParams({
           practice: '1',
           map: state.createOptions.map,
           difficulty: state.createOptions.difficulty,
-          firstto: String(state.createOptions.firstTo)
+          firstto: String(state.createOptions.firstTo),
+          skin: skin.id,
+          skinFile: skin.file,
+          skinName: skin.name
         })
         window.location.href = '/game.html?' + params.toString()
       }
@@ -1409,14 +1435,18 @@
         const card = document.createElement('div')
         card.className = 'playerCard'
         const isHost = player.id === room.host
+        const skin = normalizeSkin(player.skinId, player.skinFile, player.skinName) || DEFAULT_SKIN
         card.innerHTML = `
           <div class="avatar">${escapeHtml(initials(player.username || 'P'))}</div>
           <div class="playerInfo">
             <div class="playerName">${escapeHtml(player.username || 'PLAYER')}</div>
-            <div class="playerMeta">${isHost ? 'HOST' : 'PLAYER'}</div>
+            <div class="playerMeta">${isHost ? 'HOST' : 'PLAYER'} / ${escapeHtml(skin.name)}</div>
           </div>
           <div class="readyStatus ${player.ready ? 'ready' : ''}" title="${player.ready ? 'Ready' : 'Not Ready'}">${player.ready ? 'Ready' : 'Not Ready'}</div>
         `
+        const avatar = card.querySelector('.avatar')
+        avatar.classList.add('skinAvatar')
+        avatar.style.backgroundImage = 'linear-gradient(180deg, rgba(0,0,0,0.04), rgba(0,0,0,0.34)), url("' + skinImageUrl(skin) + '")'
         return card
       }
 
@@ -1467,13 +1497,17 @@
       function startGame(room) {
         const me = currentPlayer(room)
         const team = me ? me.team : 'red'
+        const skin = normalizeSkin(me?.skinId, me?.skinFile, me?.skinName) || getSelectedSkin()
         const params = new URLSearchParams({
           room: room.code,
           team,
           username: state.username,
           mode: room.gameMode,
           map: room.map,
-          firstto: String(room.firstTo || 5)
+          firstto: String(room.firstTo || 5),
+          skin: skin.id,
+          skinFile: skin.file,
+          skinName: skin.name
         })
         window.location.href = '/game.html?' + params.toString()
       }
@@ -1500,9 +1534,15 @@
         if (!me) return
         state.username = me.username || state.username
         state.team = me.team || state.team
+        const skin = normalizeSkin(me.skinId, me.skinFile, me.skinName)
         sessionStorage.setItem('paintballUsername', state.username)
         sessionStorage.setItem('paintballTeam', state.team)
         sessionStorage.setItem('paintballRoom', room.code)
+        if (skin) {
+          sessionStorage.setItem('paintballSkinId', skin.id)
+          sessionStorage.setItem('paintballSkinFile', skin.file)
+          sessionStorage.setItem('paintballSkinName', skin.name)
+        }
       }
 
       function currentPlayer(room) {
@@ -1529,6 +1569,33 @@
         if (map === 'rooftop') return 'Rooftop City'
         if (map === 'ghosttown') return 'Ghost Town'
         return map === 'funland' ? 'Abandoned Funland' : 'Speedball'
+      }
+
+      function normalizeSkin(id, file, name) {
+        const skinId = String(id || '').trim()
+        const skinFile = String(file || '').trim()
+        const skinName = String(name || '').trim().toLowerCase()
+        return SKINS.find((skin) => skin.id === skinId)
+          || SKINS.find((skin) => skin.file === skinFile)
+          || SKINS.find((skin) => skin.name.toLowerCase() === skinName)
+          || null
+      }
+
+      function getSelectedSkin() {
+        return normalizeSkin(storageGet('selectedSkin'), storageGet('selectedSkinFile'), storageGet('selectedSkinName')) || DEFAULT_SKIN
+      }
+
+      function storageGet(key) {
+        try { return localStorage.getItem(key) } catch (_) { return '' }
+      }
+
+      function selectedSkinPayload() {
+        const skin = getSelectedSkin()
+        return { skinId: skin.id, skinFile: skin.file, skinName: skin.name }
+      }
+
+      function skinImageUrl(skin) {
+        return '/skins/' + encodeURIComponent((skin || DEFAULT_SKIN).file)
       }
 
       function initials(value) {
