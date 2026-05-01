@@ -947,7 +947,7 @@
       height: 240px;
       padding: 0;
       display: grid;
-      grid-template-rows: 144px 1fr;
+      grid-template-rows: 168px 1fr;
       border: 1px solid var(--border);
       background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
       color: #ffffff;
@@ -972,7 +972,7 @@
 
     .skinPreview {
       width: 180px;
-      height: 144px;
+      height: 168px;
       background:
         radial-gradient(circle at 50% 38%, rgba(204,21,21,0.18), transparent 48%),
         linear-gradient(180deg, rgba(255,255,255,0.055), rgba(0,0,0,0.36));
@@ -1725,43 +1725,43 @@
       </div>
       <div id="skinGrid" class="skinGrid" aria-label="Operator skins">
         <button class="skinCard selected" data-skin="skin1" type="button">
-          <canvas class="skinPreview" width="180" height="144" data-skin-preview="skin1" aria-hidden="true"></canvas>
+          <canvas class="skinPreview" width="180" height="168" data-skin-preview="skin1" aria-hidden="true"></canvas>
           <span class="skinCardName">D Ohmie</span>
         </button>
         <button class="skinCard" data-skin="skin2" type="button">
-          <canvas class="skinPreview" width="180" height="144" data-skin-preview="skin2" aria-hidden="true"></canvas>
+          <canvas class="skinPreview" width="180" height="168" data-skin-preview="skin2" aria-hidden="true"></canvas>
           <span class="skinCardName">Freaky Indian</span>
         </button>
         <button class="skinCard" data-skin="skin3" type="button">
-          <canvas class="skinPreview" width="180" height="144" data-skin-preview="skin3" aria-hidden="true"></canvas>
+          <canvas class="skinPreview" width="180" height="168" data-skin-preview="skin3" aria-hidden="true"></canvas>
           <span class="skinCardName">Yam Guy</span>
         </button>
         <button class="skinCard" data-skin="skin4" type="button">
-          <canvas class="skinPreview" width="180" height="144" data-skin-preview="skin4" aria-hidden="true"></canvas>
+          <canvas class="skinPreview" width="180" height="168" data-skin-preview="skin4" aria-hidden="true"></canvas>
           <span class="skinCardName">Sleepy Ogre</span>
         </button>
         <button class="skinCard" data-skin="skin5" type="button">
-          <canvas class="skinPreview" width="180" height="144" data-skin-preview="skin5" aria-hidden="true"></canvas>
+          <canvas class="skinPreview" width="180" height="168" data-skin-preview="skin5" aria-hidden="true"></canvas>
           <span class="skinCardName">Sexy Ogre</span>
         </button>
         <button class="skinCard" data-skin="skin6" type="button">
-          <canvas class="skinPreview" width="180" height="144" data-skin-preview="skin6" aria-hidden="true"></canvas>
+          <canvas class="skinPreview" width="180" height="168" data-skin-preview="skin6" aria-hidden="true"></canvas>
           <span class="skinCardName">Yam ahh</span>
         </button>
         <button class="skinCard" data-skin="skin7" type="button">
-          <canvas class="skinPreview" width="180" height="144" data-skin-preview="skin7" aria-hidden="true"></canvas>
+          <canvas class="skinPreview" width="180" height="168" data-skin-preview="skin7" aria-hidden="true"></canvas>
           <span class="skinCardName">AD pizza man</span>
         </button>
         <button class="skinCard" data-skin="skin8" type="button">
-          <canvas class="skinPreview" width="180" height="144" data-skin-preview="skin8" aria-hidden="true"></canvas>
+          <canvas class="skinPreview" width="180" height="168" data-skin-preview="skin8" aria-hidden="true"></canvas>
           <span class="skinCardName">Afro Mf</span>
         </button>
         <button class="skinCard" data-skin="skin9" type="button">
-          <canvas class="skinPreview" width="180" height="144" data-skin-preview="skin9" aria-hidden="true"></canvas>
+          <canvas class="skinPreview" width="180" height="168" data-skin-preview="skin9" aria-hidden="true"></canvas>
           <span class="skinCardName">DubC</span>
         </button>
         <button class="skinCard" data-skin="skin10" type="button">
-          <canvas class="skinPreview" width="180" height="144" data-skin-preview="skin10" aria-hidden="true"></canvas>
+          <canvas class="skinPreview" width="180" height="168" data-skin-preview="skin10" aria-hidden="true"></canvas>
           <span class="skinCardName">Cool Matt</span>
         </button>
       </div>
@@ -2441,6 +2441,68 @@
       configureSkinTexture(texture);
       material.map = texture;
       return material;
+    }
+
+    function createSkinPreviewPhotoMaterial(skin) {
+      const selected = normalizeSkin(skin?.id, skin?.file, skin?.name) || DEFAULT_SKIN;
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      drawCircularSkinPreviewTexture(canvas, null);
+      const texture = new THREE.CanvasTexture(canvas);
+      configureSkinTexture(texture);
+      const material = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        roughness: 0.36,
+        metalness: 0,
+        side: THREE.DoubleSide,
+        map: texture,
+        envMap: environmentMap,
+        envMapIntensity: 0.42
+      });
+      material.userData.skinMaterial = true;
+      skinTextureLoader.load(skinImageUrl(selected), (loaded) => {
+        drawCircularSkinPreviewTexture(canvas, loaded.image);
+        texture.needsUpdate = true;
+        material.needsUpdate = true;
+        loaded.dispose?.();
+      }, undefined, () => {
+        drawCircularSkinPreviewTexture(canvas, null);
+        texture.needsUpdate = true;
+      });
+      return material;
+    }
+
+    function drawCircularSkinPreviewTexture(canvas, image) {
+      const ctx = canvas.getContext('2d');
+      const size = canvas.width;
+      ctx.clearRect(0, 0, size, size);
+      ctx.fillStyle = '#07090d';
+      ctx.fillRect(0, 0, size, size);
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(size * 0.5, size * 0.5, size * 0.49, 0, Math.PI * 2);
+      ctx.clip();
+      if (image) {
+        const width = image.naturalWidth || image.width || size;
+        const height = image.naturalHeight || image.height || size;
+        const sourceSize = Math.min(width, height);
+        const sourceX = clamp(width * 0.5 - sourceSize * 0.5, 0, Math.max(0, width - sourceSize));
+        const sourceY = clamp(height * 0.38 - sourceSize * 0.5, 0, Math.max(0, height - sourceSize));
+        ctx.drawImage(image, sourceX, sourceY, sourceSize, sourceSize, 0, 0, size, size);
+      } else {
+        const gradient = ctx.createRadialGradient(size * 0.5, size * 0.42, size * 0.08, size * 0.5, size * 0.5, size * 0.5);
+        gradient.addColorStop(0, '#32465a');
+        gradient.addColorStop(1, '#111820');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, size, size);
+      }
+      ctx.restore();
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.lineWidth = size * 0.018;
+      ctx.beginPath();
+      ctx.arc(size * 0.5, size * 0.5, size * 0.48, 0, Math.PI * 2);
+      ctx.stroke();
     }
 
     function createEnvironmentMap() {
@@ -5403,9 +5465,9 @@
         const skin = normalizeSkin(canvas.dataset.skinPreview) || DEFAULT_SKIN;
         const previewScene = new THREE.Scene();
         previewScene.background = new THREE.Color(0x080a0e);
-        const previewCamera = new THREE.PerspectiveCamera(34, 180 / 144, 0.1, 20);
-        previewCamera.position.set(0, 1.08, -4.35);
-        previewCamera.lookAt(0, 1.02, 0);
+        const previewCamera = new THREE.PerspectiveCamera(32, 180 / 168, 0.1, 20);
+        previewCamera.position.set(0, 1.18, -3.35);
+        previewCamera.lookAt(0, 1.15, 0);
         let previewRenderer;
         try {
           previewRenderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'low-power' });
@@ -5443,14 +5505,16 @@
         rubber: new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.88, metalness: 0 }),
         white: new THREE.MeshStandardMaterial({ color: 0xf0f0ea, roughness: 0.35, metalness: 0 }),
         metal: new THREE.MeshStandardMaterial({ color: 0xd87718, roughness: 0.22, metalness: 0.7 }),
-        visor: createSkinVisorMaterial(skin)
+        glass: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.08, metalness: 0, transparent: true, opacity: 0.16, side: THREE.DoubleSide }),
+        photo: createSkinPreviewPhotoMaterial(skin)
       };
       const geos = {
         box: new THREE.BoxGeometry(1, 1, 1),
         sphere: new THREE.SphereGeometry(1, 16, 16),
         cylinder: new THREE.CylinderGeometry(1, 1, 1, 16, 1),
         cylinderLow: new THREE.CylinderGeometry(1, 1, 1, 10, 1),
-        visor: new THREE.PlaneGeometry(0.34, 0.16)
+        visor: new THREE.PlaneGeometry(0.34, 0.16),
+        torsoPhoto: new THREE.PlaneGeometry(0.62, 0.52)
       };
       const add = (geo, mat, x, y, z, sx, sy, sz, rx, ry, rz, parent) => {
         const mesh = new THREE.Mesh(geo, mat);
@@ -5462,13 +5526,14 @@
       };
       add(geos.box, mats.rubber, 0, 0.56, 0.02, 0.46, 0.18, 0.26);
       add(geos.cylinder, mats.jersey, 0, 1.02, 0, 0.32, 0.66, 0.24);
+      add(geos.torsoPhoto, mats.photo, 0, 1.13, -0.265, 1, 1, 1);
       add(geos.box, mats.black, 0, 0.72, -0.19, 0.36, 0.05, 0.035);
       add(geos.box, mats.white, -0.13, 1.03, -0.23, 0.035, 0.42, 0.018, 0, 0, -0.22);
       add(geos.box, mats.white, 0.13, 1.03, -0.23, 0.035, 0.42, 0.018, 0, 0, 0.22);
       add(geos.cylinderLow, mats.black, 0, 1.42, 0, 0.07, 0.12, 0.07);
-      add(geos.sphere, mats.jerseyDark, 0, 1.62, -0.01, 0.25, 0.24, 0.22);
-      add(geos.sphere, mats.jerseyDark, 0, 1.53, -0.14, 0.23, 0.16, 0.13);
-      add(geos.visor, mats.visor, 0, 1.58, -0.265, 1, 1, 1);
+      add(geos.sphere, mats.photo, 0, 1.62, -0.01, 0.35, 0.336, 0.308, 0, Math.PI / 2, 0);
+      add(geos.sphere, mats.photo, 0, 1.51, -0.16, 0.322, 0.224, 0.182, 0, Math.PI / 2, 0);
+      add(geos.visor, mats.glass, 0, 1.58, -0.305, 1, 1, 1);
       add(geos.box, mats.rim, 0, 1.67, -0.275, 0.39, 0.018, 0.018);
       add(geos.box, mats.rim, 0, 1.49, -0.275, 0.39, 0.018, 0.018);
       add(geos.box, mats.rim, -0.195, 1.58, -0.275, 0.018, 0.1, 0.018);
