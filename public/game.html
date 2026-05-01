@@ -2792,11 +2792,15 @@
         beach: basic(0xd8c37a, { side: THREE.DoubleSide }),
         ocean: basic(0x176fa8, { side: THREE.DoubleSide }),
         glow: basic(0xffd49a, { transparent: true, opacity: 0.22, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }),
-        hills: basic(0x7ca768, { side: THREE.DoubleSide }),
+        hills: basic(0x6f8164, { transparent: true, opacity: 0.42, depthWrite: false, side: THREE.DoubleSide }),
+        hillsFar: basic(0x9ab49c, { transparent: true, opacity: 0.3, depthWrite: false, side: THREE.DoubleSide }),
+        hillsMid: basic(0x78906e, { transparent: true, opacity: 0.36, depthWrite: false, side: THREE.DoubleSide }),
+        cityHaze: basic(0xd6ecf2, { transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide }),
+        streetHaze: basic(0x9cb8bd, { transparent: true, opacity: 0.18, depthWrite: false, side: THREE.DoubleSide }),
         freeway: basic(0x4a4d55, { side: THREE.DoubleSide }),
         road: basic(0x343941),
         roadLight: basic(0x525960),
-        cityGround: basic(0x7b866e, { side: THREE.DoubleSide }),
+        cityGround: basic(0x66706b, { side: THREE.DoubleSide }),
         sidewalk: basic(0xaeb6b4),
         lane: basic(0xf3d65d, { transparent: true, opacity: 0.78, depthWrite: false }),
         crosswalk: basic(0xf7f2dc, { transparent: true, opacity: 0.82, depthWrite: false }),
@@ -2809,7 +2813,10 @@
         city: new THREE.MeshBasicMaterial({ color: 0xffffff, map: windowTexture }),
         cityWarm: new THREE.MeshBasicMaterial({ color: 0xd5c4aa, map: windowTexture }),
         cityBlue: new THREE.MeshBasicMaterial({ color: 0xa8bed2, map: windowTexture }),
-        cityDark: new THREE.MeshBasicMaterial({ color: 0x607082, map: windowTexture })
+        cityDark: new THREE.MeshBasicMaterial({ color: 0x607082, map: windowTexture }),
+        cityFar: new THREE.MeshBasicMaterial({ color: 0xb7c7cc, map: windowTexture, transparent: true, opacity: 0.58 }),
+        cityFarWarm: new THREE.MeshBasicMaterial({ color: 0xcbbfae, map: windowTexture, transparent: true, opacity: 0.52 }),
+        cityFarBlue: new THREE.MeshBasicMaterial({ color: 0x95afc0, map: windowTexture, transparent: true, opacity: 0.5 })
       };
     }
 
@@ -2849,6 +2856,67 @@
       return mesh;
     }
 
+    function addRooftopHazePanel(group, roof, x, y, z, width, height, yaw, material) {
+      const panel = new THREE.Mesh(new THREE.PlaneGeometry(width, height, 1, 1), material || roof.cityHaze);
+      panel.position.set(x, y, z);
+      panel.rotation.y = yaw || 0;
+      markRooftopBackground(panel);
+      group.add(panel);
+      return panel;
+    }
+
+    function createRooftopHillGeometry(width, height, seed) {
+      const shape = new THREE.Shape();
+      const steps = 18;
+      shape.moveTo(-width * 0.5, 0);
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        const x = -width * 0.5 + t * width;
+        const ridge = 0.36 + Math.sin(t * Math.PI * 2.0 + seed) * 0.16 + Math.sin(t * Math.PI * 5.0 + seed * 1.7) * 0.08;
+        const shoulder = Math.sin(t * Math.PI) * 0.24;
+        shape.lineTo(x, height * (ridge + shoulder));
+      }
+      shape.lineTo(width * 0.5, 0);
+      shape.lineTo(-width * 0.5, 0);
+      return new THREE.ShapeGeometry(shape);
+    }
+
+    function addRooftopHillLayer(group, roof, material, z, baseY, width, height, seed) {
+      const hills = new THREE.Mesh(createRooftopHillGeometry(width, height, seed), material);
+      hills.position.set(0, baseY, z);
+      markRooftopBackground(hills);
+      group.add(hills);
+      return hills;
+    }
+
+    function addRooftopAtmosphereLayers(group, roof) {
+      addRooftopHillLayer(group, roof, roof.hillsFar, 205, -31, 390, 22, 0.4);
+      addRooftopHillLayer(group, roof, roof.hillsMid, 172, -38, 350, 28, 2.2);
+      addRooftopHillLayer(group, roof, roof.hills, 138, -45, 310, 24, 4.0);
+      addRooftopHazePanel(group, roof, 0, -17, 126, 320, 34, 0, roof.cityHaze);
+      addRooftopHazePanel(group, roof, 0, -37, 94, 260, 28, 0, roof.streetHaze);
+      addRooftopHazePanel(group, roof, -96, -30, 64, 140, 28, Math.PI / 2, roof.streetHaze);
+      addRooftopHazePanel(group, roof, 96, -30, 64, 140, 28, -Math.PI / 2, roof.streetHaze);
+    }
+
+    function addRooftopDistantSkyline(group, roof) {
+      const mats = [roof.cityFar, roof.cityFarWarm, roof.cityFarBlue];
+      for (let i = 0; i < 48; i++) {
+        const row = i % 3;
+        const x = -145 + ((i * 19) % 290);
+        const z = 78 + row * 19 + ((i % 4) - 1.5) * 2.4;
+        const w = 5.2 + (i % 5) * 1.3;
+        const d = 5.0 + ((i + 2) % 4) * 1.4;
+        const h = 10 + ((i * 7) % 28) + (row === 0 ? 6 : 0);
+        const baseY = -54 - row * 4;
+        const yaw = ((i % 7) - 3) * 0.012;
+        const mat = mats[i % mats.length];
+        addRooftopBackdropBox(group, x, baseY + h * 0.5, z, w, h, d, mat, yaw);
+        if (i % 5 === 0) addRooftopBackdropBox(group, x, baseY + h + 0.45, z, w * 0.58, 0.9, d * 0.58, roof.roadLight, yaw);
+        if (i % 11 === 0) addRooftopBackdropBox(group, x + w * 0.18, baseY + h + 1.6, z, 0.14, 2.3, 0.14, roof.roadLight, yaw);
+      }
+    }
+
     function addRooftopOwnTowerDrop(group, roof) {
       const facadeY = -29;
       addRooftopBackdropBox(group, 0, facadeY, -ARENA_HALF_Z - 2.65, ARENA_HALF_X * 2 + 8, 58, 2.9, roof.cityBlue, 0);
@@ -2871,14 +2939,14 @@
 
     function addRooftopStreetPalm(group, roof, x, z, height) {
       const trunk = new THREE.Mesh(geometries.cylinderLow, roof.palmTrunk);
-      trunk.position.set(x, -64 + height * 0.5, z);
+      trunk.position.set(x, -72 + height * 0.5, z);
       trunk.scale.set(0.16, height, 0.16);
       markRooftopBackground(trunk);
       group.add(trunk);
       for (let i = 0; i < 6; i++) {
         const leaf = new THREE.Mesh(geometries.plane, roof.palmLeaf);
         const angle = i / 6 * Math.PI * 2;
-        leaf.position.set(x + Math.cos(angle) * 0.55, -63.6 + height, z + Math.sin(angle) * 0.55);
+        leaf.position.set(x + Math.cos(angle) * 0.55, -71.6 + height, z + Math.sin(angle) * 0.55);
         leaf.scale.set(2.2, 0.85, 0.4);
         leaf.rotation.set(-0.88, angle, 0.18);
         markRooftopBackground(leaf);
@@ -2887,14 +2955,14 @@
     }
 
     function addRooftopCar(group, roof, x, z, yaw, material) {
-      addRooftopBackdropBox(group, x, -63.35, z, 1.25, 0.34, 0.62, material, yaw);
-      addRooftopBackdropBox(group, x, -63.04, z - Math.cos(yaw || 0) * 0.04, 0.58, 0.2, 0.5, roof.cityDark, yaw);
+      addRooftopBackdropBox(group, x, -71.35, z, 1.25, 0.34, 0.62, material, yaw);
+      addRooftopBackdropBox(group, x, -71.04, z - Math.cos(yaw || 0) * 0.04, 0.58, 0.2, 0.5, roof.cityDark, yaw);
     }
 
     function addRooftopCityBelow(group, roof) {
       const cityBase = new THREE.Mesh(new THREE.PlaneGeometry(560, 560, 1, 1), roof.cityGround);
       cityBase.rotation.x = -Math.PI / 2;
-      cityBase.position.set(0, -64.2, 0);
+      cityBase.position.set(0, -72.2, 0);
       markRooftopBackground(cityBase);
       group.add(cityBase);
       addRooftopOwnTowerDrop(group, roof);
@@ -2902,23 +2970,23 @@
       for (let i = -4; i <= 4; i++) {
         const x = i * 34;
         const z = i * 34;
-        addRooftopBackdropBox(group, x, -63.9, 0, 6.4, 0.08, 290, roof.road, 0);
-        addRooftopBackdropBox(group, 0, -63.88, z, 290, 0.08, 6.4, roof.road, 0);
-        addRooftopBackdropBox(group, x - 3.8, -63.84, 0, 0.55, 0.08, 286, roof.sidewalk, 0);
-        addRooftopBackdropBox(group, x + 3.8, -63.84, 0, 0.55, 0.08, 286, roof.sidewalk, 0);
-        addRooftopBackdropBox(group, 0, -63.82, z - 3.8, 286, 0.08, 0.55, roof.sidewalk, 0);
-        addRooftopBackdropBox(group, 0, -63.82, z + 3.8, 286, 0.08, 0.55, roof.sidewalk, 0);
+        addRooftopBackdropBox(group, x, -71.9, 0, 6.4, 0.08, 290, roof.road, 0);
+        addRooftopBackdropBox(group, 0, -71.88, z, 290, 0.08, 6.4, roof.road, 0);
+        addRooftopBackdropBox(group, x - 3.8, -71.84, 0, 0.55, 0.08, 286, roof.sidewalk, 0);
+        addRooftopBackdropBox(group, x + 3.8, -71.84, 0, 0.55, 0.08, 286, roof.sidewalk, 0);
+        addRooftopBackdropBox(group, 0, -71.82, z - 3.8, 286, 0.08, 0.55, roof.sidewalk, 0);
+        addRooftopBackdropBox(group, 0, -71.82, z + 3.8, 286, 0.08, 0.55, roof.sidewalk, 0);
         for (let j = -4; j <= 4; j++) {
           const p = j * 31;
-          addRooftopBackdropBox(group, x, -63.74, p, 0.28, 0.08, 7.5, roof.lane, 0);
-          addRooftopBackdropBox(group, p, -63.72, z, 7.5, 0.08, 0.28, roof.lane, 0);
+          addRooftopBackdropBox(group, x, -71.74, p, 0.28, 0.08, 7.5, roof.lane, 0);
+          addRooftopBackdropBox(group, p, -71.72, z, 7.5, 0.08, 0.28, roof.lane, 0);
         }
       }
 
       for (let x = -136; x <= 136; x += 34) {
         for (let z = -136; z <= 136; z += 34) {
-          addRooftopBackdropBox(group, x, -63.62, z, 4.6, 0.08, 0.36, roof.crosswalk, 0);
-          addRooftopBackdropBox(group, x, -63.6, z, 0.36, 0.08, 4.6, roof.crosswalk, 0);
+          addRooftopBackdropBox(group, x, -71.62, z, 4.6, 0.08, 0.36, roof.crosswalk, 0);
+          addRooftopBackdropBox(group, x, -71.6, z, 0.36, 0.08, 4.6, roof.crosswalk, 0);
         }
       }
 
@@ -2933,11 +3001,11 @@
           const w = 7.5 + ((index * 7) % 9);
           const d = 7.0 + ((index * 5) % 8);
           const h = nearEdge ? 28 + ((index * 11) % 30) : 12 + ((index * 13) % 40);
-          const y = -64 + h * 0.5;
+          const y = -72 + h * 0.5;
           const mat = buildingMats[index % buildingMats.length];
           addRooftopBackdropBox(group, x, y, z, w, h, d, mat, ((index % 5) - 2) * 0.025);
-          if (index % 4 === 0) addRooftopBackdropBox(group, x, -64 + h + 0.85, z, w * 0.54, 1.4, d * 0.54, roof.roadLight, 0);
-          if (index % 9 === 0) addRooftopBackdropBox(group, x, -64 + h + 2.4, z, 0.22, 3.2, 0.22, roof.warning, 0);
+          if (index % 4 === 0) addRooftopBackdropBox(group, x, -72 + h + 0.85, z, w * 0.54, 1.4, d * 0.54, roof.roadLight, 0);
+          if (index % 9 === 0) addRooftopBackdropBox(group, x, -72 + h + 2.4, z, 0.22, 3.2, 0.22, roof.warning, 0);
           index++;
         }
       }
@@ -2950,15 +3018,15 @@
       ];
       closeTowers.forEach((t, i) => {
         const [x, z, w, h, d, mat] = t;
-        addRooftopBackdropBox(group, x, -62 + h * 0.5, z, w, h, d, mat, i % 2 ? 0.04 : -0.04);
-        addRooftopBackdropBox(group, x, -62 + h + 0.8, z, w * 0.62, 1.3, d * 0.62, roof.steel, i % 2 ? 0.04 : -0.04);
+        addRooftopBackdropBox(group, x, -70 + h * 0.5, z, w, h, d, mat, i % 2 ? 0.04 : -0.04);
+        addRooftopBackdropBox(group, x, -70 + h + 0.8, z, w * 0.62, 1.3, d * 0.62, roof.steel, i % 2 ? 0.04 : -0.04);
       });
 
-      addRooftopBackdropBox(group, 0, -45, -78, 230, 1.0, 5.8, roof.freeway, -0.16);
-      addRooftopBackdropBox(group, -86, -43, 0, 5.8, 1.0, 220, roof.freeway, 0.12);
+      addRooftopBackdropBox(group, 0, -53, -78, 230, 1.0, 5.8, roof.freeway, -0.16);
+      addRooftopBackdropBox(group, -86, -51, 0, 5.8, 1.0, 220, roof.freeway, 0.12);
       for (let i = -5; i <= 5; i++) {
-        addRooftopBackdropBox(group, i * 22, -53.5, -78 + i * 3.5, 0.55, 17.5, 0.55, roof.roadLight, 0);
-        addRooftopBackdropBox(group, -86 + i * 3.4, -52.5, i * 22, 0.55, 19.0, 0.55, roof.roadLight, 0);
+        addRooftopBackdropBox(group, i * 22, -59.5, -78 + i * 3.5, 0.55, 13.5, 0.55, roof.roadLight, 0);
+        addRooftopBackdropBox(group, -86 + i * 3.4, -58.5, i * 22, 0.55, 15.0, 0.55, roof.roadLight, 0);
       }
 
       const carMats = [roof.carRed, roof.carBlue, roof.carYellow, roof.carWhite];
@@ -3039,40 +3107,14 @@
       haze.position.set(0, 26, -230);
       markRooftopBackground(haze);
       group.add(haze);
-      const hills = new THREE.Mesh(new THREE.PlaneGeometry(260, 46), roof.hills);
-      hills.position.set(0, 3, 112);
-      hills.rotation.x = -0.08;
-      markRooftopBackground(hills);
-      group.add(hills);
+      addRooftopAtmosphereLayers(group, roof);
       const freeway = new THREE.Mesh(new THREE.PlaneGeometry(140, 8), roof.freeway);
       freeway.rotation.x = -Math.PI / 2;
       freeway.rotation.z = -0.36;
       freeway.position.set(-28, -24, 54);
       markRooftopBackground(freeway);
       group.add(freeway);
-      const skylineColors = [0xb8c4cf, 0x9daabd, 0xd5c9b8, 0x8d9aae, 0xc4d2d8];
-      for (let i = 0; i < 30; i++) {
-        const side = i % 4;
-        const w = 5 + (i % 5) * 1.6;
-        const d = 5 + ((i + 2) % 5) * 1.3;
-        const h = 22 + (i * 7 % 34);
-        const x = side < 2 ? -72 + (i * 11 % 144) : (side === 2 ? -58 : 58);
-        const z = side < 2 ? (side === 0 ? -62 - (i % 5) * 7 : 58 + (i % 5) * 7) : -46 + (i * 13 % 92);
-        const baseY = i % 6 === 0 ? -18 : -30 - (i % 3) * 3;
-        const material = i % 3 === 0 ? new THREE.MeshBasicMaterial({ color: skylineColors[i % skylineColors.length], map: roof.city.map }) : roof.city;
-        const building = new THREE.Mesh(geometries.box, material);
-        building.position.set(x, baseY + h * 0.5, z);
-        building.scale.set(w, h, d);
-        markRooftopBackground(building);
-        group.add(building);
-        if (i % 7 === 0) {
-          const cap = new THREE.Mesh(geometries.box, roof.freeway);
-          cap.position.set(x, baseY + h + 0.9, z);
-          cap.scale.set(w * 0.58, 1.4, d * 0.58);
-          markRooftopBackground(cap);
-          group.add(cap);
-        }
-      }
+      addRooftopDistantSkyline(group, roof);
       for (let i = 0; i < 18; i++) {
         const x = -62 + (i * 7.3);
         addRooftopPalm(group, roof, x, -47 - (i % 3) * 3, 4.2 + (i % 4) * 0.45);
