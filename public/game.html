@@ -44,6 +44,11 @@
       height: 100%;
     }
 
+    body.killCamActive > canvas {
+      filter: contrast(1.16) saturate(1.18) sepia(0.08) brightness(1.03);
+      transition: filter 0.2s ease;
+    }
+
     h1,
     h2,
     h3,
@@ -562,6 +567,177 @@
     @keyframes killFeedIn {
       from { opacity: 0; transform: translateX(18px); }
       to { opacity: 1; transform: translateX(0); }
+    }
+
+    #killCamOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: none;
+      pointer-events: none;
+      --killcam-color: var(--red);
+      --killcam-rgb: 204, 21, 21;
+      --victim-color: var(--blue);
+      --victim-rgb: 21, 102, 204;
+    }
+
+    #killCamOverlay.visible {
+      display: block;
+    }
+
+    #killCamOverlay::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 7;
+      background: #000;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    #killCamOverlay.fading::after {
+      opacity: 1;
+    }
+
+    .killCamLetterbox {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: clamp(26px, 5vh, 54px);
+      z-index: 1;
+      background: #010203;
+      box-shadow: 0 0 28px rgba(0,0,0,0.78);
+      transition: transform 0.2s ease;
+    }
+
+    .killCamLetterbox.top {
+      top: 0;
+      transform: translateY(-100%);
+    }
+
+    .killCamLetterbox.bottom {
+      bottom: 0;
+      transform: translateY(100%);
+    }
+
+    #killCamOverlay.visible .killCamLetterbox {
+      transform: translateY(0);
+    }
+
+    .killCamHeader {
+      position: absolute;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+      min-width: min(360px, calc(100vw - 42px));
+      display: grid;
+      gap: 7px;
+      justify-items: center;
+      color: var(--killcam-color);
+      text-align: center;
+      text-shadow: 0 0 18px rgba(var(--killcam-rgb),0.62), 0 8px 22px rgba(0,0,0,0.9);
+    }
+
+    .killCamTitle {
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: clamp(34px, 5vw, 56px);
+      line-height: 0.88;
+      letter-spacing: 0.18em;
+    }
+
+    .killCamProgressTrack {
+      width: 100%;
+      height: 3px;
+      background: rgba(255,255,255,0.17);
+      overflow: hidden;
+      box-shadow: 0 0 18px rgba(var(--killcam-rgb),0.32);
+    }
+
+    #killCamProgress {
+      width: 100%;
+      height: 100%;
+      transform-origin: left center;
+      transform: scaleX(1);
+      background: linear-gradient(90deg, var(--killcam-color), #fff);
+    }
+
+    .killCamInfo {
+      position: absolute;
+      bottom: 38px;
+      z-index: 2;
+      width: min(300px, 40vw);
+      padding: 12px 14px 11px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(var(--panel-rgb, 204, 21, 21),0.74);
+      color: #ffffff;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.12);
+      backdrop-filter: blur(10px);
+    }
+
+    .killCamInfo.killer {
+      left: 22px;
+      --panel-rgb: var(--killcam-rgb);
+    }
+
+    .killCamInfo.victim {
+      right: 22px;
+      --panel-rgb: var(--victim-rgb);
+      text-align: right;
+    }
+
+    .killCamInfo span {
+      display: block;
+      color: rgba(255,255,255,0.72);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .killCamInfo strong {
+      display: block;
+      margin-top: 2px;
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: clamp(26px, 4vw, 44px);
+      line-height: 0.9;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+      text-shadow: 0 3px 12px rgba(0,0,0,0.6);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .killCamSkip {
+      position: absolute;
+      left: 50%;
+      bottom: 42px;
+      transform: translateX(-50%);
+      z-index: 2;
+      color: rgba(255,255,255,0.68);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      text-shadow: 0 2px 10px #000;
+    }
+
+    #killCamSplat {
+      position: absolute;
+      inset: -8%;
+      z-index: 0;
+      opacity: 0;
+      background:
+        radial-gradient(ellipse at 50% 46%, rgba(var(--killcam-rgb),0.82) 0 8%, rgba(var(--killcam-rgb),0.36) 12%, transparent 27%),
+        radial-gradient(circle at 39% 37%, rgba(var(--killcam-rgb),0.62) 0 5%, transparent 12%),
+        radial-gradient(circle at 63% 55%, rgba(var(--killcam-rgb),0.5) 0 4%, transparent 11%);
+      filter: saturate(1.25) blur(0.2px);
+      transition: opacity 0.16s ease;
+    }
+
+    #killCamSplat.impact {
+      opacity: 0.86;
     }
 
     @keyframes ammoPulse {
@@ -1839,6 +2015,24 @@
     <div id="hint">Pointer lock may release on Esc. Click the field to re-lock. AI uses cover, line-of-sight checks, and a balanced firing cadence.</div>
     <div id="perf">FPS --</div>
   </div>
+  <div id="killCamOverlay" aria-label="Kill cam">
+    <div class="killCamLetterbox top" aria-hidden="true"></div>
+    <div class="killCamLetterbox bottom" aria-hidden="true"></div>
+    <div id="killCamSplat" aria-hidden="true"></div>
+    <div class="killCamHeader">
+      <div id="killCamTitle" class="killCamTitle">KILL CAM</div>
+      <div class="killCamProgressTrack"><div id="killCamProgress"></div></div>
+    </div>
+    <div id="killCamKiller" class="killCamInfo killer">
+      <span>Eliminated By</span>
+      <strong id="killCamKillerName">Player</strong>
+    </div>
+    <div id="killCamVictim" class="killCamInfo victim">
+      <span>Victim</span>
+      <strong id="killCamVictimName">Player</strong>
+    </div>
+    <div class="killCamSkip">Space to skip</div>
+  </div>
   <div id="eliminatedOverlay">
     <div class="lensPaint mist" aria-hidden="true"></div>
     <div class="lensPaint primary" aria-hidden="true"></div>
@@ -1922,6 +2116,9 @@
     const COUNTDOWN_TIME = 3;
     const READY_DELAY = 2;
     const ROUND_OVER_TIME = 2;
+    const KILL_CAM_DURATION = 3;
+    const KILL_CAM_FADE_TIME = 0.3;
+    const KILL_CAM_SLOW_MO = 0.4;
     const PROJECTILE_POOL_SIZE = 96;
     const SPLAT_POOL_SIZE = 180;
     const OVERCAST_SKY_COLOR = 0xc8d4dc;
@@ -2053,7 +2250,15 @@
       miniLayout: document.getElementById('miniLayout'),
       miniPlayer: document.getElementById('miniPlayer'),
       miniOpponent: document.getElementById('miniOpponent'),
-      killFeed: document.getElementById('killFeed')
+      killFeed: document.getElementById('killFeed'),
+      killCamOverlay: document.getElementById('killCamOverlay'),
+      killCamTitle: document.getElementById('killCamTitle'),
+      killCamProgress: document.getElementById('killCamProgress'),
+      killCamKiller: document.getElementById('killCamKiller'),
+      killCamVictim: document.getElementById('killCamVictim'),
+      killCamKillerName: document.getElementById('killCamKillerName'),
+      killCamVictimName: document.getElementById('killCamVictimName'),
+      killCamSplat: document.getElementById('killCamSplat')
     };
 
     const state = {
@@ -2224,6 +2429,37 @@
       startRot: new THREE.Euler()
     };
 
+    const shotHistory = Array.from({ length: 10 }, () => null);
+    let shotHistoryIndex = 0;
+    const killCam = {
+      active: false,
+      finishing: false,
+      timer: 0,
+      fadeTimer: 0,
+      shot: null,
+      killerName: '',
+      killerTeam: 'red',
+      victimName: '',
+      victimTeam: 'blue',
+      victimType: 'ai',
+      winner: 'Red',
+      message: '',
+      sync: true,
+      localVictim: false,
+      killerIsLocal: false,
+      impactStarted: false,
+      victimPosition: new THREE.Vector3(),
+      impactPosition: new THREE.Vector3(),
+      origin: new THREE.Vector3(),
+      direction: new THREE.Vector3(0, 0, -1),
+      savedCameraPosition: new THREE.Vector3(),
+      savedCameraQuaternion: new THREE.Quaternion(),
+      savedCameraFov: 64,
+      savedCameraParent: null,
+      savedGunVisible: true,
+      cameraDetached: false
+    };
+
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(OVERCAST_SKY_COLOR);
     scene.fog = new THREE.Fog(OVERCAST_SKY_COLOR, OVERCAST_FOG_NEAR, OVERCAST_FOG_FAR);
@@ -2280,6 +2516,10 @@
     const activeCoverPoints = [];
     const projectiles = createProjectilePool();
     const splats = createSplatPool();
+    const killCamBall = new THREE.Mesh(geometries.paintball, materials.paintRed);
+    killCamBall.visible = false;
+    killCamBall.scale.setScalar(1.45);
+    scene.add(killCamBall);
     const dronePreviews = [];
     const skinPreviews = [];
     let hoveredPreviewMap = null;
@@ -4899,7 +5139,7 @@
       for (let i = 0; i < PROJECTILE_POOL_SIZE; i++) {
         const mesh = new THREE.Mesh(geometries.paintball, materials.paintRed);
         mesh.visible = false;
-        pool.push({ mesh, active: false, team: 'red', life: 0, radius: PAINTBALL_RADIUS, pos: mesh.position, prev: new THREE.Vector3(), vel: new THREE.Vector3() });
+        pool.push({ mesh, active: false, team: 'red', life: 0, radius: PAINTBALL_RADIUS, pos: mesh.position, prev: new THREE.Vector3(), vel: new THREE.Vector3(), shotData: null });
       }
       return pool;
     }
@@ -5727,13 +5967,13 @@
         }
       });
       multiplayer.socket.on('opponent_update', updateRemotePlayerFromNetwork);
-      multiplayer.socket.on('opponent_shoot', ({ origin, direction, team, id }) => {
+      multiplayer.socket.on('opponent_shoot', ({ origin, direction, team, id, shot }) => {
         if (id && id !== remotePlayer.id) remotePlayer.id = id;
-        spawnRemotePaintball(origin, direction, team || remotePlayer.team);
+        spawnRemotePaintball(origin, direction, team || remotePlayer.team, id, shot);
       });
-      multiplayer.socket.on('hit_confirmed', ({ shooterId, victimId }) => {
-        if (victimId === multiplayer.socket.id) hitPlayer();
-        else if (!remotePlayer.id || victimId === remotePlayer.id || shooterId === multiplayer.socket.id) hitOpponent();
+      multiplayer.socket.on('hit_confirmed', ({ shooterId, victimId, shot }) => {
+        if (victimId === multiplayer.socket.id) hitPlayer(shot, shooterId);
+        else if (!remotePlayer.id || victimId === remotePlayer.id || shooterId === multiplayer.socket.id) hitOpponent(shot, shooterId);
       });
       multiplayer.socket.on('round_ended', ({ winner }) => {
         endRound(winner, roundMessage(winner), false);
@@ -5787,6 +6027,7 @@
     function updateRemotePlayerFromNetwork({ id, position, rotation, crouching, prone }) {
       if (!MULTIPLAYER || !position) return;
       if (id) remotePlayer.id = id;
+      if (killCam.active) return;
       remotePlayer.visible = true;
       remotePlayer.crouching = !!crouching;
       remotePlayer.prone = !!prone;
@@ -5821,12 +6062,22 @@
       });
     }
 
-    function spawnRemotePaintball(origin, direction, team) {
+    function spawnRemotePaintball(origin, direction, team, shooterId, shot) {
       if (!origin || !direction) return;
       tmpVecA.set(Number(origin.x) || 0, Number(origin.y) || 0, Number(origin.z) || 0);
       tmpVecB.set(Number(direction.x) || 0, Number(direction.y) || 0, Number(direction.z) || 0);
       if (tmpVecB.lengthSq() <= 0.000001) return;
-      fireProjectile(team === 'red' || team === 'blue' ? team : remotePlayer.team, tmpVecA, tmpVecB);
+      const shotTeam = team === 'red' || team === 'blue' ? team : remotePlayer.team;
+      const shotData = recordShotData(cloneShotData(shot) || {
+        origin: tmpVecA,
+        direction: tmpVecB,
+        shooterPosition: remotePlayer.position || ai.position,
+        shooterRotation: { x: 0, y: ai.group.rotation.y, z: 0 },
+        team: shotTeam,
+        shooterId: shooterId || remotePlayer.id,
+        shooterName: remoteSkinName()
+      });
+      fireProjectile(shotTeam, tmpVecA, tmpVecB, shotData);
       audio.fire();
     }
 
@@ -5978,7 +6229,7 @@
         input.pointerLocked = document.pointerLockElement === renderer.domElement;
       });
       renderer.domElement.addEventListener('click', () => {
-        if (state.phase !== 'menu' && state.phase !== 'matchOver' && !isPaused()) {
+        if (state.phase !== 'menu' && state.phase !== 'matchOver' && !killCam.active && !isPaused()) {
           unlockAudio();
           renderer.domElement.requestPointerLock?.();
         }
@@ -5990,7 +6241,7 @@
         player.pitch = clamp(player.pitch, -1.36, 1.34);
       });
       document.addEventListener('mousedown', (e) => {
-        if (e.button === 0 && input.pointerLocked && !isPaused() && !player.sliding) input.shotRequests = Math.min(input.shotRequests + 1, 3);
+        if (e.button === 0 && input.pointerLocked && !killCam.active && !isPaused() && !player.sliding) input.shotRequests = Math.min(input.shotRequests + 1, 3);
       });
       document.addEventListener('contextmenu', (e) => e.preventDefault());
       document.addEventListener('keydown', (e) => setKey(e, true));
@@ -6000,6 +6251,11 @@
 
     function setKey(e, down) {
       const code = e.code;
+      if (killCam.active && down && !e.repeat) {
+        if (code === 'Space') requestKillCamFinish();
+        e.preventDefault();
+        return;
+      }
       if (code === 'Backspace' && down && !e.repeat && !input.pointerLocked && !isTextEntryTarget(e.target)) {
         let handled = false;
         if (ui.pauseScreen.style.display === 'grid') {
@@ -6148,6 +6404,7 @@
       state.nextShotTime = 0;
       state.aiShotClock = initialAiShotDelay();
       state.aiMoveClock = 0.2;
+      clearShotHistory();
       input.crawl = false;
       input.shotRequests = 0;
       resetAmmo();
@@ -6312,6 +6569,11 @@
       if (!state.running) {
         updateGun(dt, false);
         audio.updateRattle(false, false);
+        return;
+      }
+      if (killCam.active) {
+        updateKillCam(dt);
+        updateHud();
         return;
       }
       state.shotClock = Math.max(0, state.nextShotTime - performance.now() / 1000);
@@ -6693,6 +6955,66 @@
       else restoreCoverCullVisibility(gun.group);
     }
 
+    function vectorPlain(value, fallback) {
+      const source = value || fallback || { x: 0, y: 0, z: 0 };
+      return { x: Number(source.x) || 0, y: Number(source.y) || 0, z: Number(source.z) || 0 };
+    }
+
+    function rotationPlain(value) {
+      const source = value || { x: 0, y: 0, z: 0 };
+      return { x: Number(source.x) || 0, y: Number(source.y) || 0, z: Number(source.z) || 0 };
+    }
+
+    function cloneShotData(shot) {
+      if (!shot || !shot.origin || !shot.direction) return null;
+      const direction = vectorPlain(shot.direction, { x: 0, y: 0, z: -1 });
+      const length = Math.hypot(direction.x, direction.y, direction.z) || 1;
+      direction.x /= length;
+      direction.y /= length;
+      direction.z /= length;
+      return {
+        origin: vectorPlain(shot.origin),
+        direction,
+        shooterPosition: vectorPlain(shot.shooterPosition, shot.origin),
+        shooterRotation: rotationPlain(shot.shooterRotation),
+        impactPosition: shot.impactPosition ? vectorPlain(shot.impactPosition) : null,
+        team: shot.team === 'blue' ? 'blue' : 'red',
+        shooterId: shot.shooterId || '',
+        shooterName: shot.shooterName || '',
+        timestamp: Number(shot.timestamp) || Date.now()
+      };
+    }
+
+    function recordShotData(details) {
+      const shot = cloneShotData({ ...details, timestamp: Date.now() });
+      if (!shot) return null;
+      shotHistory[shotHistoryIndex] = shot;
+      shotHistoryIndex = (shotHistoryIndex + 1) % shotHistory.length;
+      return cloneShotData(shot);
+    }
+
+    function clearShotHistory() {
+      for (let i = 0; i < shotHistory.length; i++) shotHistory[i] = null;
+      shotHistoryIndex = 0;
+    }
+
+    function latestShotForTeam(team) {
+      const normalizedTeam = team === 'blue' ? 'blue' : 'red';
+      for (let i = 0; i < shotHistory.length; i++) {
+        const index = (shotHistoryIndex - 1 - i + shotHistory.length) % shotHistory.length;
+        const shot = shotHistory[index];
+        if (shot && shot.team === normalizedTeam) return cloneShotData(shot);
+      }
+      return null;
+    }
+
+    function shotWithImpact(shot, impactPosition) {
+      const copy = cloneShotData(shot);
+      if (!copy) return null;
+      copy.impactPosition = vectorPlain(impactPosition, copy.impactPosition || copy.origin);
+      return copy;
+    }
+
     function tryShootPlayer() {
       const now = performance.now() / 1000;
       if (state.phase !== 'active' || state.playerEliminated || player.sliding || state.readyClock > 0 || now < state.nextShotTime) return false;
@@ -6712,13 +7034,23 @@
       tmpVecA.copy(spawnPos);
       tmpVecB.copy(shootDir);
       const shotTeam = MULTIPLAYER ? MY_TEAM : 'red';
-      fireProjectile(shotTeam, tmpVecA, tmpVecB);
+      const shotData = recordShotData({
+        origin: tmpVecA,
+        direction: tmpVecB,
+        shooterPosition: player.root.position,
+        shooterRotation: { x: camera.rotation.x, y: player.yaw, z: camera.rotation.z },
+        team: shotTeam,
+        shooterId: multiplayer.socket?.id || 'local',
+        shooterName: selectedSkinName()
+      });
+      fireProjectile(shotTeam, tmpVecA, tmpVecB, shotData);
       if (MULTIPLAYER && multiplayer.socket && multiplayer.socket.connected) {
         multiplayer.socket.emit('player_shoot', {
           code: ROOM_CODE,
           origin: { x: tmpVecA.x, y: tmpVecA.y, z: tmpVecA.z },
           direction: { x: tmpVecB.x, y: tmpVecB.y, z: tmpVecB.z },
-          team: MY_TEAM
+          team: MY_TEAM,
+          shot: shotData
         });
       }
       ammo.hopper -= 1;
@@ -6730,12 +7062,13 @@
       return true;
     }
 
-    function fireProjectile(team, origin, direction) {
+    function fireProjectile(team, origin, direction, shotData) {
       for (let i = 0; i < projectiles.length; i++) {
         const p = projectiles[i];
         if (!p.active) {
           p.active = true;
           p.team = team;
+          p.shotData = cloneShotData(shotData) || latestShotForTeam(team);
           p.life = PAINTBALL_LIFE;
           p.mesh.material = team === 'red' ? materials.paintRed : materials.paintBlue;
           p.mesh.position.copy(origin);
@@ -6753,6 +7086,7 @@
     function clearProjectiles() {
       for (let i = 0; i < projectiles.length; i++) {
         projectiles[i].active = false;
+        projectiles[i].shotData = null;
         projectiles[i].mesh.visible = false;
         if (projectiles[i].mesh.parent) scene.remove(projectiles[i].mesh);
       }
@@ -6803,9 +7137,10 @@
         if (bodyTarget === 1) {
           tmpVecA.copy(p.pos);
           p.pos.copy(p.prev).lerp(tmpVecA, bodyT);
-          if (MULTIPLAYER) confirmOpponentHit(p.pos);
+          const killingShot = shotWithImpact(p.shotData, p.pos);
+          if (MULTIPLAYER) confirmOpponentHit(p.pos, killingShot);
           else {
-            aiEliminated(p.pos);
+            aiEliminated(p.pos, killingShot);
             spawnSplat('red', ai.position.x, 1.25, ai.position.z - 0.45, 0, 0, -1, 0.72);
           }
           deactivateProjectile(p);
@@ -6819,7 +7154,7 @@
           tmpVecA.copy(p.pos);
           p.pos.copy(p.prev).lerp(tmpVecA, bodyT);
           if (!MULTIPLAYER) {
-            playerEliminated();
+            playerEliminated(shotWithImpact(p.shotData, p.pos));
             spawnSplat('blue', player.bodyCenter.x, player.height * 0.82, player.bodyCenter.z, 0, 0, 1, 0.72);
           }
           deactivateProjectile(p);
@@ -6834,6 +7169,7 @@
 
     function deactivateProjectile(p) {
       p.active = false;
+      p.shotData = null;
       p.mesh.visible = false;
       if (p.mesh.parent) scene.remove(p.mesh);
     }
@@ -6848,12 +7184,13 @@
       return p.team === 'blue' && !state.playerEliminated;
     }
 
-    function confirmOpponentHit(hitPos) {
+    function confirmOpponentHit(hitPos, shotData) {
       if (!remotePlayer.id || !multiplayer.socket || !multiplayer.socket.connected) return;
       spawnSplat(MY_TEAM, hitPos.x, Math.max(0.6, ai.tacticalHeight * 0.82), hitPos.z, 0, 0, -1, 0.72);
       multiplayer.socket.emit('player_hit', {
         code: ROOM_CODE,
-        victimId: remotePlayer.id
+        victimId: remotePlayer.id,
+        shot: shotWithImpact(shotData, hitPos)
       });
     }
 
@@ -7475,7 +7812,16 @@
         tmpVecB.z += Math.cos(state.elapsed * 2.7) * spread;
       }
       tmpVecB.normalize();
-      fireProjectile('blue', tmpVecA, tmpVecB);
+      const shotData = recordShotData({
+        origin: tmpVecA,
+        direction: tmpVecB,
+        shooterPosition: ai.position,
+        shooterRotation: { x: 0, y: ai.group.rotation.y, z: 0 },
+        team: 'blue',
+        shooterId: 'ai',
+        shooterName: aiDifficultyName()
+      });
+      fireProjectile('blue', tmpVecA, tmpVecB, shotData);
       audio.fire();
       return true;
     }
@@ -7532,7 +7878,7 @@
       return key.charAt(0).toUpperCase() + key.slice(1);
     }
 
-    function aiEliminated(hitPos) {
+    function aiEliminated(hitPos, shotData) {
       state.aiEliminated = true;
       ai.splat.visible = true;
       if (ai.limbs && ai.limbs.splat2) ai.limbs.splat2.visible = true;
@@ -7540,23 +7886,55 @@
       addKillFeedEntry(selectedSkinName(), 'red', aiDifficultyName(), 'blue');
       playEliminationAudio('shooter');
       scoreTeam('red');
-      endRound('Red', 'Red wins the round');
+      tmpVecA.set(ai.position.x, Math.max(0.7, (ai.tacticalHeight || ai.height) * 0.76), ai.position.z);
+      if (!startKillCam({
+        shot: shotWithImpact(shotData, hitPos),
+        killerName: selectedSkinName(),
+        killerTeam: 'red',
+        killerIsLocal: true,
+        victimName: aiDifficultyName(),
+        victimTeam: 'blue',
+        victimType: 'ai',
+        victimPosition: tmpVecA,
+        impactPosition: hitPos,
+        winner: 'Red',
+        message: 'Red wins the round'
+      })) endRound('Red', 'Red wins the round');
     }
 
-    function playerEliminated() {
+    function playerEliminated(shotData) {
       state.playerEliminated = true;
       gun.paint.visible = true;
-      startDeathCamera();
-      showEliminatedOverlay('blue');
       addKillFeedEntry(aiDifficultyName(), 'blue', selectedSkinName(), 'red');
       playEliminationAudio('victim');
       scoreTeam('blue');
-      endRound('Blue', 'Blue wins the round');
+      tmpVecA.copy(player.bodyCenter);
+      tmpVecA.y = Math.max(0.55, player.height * 0.78);
+      if (!startKillCam({
+        shot: shotData,
+        killerName: aiDifficultyName(),
+        killerTeam: 'blue',
+        killerIsLocal: false,
+        victimName: selectedSkinName(),
+        victimTeam: 'red',
+        victimType: 'player',
+        victimPosition: tmpVecA,
+        impactPosition: tmpVecA,
+        localVictim: true,
+        winner: 'Blue',
+        message: 'Blue wins the round'
+      })) {
+        startDeathCamera();
+        showEliminatedOverlay('blue');
+        endRound('Blue', 'Blue wins the round');
+      }
     }
 
-    function hitOpponent() {
+    function hitOpponent(shotData, shooterId) {
       if (state.aiEliminated || state.phase === 'roundOver' || state.phase === 'matchOver') return;
       const localMats = getTeamMaterials(MY_TEAM);
+      const winner = MY_TEAM;
+      const message = formatTeam(winner) + ' wins the round';
       state.aiEliminated = true;
       ai.splat.material = localMats.paint;
       ai.splat.visible = true;
@@ -7569,21 +7947,54 @@
       addKillFeedEntry(selectedSkinName(), MY_TEAM, remoteSkinName(), remotePlayer.team || OPPONENT_TEAM);
       playEliminationAudio('shooter');
       scoreTeam(MY_TEAM);
-      endRound(MY_TEAM, formatTeam(MY_TEAM) + ' wins the round', false);
+      tmpVecA.set(ai.position.x, Math.max(0.7, (ai.tacticalHeight || ai.height) * 0.76), ai.position.z);
+      if (!startKillCam({
+        shot: shotData,
+        killerName: selectedSkinName(),
+        killerTeam: MY_TEAM,
+        killerIsLocal: !shooterId || shooterId === multiplayer.socket?.id,
+        victimName: remoteSkinName(),
+        victimTeam: remotePlayer.team || OPPONENT_TEAM,
+        victimType: 'remote',
+        victimPosition: tmpVecA,
+        impactPosition: shotData?.impactPosition || tmpVecA,
+        winner,
+        message,
+        sync: false
+      })) endRound(winner, message, false);
     }
 
-    function hitPlayer() {
+    function hitPlayer(shotData, shooterId) {
       if (state.playerEliminated || state.phase === 'roundOver' || state.phase === 'matchOver') return;
       const winner = remotePlayer.team || OPPONENT_TEAM;
+      const message = formatTeam(winner) + ' wins the round';
       gun.paint.material = getTeamMaterials(winner).paint;
       state.playerEliminated = true;
       gun.paint.visible = true;
-      startDeathCamera();
-      showEliminatedOverlay(winner);
       addKillFeedEntry(remoteSkinName(), winner, selectedSkinName(), MY_TEAM);
       playEliminationAudio('victim');
       scoreTeam(winner);
-      endRound(winner, formatTeam(winner) + ' wins the round', false);
+      tmpVecA.copy(player.bodyCenter);
+      tmpVecA.y = Math.max(0.55, player.height * 0.78);
+      if (!startKillCam({
+        shot: shotData,
+        killerName: remoteSkinName(),
+        killerTeam: winner,
+        killerIsLocal: shooterId === multiplayer.socket?.id,
+        victimName: selectedSkinName(),
+        victimTeam: MY_TEAM,
+        victimType: 'player',
+        victimPosition: tmpVecA,
+        impactPosition: shotData?.impactPosition || tmpVecA,
+        localVictim: true,
+        winner,
+        message,
+        sync: false
+      })) {
+        startDeathCamera();
+        showEliminatedOverlay(winner);
+        endRound(winner, message, false);
+      }
     }
 
     function scoreTeam(team) {
@@ -7634,6 +8045,256 @@
       ui.eliminatedOverlay.classList.remove('visible');
     }
 
+    function teamCss(team) {
+      return String(team).toLowerCase() === 'blue'
+        ? { color: '#1566cc', rgb: '21, 102, 204' }
+        : { color: '#cc1515', rgb: '204, 21, 21' };
+    }
+
+    function setKillCamVector(target, value, fallback) {
+      const source = value || fallback || { x: 0, y: 0, z: 0 };
+      target.set(Number(source.x) || 0, Number(source.y) || 0, Number(source.z) || 0);
+      return target;
+    }
+
+    function fallbackKillCamShot(killerTeam, killerIsLocal, victimPosition, killerName) {
+      if (killerIsLocal) {
+        camera.getWorldPosition(tmpVecA);
+      } else if (ai.markerBarrelTip) {
+        ai.markerBarrelTip.getWorldPosition(tmpVecA);
+      } else {
+        tmpVecA.copy(ai.position);
+        tmpVecA.y += Math.max(0.6, (ai.tacticalHeight || ai.height) * 0.82);
+      }
+      tmpVecB.copy(victimPosition).sub(tmpVecA);
+      if (tmpVecB.lengthSq() <= 0.000001) tmpVecB.set(killerTeam === 'blue' ? -1 : 1, 0, 0);
+      tmpVecB.normalize();
+      return cloneShotData({
+        origin: tmpVecA,
+        direction: tmpVecB,
+        shooterPosition: killerIsLocal ? player.root.position : ai.position,
+        shooterRotation: { x: killerIsLocal ? player.pitch : 0, y: killerIsLocal ? player.yaw : ai.group.rotation.y, z: camera.rotation.z },
+        impactPosition: victimPosition,
+        team: killerTeam,
+        shooterId: killerIsLocal ? (multiplayer.socket?.id || 'local') : (remotePlayer.id || 'ai'),
+        shooterName: killerName
+      });
+    }
+
+    function startKillCam(options) {
+      if (killCam.active || state.phase === 'matchOver') return false;
+      const killerTeam = options.killerTeam === 'blue' ? 'blue' : 'red';
+      const victimTeam = options.victimTeam === 'blue' ? 'blue' : 'red';
+      const killerStyle = teamCss(killerTeam);
+      const victimStyle = teamCss(victimTeam);
+      const fallbackVictim = options.victimType === 'player'
+        ? player.bodyCenter
+        : tmpVecC.set(ai.position.x, Math.max(0.7, (ai.tacticalHeight || ai.height) * 0.74), ai.position.z);
+      setKillCamVector(killCam.victimPosition, options.victimPosition, fallbackVictim);
+      const primaryShot = cloneShotData(options.shot) || latestShotForTeam(killerTeam) || fallbackKillCamShot(killerTeam, !!options.killerIsLocal, killCam.victimPosition, options.killerName);
+      const shot = shotWithImpact(primaryShot, options.impactPosition || killCam.victimPosition);
+      if (!shot) return false;
+
+      killCam.active = true;
+      killCam.finishing = false;
+      killCam.impactStarted = false;
+      killCam.timer = 0;
+      killCam.fadeTimer = 0;
+      killCam.shot = shot;
+      killCam.killerName = options.killerName || shot.shooterName || formatTeam(killerTeam);
+      killCam.killerTeam = killerTeam;
+      killCam.victimName = options.victimName || formatTeam(victimTeam);
+      killCam.victimTeam = victimTeam;
+      killCam.victimType = options.victimType || 'ai';
+      killCam.winner = options.winner || formatTeam(killerTeam);
+      killCam.message = options.message || roundMessage(killCam.winner);
+      killCam.sync = options.sync !== false;
+      killCam.localVictim = !!options.localVictim;
+      killCam.killerIsLocal = !!options.killerIsLocal;
+      setKillCamVector(killCam.origin, shot.origin);
+      setKillCamVector(killCam.direction, shot.direction, { x: 0, y: 0, z: -1 });
+      if (killCam.direction.lengthSq() <= 0.000001) killCam.direction.subVectors(killCam.victimPosition, killCam.origin);
+      if (killCam.direction.lengthSq() <= 0.000001) killCam.direction.set(0, 0, -1);
+      killCam.direction.normalize();
+      setKillCamVector(killCam.impactPosition, shot.impactPosition, options.impactPosition || killCam.victimPosition);
+
+      killCam.savedCameraParent = camera.parent;
+      killCam.savedCameraPosition.copy(camera.position);
+      killCam.savedCameraQuaternion.copy(camera.quaternion);
+      killCam.savedCameraFov = camera.fov;
+      killCam.savedGunVisible = gun.group.visible;
+      scene.attach(camera);
+      killCam.cameraDetached = true;
+
+      stopReload(false);
+      input.shotRequests = 0;
+      audio.updateRattle(false, false);
+      ui.centerMessage.classList.remove('visible');
+      hideEliminatedOverlay();
+      document.body.classList.add('killCamActive');
+      ui.killCamOverlay.style.setProperty('--killcam-color', killerStyle.color);
+      ui.killCamOverlay.style.setProperty('--killcam-rgb', killerStyle.rgb);
+      ui.killCamOverlay.style.setProperty('--victim-color', victimStyle.color);
+      ui.killCamOverlay.style.setProperty('--victim-rgb', victimStyle.rgb);
+      ui.killCamKillerName.textContent = killCam.killerName;
+      ui.killCamVictimName.textContent = killCam.victimName;
+      ui.killCamTitle.textContent = 'KILL CAM';
+      ui.killCamProgress.style.transform = 'scaleX(1)';
+      ui.killCamSplat.classList.remove('impact');
+      ui.killCamOverlay.classList.remove('fading');
+      ui.killCamOverlay.classList.add('visible');
+      killCamBall.material = killerTeam === 'blue' ? materials.paintBlue : materials.paintRed;
+      killCamBall.position.copy(killCam.origin);
+      killCamBall.visible = false;
+      renderKillCamFrame(0);
+      return true;
+    }
+
+    function requestKillCamFinish() {
+      if (!killCam.active || killCam.finishing) return;
+      killCam.finishing = true;
+      killCam.fadeTimer = KILL_CAM_FADE_TIME;
+      ui.killCamOverlay.classList.add('fading');
+      ui.killCamProgress.style.transform = 'scaleX(0)';
+    }
+
+    function updateKillCam(dt) {
+      if (!killCam.active) return;
+      if (killCam.finishing) {
+        killCam.fadeTimer -= dt;
+        if (killCam.fadeTimer <= 0) completeKillCam();
+        return;
+      }
+      killCam.timer += dt;
+      const progress = clamp(1 - killCam.timer / KILL_CAM_DURATION, 0, 1);
+      ui.killCamProgress.style.transform = 'scaleX(' + progress.toFixed(3) + ')';
+      renderKillCamFrame(dt);
+      if (killCam.timer >= KILL_CAM_DURATION) requestKillCamFinish();
+    }
+
+    function renderKillCamFrame(dt) {
+      if (killCam.timer < 1) renderKillCamShooterView();
+      else if (killCam.timer < 2) renderKillCamPaintballFollow();
+      else renderKillCamImpact(dt);
+    }
+
+    function setReplayCamera(position, target, roll) {
+      camera.position.copy(position);
+      camera.lookAt(target);
+      if (roll) camera.rotation.z += roll;
+    }
+
+    function renderKillCamShooterView() {
+      const t = clamp(killCam.timer, 0, 1);
+      gun.group.visible = killCam.killerIsLocal;
+      killCamBall.visible = false;
+      tmpVecA.copy(killCam.origin).addScaledVector(killCam.direction, -0.42);
+      tmpVecA.y += 0.02 + Math.sin(t * Math.PI) * 0.035;
+      tmpVecB.copy(killCam.origin).addScaledVector(killCam.direction, 32);
+      setReplayCamera(tmpVecA, tmpVecB, Math.sin(t * Math.PI * 5) * 0.006);
+      camera.fov = 61 - t * 4;
+      camera.updateProjectionMatrix();
+    }
+
+    function killCamTrajectoryPoint(progress, target) {
+      const t = clamp(progress, 0, 1);
+      target.copy(killCam.origin).lerp(killCam.impactPosition, t);
+      target.y -= Math.sin(t * Math.PI) * 0.42;
+      return target;
+    }
+
+    function renderKillCamPaintballFollow() {
+      const t = clamp(killCam.timer - 1, 0, 1);
+      const travel = clamp(t * KILL_CAM_SLOW_MO + t * t * (1 - KILL_CAM_SLOW_MO), 0, 1);
+      gun.group.visible = false;
+      ui.killCamSplat.classList.remove('impact');
+      killCamTrajectoryPoint(travel, tmpVecA);
+      killCamBall.visible = true;
+      killCamBall.position.copy(tmpVecA);
+      killCamBall.rotation.x += 0.42;
+      killCamBall.rotation.y += 0.31;
+      tmpVecD.set(0, 1, 0);
+      tmpVecC.crossVectors(killCam.direction, tmpVecD);
+      if (tmpVecC.lengthSq() <= 0.000001) tmpVecC.set(1, 0, 0);
+      tmpVecC.normalize();
+      tmpVecB.copy(tmpVecA)
+        .addScaledVector(killCam.direction, -2.25 - t * 0.65)
+        .addScaledVector(tmpVecC, Math.sin(t * Math.PI) * 0.42);
+      tmpVecB.y += 0.28 + t * 0.38;
+      tmpVecD.copy(tmpVecA).addScaledVector(killCam.direction, 1.8);
+      setReplayCamera(tmpVecB, tmpVecD, Math.sin(t * Math.PI * 2) * 0.018);
+      camera.fov = 49 + t * 3;
+      camera.updateProjectionMatrix();
+    }
+
+    function renderKillCamImpact(dt) {
+      const t = clamp(killCam.timer - 2, 0, 1);
+      gun.group.visible = false;
+      if (!killCam.impactStarted) {
+        killCam.impactStarted = true;
+        ui.killCamSplat.classList.add('impact');
+        if (killCam.victimType !== 'player') startAiDeathVisual();
+      }
+      if (killCam.victimType !== 'player') updateAiVisual(dt, false, false);
+      if (t < 0.16) {
+        killCamBall.visible = true;
+        killCamBall.position.copy(killCam.impactPosition);
+      } else {
+        killCamBall.visible = false;
+      }
+      tmpVecD.set(0, 1, 0);
+      tmpVecC.crossVectors(killCam.direction, tmpVecD);
+      if (tmpVecC.lengthSq() <= 0.000001) tmpVecC.set(1, 0, 0);
+      tmpVecC.normalize();
+      const shake = Math.sin(killCam.timer * 92) * 0.08 * (1 - t);
+      const pullback = 1.25 + t * 3.7;
+      tmpVecA.copy(killCam.impactPosition)
+        .addScaledVector(killCam.direction, -pullback)
+        .addScaledVector(tmpVecC, shake);
+      tmpVecA.y += 0.42 + t * 0.82 + Math.abs(shake) * 0.55;
+      tmpVecB.copy(killCam.victimPosition).lerp(killCam.impactPosition, 0.42);
+      tmpVecB.y += 0.24 * (1 - t);
+      setReplayCamera(tmpVecA, tmpVecB, shake * 0.14);
+      camera.fov = 54 + t * 6 + Math.abs(shake) * 18;
+      camera.updateProjectionMatrix();
+    }
+
+    function completeKillCam() {
+      const localVictim = killCam.localVictim;
+      const victimTeam = killCam.victimTeam;
+      const winner = killCam.winner;
+      const message = killCam.message;
+      const sync = killCam.sync;
+      resetKillCam();
+      if (localVictim) {
+        startDeathCamera();
+        showEliminatedOverlay(victimTeam);
+      }
+      endRound(winner, message, sync);
+    }
+
+    function resetKillCam() {
+      if (killCam.cameraDetached) {
+        (killCam.savedCameraParent || player.root).attach(camera);
+        camera.position.copy(killCam.savedCameraPosition);
+        camera.quaternion.copy(killCam.savedCameraQuaternion);
+        camera.fov = killCam.savedCameraFov || 64;
+        camera.updateProjectionMatrix();
+      }
+      killCam.active = false;
+      killCam.finishing = false;
+      killCam.impactStarted = false;
+      killCam.fadeTimer = 0;
+      killCam.timer = 0;
+      killCam.cameraDetached = false;
+      killCam.shot = null;
+      gun.group.visible = killCam.savedGunVisible;
+      killCamBall.visible = false;
+      ui.killCamOverlay.classList.remove('visible', 'fading');
+      ui.killCamSplat.classList.remove('impact');
+      document.body.classList.remove('killCamActive');
+    }
+
     function endRound(winner, message, sync = true) {
       if (state.phase === 'roundOver' || state.phase === 'matchOver') return;
       const finalMessage = message || roundMessage(winner);
@@ -7673,6 +8334,7 @@
     }
 
     function resetCameraEffects() {
+      resetKillCam();
       victoryCam.active = false;
       victoryCam.timer = 0;
       deathCam.active = false;

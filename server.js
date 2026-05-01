@@ -271,19 +271,19 @@ io.on('connection', (socket) => {
     })
   })
 
-  socket.on('player_shoot', ({ code, origin, direction, team }) => {
+  socket.on('player_shoot', ({ code, origin, direction, team, shot }) => {
     code = normalizeCode(code)
     if (!rooms[code]) return
     socket.to(code).emit('opponent_shoot', {
-      id: socket.id, origin, direction, team
+      id: socket.id, origin, direction, team, shot
     })
   })
 
-  socket.on('player_hit', ({ code, victimId }) => {
+  socket.on('player_hit', ({ code, victimId, shot }) => {
     code = normalizeCode(code)
     if (!rooms[code]) return
     io.to(code).emit('hit_confirmed', {
-      shooterId: socket.id, victimId
+      shooterId: socket.id, victimId, shot
     })
   })
 
