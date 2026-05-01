@@ -1416,9 +1416,9 @@
         <div class="card" data-map="rooftop" tabindex="0">
           <canvas class="cardPreview" data-preview="rooftop" aria-hidden="true"></canvas>
           <div class="cardText">
-            <p class="cardTag">Night Ops</p>
+            <p class="cardTag">Skyline</p>
             <p class="cardTitle">ROOFTOP CITY</p>
-            <p class="cardCopy">Skyscraper roof / city glow</p>
+            <p class="cardCopy">Grass roof / LA skyline</p>
           </div>
         </div>
       </div>
@@ -2747,48 +2747,50 @@
       const shootables = [];
       const coverPoints = [];
       const roof = createRooftopMaterials();
-      group.add(makeRooftopGround(roof.rooftop));
+      group.add(makeRooftopGround(roof.turf));
       addRooftopSurfaceDetails(group, roof);
       addRooftopBackdrop(group, roof);
-      addRooftopStarsAndMoon(group, roof);
       addRooftopGlassFence(group, colliders, roof);
       colliders.shootables = shootables;
       addRooftopCover(group, colliders, coverPoints, roof);
       finalizeRooftopShadows(group);
-      return { group, colliders, shootables, coverPoints, sky: 0x050510, fog: 0x050510, ambient: 'rooftop' };
+      return { group, colliders, shootables, coverPoints, sky: 0x79cfff, fog: 0x79cfff, ambient: 'rooftop' };
     }
 
     function createRooftopMaterials() {
       const standard = (color, opts = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.74, metalness: 0.1, envMap: environmentMap, envMapIntensity: 0.35, ...opts });
       const basic = (color, opts = {}) => new THREE.MeshBasicMaterial({ color, ...opts });
-      const rooftop = standard(0x2a2a35, { roughness: 0.94, metalness: 0.02, envMapIntensity: 0.16 });
-      textureLibrary.apply(rooftop, 'concrete', 15, 15);
-      textureLibrary.apply(rooftop, 'concreteBump', 15, 15, 'bumpMap', THREE.NoColorSpace || THREE.LinearSRGBColorSpace);
-      textureLibrary.apply(rooftop, 'concreteRoughness', 15, 15, 'roughnessMap', THREE.NoColorSpace || THREE.LinearSRGBColorSpace);
-      rooftop.bumpScale = 0.025;
+      const turf = standard(0x4d9a3f, { roughness: 1, metalness: 0, envMapIntensity: 0.22, vertexColors: true });
+      textureLibrary.apply(turf, 'grass', 18, 18);
+      textureLibrary.apply(turf, 'grassNormal', 18, 18, 'normalMap', THREE.NoColorSpace || THREE.LinearSRGBColorSpace);
+      turf.normalScale = new THREE.Vector2(0.16, 0.16);
       return {
-        rooftop,
-        joint: standard(0x191922, { roughness: 1, metalness: 0, transparent: true, opacity: 0.45, depthWrite: false }),
-        marking: standard(0xd8b341, { roughness: 0.82, metalness: 0, transparent: true, opacity: 0.34, depthWrite: false }),
-        drain: standard(0x101018, { roughness: 0.82, metalness: 0.48 }),
+        turf,
+        joint: standard(0x2e6f2f, { roughness: 1, metalness: 0, transparent: true, opacity: 0.34, depthWrite: false }),
+        marking: standard(0xf2d14d, { roughness: 0.82, metalness: 0, transparent: true, opacity: 0.48, depthWrite: false }),
+        drain: standard(0x33343b, { roughness: 0.82, metalness: 0.48 }),
         steel: standard(0x888899, { roughness: 0.34, metalness: 0.78, envMapIntensity: 0.65 }),
-        glass: new THREE.MeshPhysicalMaterial({ color: 0x88aaff, transmission: 0.9, transparent: true, opacity: 0.32, roughness: 0.05, thickness: 0.1, metalness: 0, envMap: environmentMap, envMapIntensity: 0.75, side: THREE.DoubleSide }),
-        hvac: standard(0x555566, { roughness: 0.68, metalness: 0.34 }),
+        glass: new THREE.MeshPhysicalMaterial({ color: 0xb8e8ff, transmission: 0.82, transparent: true, opacity: 0.26, roughness: 0.04, thickness: 0.1, metalness: 0, envMap: environmentMap, envMapIntensity: 0.9, side: THREE.DoubleSide }),
+        hvac: standard(0x686f78, { roughness: 0.62, metalness: 0.38 }),
         hvacDark: standard(0x30313a, { roughness: 0.72, metalness: 0.45 }),
         rust: standard(0x8a4a28, { roughness: 0.86, metalness: 0.2 }),
         duct: standard(0x999aaa, { roughness: 0.46, metalness: 0.62, envMapIntensity: 0.55 }),
         waterWood: standard(0x8b6914, { roughness: 0.9, metalness: 0.02 }),
         concrete: standard(0x686875, { roughness: 0.9, metalness: 0.02 }),
+        planter: standard(0x6b5840, { roughness: 0.88, metalness: 0.02 }),
+        hedge: standard(0x2f7c34, { roughness: 0.96, metalness: 0.0 }),
         yellow: standard(0xbda33a, { roughness: 0.7, metalness: 0.12 }),
-        signPink: standard(0xff0088, { emissive: 0xff0088, emissiveIntensity: 0.8, roughness: 0.35, metalness: 0.02 }),
-        signBlue: standard(0x0088ff, { emissive: 0x0088ff, emissiveIntensity: 0.8, roughness: 0.35, metalness: 0.02 }),
-        signGreen: standard(0x00ff88, { emissive: 0x00ff88, emissiveIntensity: 0.8, roughness: 0.35, metalness: 0.02 }),
-        signOrange: standard(0xff4400, { emissive: 0xff4400, emissiveIntensity: 0.8, roughness: 0.35, metalness: 0.02 }),
-        moon: basic(0xeeeeff),
-        star: basic(0xffffff, { transparent: true, opacity: 0.9, side: THREE.DoubleSide }),
-        beach: basic(0xc8b87a),
-        ocean: basic(0x001133),
-        glow: basic(0xff9944, { transparent: true, opacity: 0.3, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }),
+        signPink: standard(0xff4fa2, { emissive: 0xff4fa2, emissiveIntensity: 0.2, roughness: 0.42, metalness: 0.02 }),
+        signBlue: standard(0x2ea2ff, { emissive: 0x2ea2ff, emissiveIntensity: 0.2, roughness: 0.42, metalness: 0.02 }),
+        signGreen: standard(0x31d787, { emissive: 0x31d787, emissiveIntensity: 0.18, roughness: 0.42, metalness: 0.02 }),
+        signOrange: standard(0xff7a2a, { emissive: 0xff7a2a, emissiveIntensity: 0.18, roughness: 0.42, metalness: 0.02 }),
+        beach: basic(0xd8c37a, { side: THREE.DoubleSide }),
+        ocean: basic(0x176fa8, { side: THREE.DoubleSide }),
+        glow: basic(0xffd49a, { transparent: true, opacity: 0.22, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }),
+        hills: basic(0x7ca768, { side: THREE.DoubleSide }),
+        freeway: basic(0x4a4d55, { side: THREE.DoubleSide }),
+        palmTrunk: basic(0x8b5a2b),
+        palmLeaf: basic(0x2f8c45, { side: THREE.DoubleSide }),
         city: new THREE.MeshBasicMaterial({ color: 0xffffff, map: createCityWindowTexture() })
       };
     }
@@ -2798,15 +2800,17 @@
       canvas.width = 128;
       canvas.height = 128;
       const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#080a12';
+      ctx.fillStyle = '#8f9aaa';
       ctx.fillRect(0, 0, 128, 128);
       for (let y = 8; y < 120; y += 16) {
         for (let x = 8; x < 120; x += 16) {
-          const lit = ((x * 13 + y * 7) % 5) !== 0;
-          ctx.fillStyle = lit ? 'rgba(255,198,86,0.92)' : 'rgba(54,48,44,0.55)';
-          ctx.fillRect(x, y, 5, 7);
+          const tint = ((x * 13 + y * 7) % 5) / 5;
+          ctx.fillStyle = tint > 0.55 ? 'rgba(186,225,255,0.9)' : 'rgba(72,93,122,0.72)';
+          ctx.fillRect(x, y, 6, 8);
         }
       }
+      ctx.fillStyle = 'rgba(255,255,255,0.18)';
+      ctx.fillRect(0, 0, 128, 22);
       const texture = new THREE.CanvasTexture(canvas);
       configureTexture(texture, 3, 5, 1, THREE.SRGBColorSpace);
       return texture;
@@ -2815,6 +2819,18 @@
     function makeRooftopGround(material) {
       const geo = new THREE.PlaneGeometry(ARENA_HALF_X * 2, ARENA_HALF_Z * 2, 36, 24);
       geo.rotateX(-Math.PI / 2);
+      const color = new THREE.Color();
+      const colors = [];
+      const pos = geo.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i);
+        const z = pos.getZ(i);
+        const stripe = ((Math.floor((z + ARENA_HALF_Z) / 4) & 1) ? 0.045 : -0.025);
+        const mottle = Math.sin(x * 1.7 + z * 0.35) * 0.022 + Math.cos(z * 2.1) * 0.018;
+        color.setHex(0x4d9a3f).offsetHSL(0.015, 0.04, stripe + mottle);
+        colors.push(color.r, color.g, color.b);
+      }
+      geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
       const mesh = new THREE.Mesh(geo, material);
       mesh.userData.rooftopGround = true;
       mesh.castShadow = false;
@@ -2844,55 +2860,74 @@
     function addRooftopBackdrop(group, roof) {
       const beach = new THREE.Mesh(new THREE.PlaneGeometry(170, 42), roof.beach);
       beach.rotation.x = -Math.PI / 2;
-      beach.position.set(0, -30, -92);
+      beach.position.set(0, -28, -82);
       beach.userData.rooftopBackground = true;
       group.add(beach);
       const ocean = new THREE.Mesh(new THREE.PlaneGeometry(260, 160), roof.ocean);
       ocean.rotation.x = -Math.PI / 2;
-      ocean.position.set(0, -30.2, -178);
+      ocean.position.set(0, -28.2, -165);
       ocean.userData.rooftopBackground = true;
       group.add(ocean);
-      const glow = new THREE.Mesh(new THREE.PlaneGeometry(260, 70), roof.glow);
-      glow.position.set(0, 8, -215);
-      glow.userData.rooftopBackground = true;
-      group.add(glow);
-      for (let i = 0; i < 20; i++) {
+      const haze = new THREE.Mesh(new THREE.PlaneGeometry(300, 80), roof.glow);
+      haze.position.set(0, 26, -230);
+      haze.userData.rooftopBackground = true;
+      group.add(haze);
+      const hills = new THREE.Mesh(new THREE.PlaneGeometry(260, 46), roof.hills);
+      hills.position.set(0, 3, 112);
+      hills.rotation.x = -0.08;
+      hills.userData.rooftopBackground = true;
+      group.add(hills);
+      const freeway = new THREE.Mesh(new THREE.PlaneGeometry(140, 8), roof.freeway);
+      freeway.rotation.x = -Math.PI / 2;
+      freeway.rotation.z = -0.36;
+      freeway.position.set(-28, -24, 54);
+      freeway.userData.rooftopBackground = true;
+      group.add(freeway);
+      const skylineColors = [0xb8c4cf, 0x9daabd, 0xd5c9b8, 0x8d9aae, 0xc4d2d8];
+      for (let i = 0; i < 30; i++) {
         const side = i % 4;
-        const w = 4 + (i % 5) * 1.4;
-        const d = 4 + ((i + 2) % 5) * 1.2;
-        const h = 16 + (i * 7 % 26);
-        const x = side < 2 ? -60 + (i * 13 % 120) : (side === 2 ? -48 : 48);
-        const z = side < 2 ? (side === 0 ? -58 - (i % 4) * 8 : 54 + (i % 4) * 7) : -45 + (i * 11 % 90);
-        const baseY = i % 6 === 0 ? -16 : -32 - (i % 4) * 3;
-        const building = new THREE.Mesh(geometries.box, roof.city);
+        const w = 5 + (i % 5) * 1.6;
+        const d = 5 + ((i + 2) % 5) * 1.3;
+        const h = 22 + (i * 7 % 34);
+        const x = side < 2 ? -72 + (i * 11 % 144) : (side === 2 ? -58 : 58);
+        const z = side < 2 ? (side === 0 ? -62 - (i % 5) * 7 : 58 + (i % 5) * 7) : -46 + (i * 13 % 92);
+        const baseY = i % 6 === 0 ? -18 : -30 - (i % 3) * 3;
+        const material = i % 3 === 0 ? new THREE.MeshBasicMaterial({ color: skylineColors[i % skylineColors.length], map: roof.city.map }) : roof.city;
+        const building = new THREE.Mesh(geometries.box, material);
         building.position.set(x, baseY + h * 0.5, z);
         building.scale.set(w, h, d);
         building.userData.rooftopBackground = true;
         group.add(building);
+        if (i % 7 === 0) {
+          const cap = new THREE.Mesh(geometries.box, roof.freeway);
+          cap.position.set(x, baseY + h + 0.9, z);
+          cap.scale.set(w * 0.58, 1.4, d * 0.58);
+          cap.userData.rooftopBackground = true;
+          group.add(cap);
+        }
+      }
+      for (let i = 0; i < 18; i++) {
+        const x = -62 + (i * 7.3);
+        addRooftopPalm(group, roof, x, -47 - (i % 3) * 3, 4.2 + (i % 4) * 0.45);
+        if (i % 2 === 0) addRooftopPalm(group, roof, -56 + i * 6.5, 48 + (i % 4) * 3, 3.8 + (i % 5) * 0.38);
       }
     }
 
-    function addRooftopStarsAndMoon(group, roof) {
-      const starGeo = new THREE.PlaneGeometry(0.05, 0.05);
-      const stars = new THREE.InstancedMesh(starGeo, roof.star, 800);
-      const dummy = new THREE.Object3D();
-      for (let i = 0; i < 800; i++) {
-        const angle = i * 2.399963;
-        const y = 120 + ((i * 47) % 120);
-        const radius = Math.sqrt(Math.max(0, 400 * 400 - y * y));
-        const wobble = 0.72 + ((i * 29) % 90) / 300;
-        dummy.position.set(Math.cos(angle) * radius * wobble, y, Math.sin(angle) * radius * wobble);
-        dummy.rotation.set(0, angle, 0);
-        dummy.scale.setScalar(0.8 + (i % 4) * 0.18);
-        dummy.updateMatrix();
-        stars.setMatrixAt(i, dummy.matrix);
+    function addRooftopPalm(group, roof, x, z, height) {
+      const trunk = new THREE.Mesh(geometries.cylinderLow, roof.palmTrunk);
+      trunk.position.set(x, -24 + height * 0.5, z);
+      trunk.scale.set(0.18, height, 0.18);
+      trunk.userData.rooftopBackground = true;
+      group.add(trunk);
+      for (let i = 0; i < 6; i++) {
+        const leaf = new THREE.Mesh(geometries.plane, roof.palmLeaf);
+        const angle = i / 6 * Math.PI * 2;
+        leaf.position.set(x + Math.cos(angle) * 0.65, -23.6 + height, z + Math.sin(angle) * 0.65);
+        leaf.scale.set(2.6, 1, 0.45);
+        leaf.rotation.set(-0.8, angle, 0.2);
+        leaf.userData.rooftopBackground = true;
+        group.add(leaf);
       }
-      stars.userData.rooftopBackground = true;
-      group.add(stars);
-      const moon = new THREE.Mesh(new THREE.SphereGeometry(8, 24, 16), roof.moon);
-      moon.position.set(300, 200, -160);
-      moon.userData.rooftopBackground = true;
-      group.add(moon);
     }
 
     function addRooftopGlassFence(group, colliders, roof) {
@@ -2929,6 +2964,10 @@
       [[-25, -3], [-19, 15], [-13, -15], [-4, 8], [4, -8], [13, 15], [19, -15], [25, 3]].forEach((j) => addJunctionBox(group, colliders, points, roof, j[0], j[1]));
       addGeneratorCover(group, colliders, points, roof, 0, 0);
       [[-17, 0, Math.PI / 2, roof.signPink], [-4, 16, 0, roof.signBlue], [17, 0, -Math.PI / 2, roof.signGreen], [4, -16, Math.PI, roof.signOrange]].forEach((s) => addNeonSign(group, colliders, points, roof, s[0], s[1], s[2], s[3]));
+      [[-25, -17, 0], [-22, 4, 0.08], [-14, 15, -0.18], [-6, -17, 0.12], [6, 17, -0.12], [14, -15, 0.18], [22, -4, -0.08], [25, 17, 0]].forEach((p) => addPlanterCover(group, colliders, points, roof, p[0], p[1], p[2]));
+      [[-19, -6, 0.28], [-9, 15, -0.34], [-2, -8, 0.18], [2, 8, -0.18], [9, -15, 0.34], [19, 6, -0.28]].forEach((b) => addTurfBarricade(group, colliders, points, roof, b[0], b[1], b[2]));
+      [[-27, 10, 0], [-20, -1, Math.PI / 2], [-11, 3, 0.24], [11, -3, -0.24], [20, 1, Math.PI / 2], [27, -10, 0]].forEach((c) => addConcreteRiserCover(group, colliders, points, roof, c[0], c[1], c[2]));
+      [[-6, 12, -0.45], [6, -12, 0.45], [-16, 10, 0.25], [16, -10, -0.25]].forEach((s) => addSolarPanelCover(group, colliders, points, roof, s[0], s[1], s[2]));
     }
 
     function addRooftopHvac(group, colliders, points, roof, x, z, yaw) {
@@ -3006,6 +3045,33 @@
       addLocalColliderBox(group, colliders, x, z, yaw, 0, 0.12, 0, 3.8, 0.14, 0.16, roof.steel);
       addLocalBox(group, x, 0, z, yaw, 0, 1.25, -0.035, 3.2, 1.75, 0.035, faceMat);
       addCoverPoints(points, x, z, 4.0, 0.7, 'any', 2.5);
+    }
+
+    function addPlanterCover(group, colliders, points, roof, x, z, yaw) {
+      addBox(group, x, 0.42, z, 3.6, 0.84, 1.1, roof.planter, colliders, yaw);
+      addLocalBox(group, x, 0, z, yaw, 0, 1.03, 0, 3.35, 0.58, 0.86, roof.hedge);
+      for (let i = -1; i <= 1; i += 2) addLocalBox(group, x, 0, z, yaw, i * 1.45, 1.38, 0, 0.42, 0.5, 0.42, roof.hedge);
+      addCoverPoints(points, x, z, 3.8, 1.3, 'any', 1.4);
+    }
+
+    function addTurfBarricade(group, colliders, points, roof, x, z, yaw) {
+      addBox(group, x, 0.55, z, 4.6, 1.1, 0.58, roof.hedge, colliders, yaw);
+      addLocalBox(group, x, 0, z, yaw, 0, 1.14, -0.02, 4.8, 0.12, 0.72, roof.marking);
+      addCoverPoints(points, x, z, 4.8, 0.9, 'any', 1.15);
+    }
+
+    function addConcreteRiserCover(group, colliders, points, roof, x, z, yaw) {
+      addBox(group, x, 0.62, z, 2.8, 1.24, 1.3, roof.concrete, colliders, yaw);
+      addLocalBox(group, x, 0, z, yaw, 0, 1.33, 0, 2.9, 0.14, 1.4, roof.steel);
+      addCoverPoints(points, x, z, 3.0, 1.5, 'any', 1.35);
+    }
+
+    function addSolarPanelCover(group, colliders, points, roof, x, z, yaw) {
+      addBox(group, x, 0.55, z, 3.4, 1.1, 0.32, roof.steel, colliders, yaw);
+      addLocalBox(group, x, 0, z, yaw, 0, 1.12, -0.22, 3.2, 1.45, 0.08, materials.glass);
+      addLocalBox(group, x, 0, z, yaw, -1.05, 0.82, 0.18, 0.08, 0.9, 0.56, roof.steel);
+      addLocalBox(group, x, 0, z, yaw, 1.05, 0.82, 0.18, 0.08, 0.9, 0.56, roof.steel);
+      addCoverPoints(points, x, z, 3.6, 1.4, 'any', 1.5);
     }
 
     function finalizeRooftopShadows(group) {
@@ -4755,19 +4821,13 @@
 
     function applyDronePreviewLighting(previewScene, mapName) {
       if (mapName === 'rooftop') {
-        previewScene.background = new THREE.Color(0x050510);
-        previewScene.fog = new THREE.Fog(0x050510, 45, 165);
-        previewScene.add(new THREE.AmbientLight(0x1a1a2e, 0.4));
-        previewScene.add(new THREE.HemisphereLight(0x0d0d1a, 0x1a0d0d, 0.5));
-        const cityGlow = new THREE.PointLight(0xff9944, 1.2, 80);
-        cityGlow.position.set(0, -5, 0);
-        const blueA = new THREE.PointLight(0x4488ff, 0.8, 20);
-        blueA.position.set(-26, 0.45, -16);
-        const blueB = new THREE.PointLight(0x4488ff, 0.8, 20);
-        blueB.position.set(26, 0.45, 16);
-        const warm = new THREE.PointLight(0xff6633, 0.6, 15);
-        warm.position.set(-7, 0.4, 6);
-        previewScene.add(cityGlow, blueA, blueB, warm);
+        previewScene.background = new THREE.Color(0x79cfff);
+        previewScene.fog = new THREE.Fog(0x79cfff, 90, 260);
+        previewScene.add(new THREE.AmbientLight(0xffffff, 0.95));
+        previewScene.add(new THREE.HemisphereLight(0xb8e8ff, 0xa9c884, 1.45));
+        const sun = new THREE.DirectionalLight(0xfff2cc, 2.3);
+        sun.position.set(42, 82, 24);
+        previewScene.add(sun);
         return;
       }
       if (mapName === 'ghosttown') {
@@ -4840,8 +4900,8 @@
         const phase = (t * 0.09) % 1;
         const sweep = 0.5 - 0.5 * Math.cos(phase * Math.PI * 2);
         const side = Math.sin(phase * Math.PI * 2);
-        preview.camera.position.set(-34 + sweep * 68, 16 + (1 - Math.abs(side)) * 8, -22 + side * 24);
-        tmpVecA.set(-6 + sweep * 12, 1.3, side * 5);
+        preview.camera.position.set(-36 + sweep * 72, 18 + (1 - Math.abs(side)) * 7, -25 + side * 30);
+        tmpVecA.set(-4 + sweep * 8, 1.25, side * 6);
       } else {
         const phase = (t * 0.085) % 1;
         const sweep = 0.5 - 0.5 * Math.cos(phase * Math.PI * 2);
@@ -5185,8 +5245,8 @@
         const phase = (t * 0.09) % 1;
         const sweep = 0.5 - 0.5 * Math.cos(phase * Math.PI * 2);
         const side = Math.sin(phase * Math.PI * 2);
-        camera.position.set(-34 + sweep * 68, 16 + (1 - Math.abs(side)) * 8, -22 + side * 24);
-        tmpVecA.set(-6 + sweep * 12, 1.3, side * 5);
+        camera.position.set(-36 + sweep * 72, 18 + (1 - Math.abs(side)) * 7, -25 + side * 30);
+        tmpVecA.set(-4 + sweep * 8, 1.25, side * 6);
       } else {
         const angle = t * 0.46;
         const descend = 0.5 + 0.5 * Math.sin(t * 0.42 - 1.1);
@@ -6935,8 +6995,8 @@
     }
 
     function buildRooftopMiniMap() {
-      let html = '<rect width="180" height="120" fill="rgba(18,20,34,0.94)"/>';
-      html += '<rect x="1" y="1" width="178" height="118" fill="none" stroke="rgba(136,170,255,0.7)" stroke-width="2"/>';
+      let html = '<rect width="180" height="120" fill="rgba(70,150,62,0.9)"/>';
+      html += '<rect x="1" y="1" width="178" height="118" fill="none" stroke="rgba(235,252,255,0.86)" stroke-width="2"/>';
       html += miniRect(-24, 0, 4.8, 16.4, 'rgba(221,17,17,0.24)', '#dd1111', 0, 1);
       html += miniRect(24, 0, 4.8, 16.4, 'rgba(17,85,238,0.24)', '#1155ee', 0, 1);
       html += miniRect(0, 0, 2.4, 3.3, '#bda33a', '#2d2d35', 0, 0.98);
@@ -6945,6 +7005,8 @@
       html += miniCircle(24, -14, 4.1, '#8b6914', '#333344', 0.96);
       [[-18,-16,11,1.4,0],[18,16,11,1.4,0],[-11,-11,2.1,1.4,0.55],[-8,11,2.1,1.4,-0.45],[10,-11,2.1,1.4,Math.PI-0.55],[8,11,2.1,1.4,Math.PI+0.45]].forEach((d) => { html += miniRect(d[0], d[1], d[2], d[3], '#999aaa', '#1d2230', d[4], 0.94); });
       [[-17,0,4,0.7,Math.PI/2,'#ff0088'],[-4,16,4,0.7,0,'#0088ff'],[17,0,4,0.7,-Math.PI/2,'#00ff88'],[4,-16,4,0.7,Math.PI,'#ff4400']].forEach((s) => { html += miniRect(s[0], s[1], s[2], s[3], s[5], '#ffffff', s[4], 0.94); });
+      [[-25,-17,3.8,1.3,0],[-22,4,3.8,1.3,0.08],[-14,15,3.8,1.3,-0.18],[-6,-17,3.8,1.3,0.12],[6,17,3.8,1.3,-0.12],[14,-15,3.8,1.3,0.18],[22,-4,3.8,1.3,-0.08],[25,17,3.8,1.3,0]].forEach((p) => { html += miniRect(p[0], p[1], p[2], p[3], '#2f7c34', '#6b5840', p[4], 0.94); });
+      [[-19,-6,4.8,0.9,0.28],[-9,15,4.8,0.9,-0.34],[-2,-8,4.8,0.9,0.18],[2,8,4.8,0.9,-0.18],[9,-15,4.8,0.9,0.34],[19,6,4.8,0.9,-0.28]].forEach((b) => { html += miniRect(b[0], b[1], b[2], b[3], '#3d9141', '#f2d14d', b[4], 0.92); });
       return html;
     }
 
@@ -7052,26 +7114,28 @@
       renderer.shadowMap.enabled = false;
       if (active && active.ambient === 'rooftop') {
         scene.remove(ambientLight, keyLight, keyLight.target, hemiLight);
-        scene.background = new THREE.Color(0x050510);
-        scene.fog = new THREE.Fog(0x050510, 45, 165);
-        skyStatus = 'rooftop-night';
+        scene.background = new THREE.Color(0x79cfff);
+        scene.fog = new THREE.Fog(0x79cfff, 92, 270);
+        skyStatus = 'rooftop-la-day';
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.05;
-        const ambient = new THREE.AmbientLight(0x1a1a2e, 0.4);
-        const hemi = new THREE.HemisphereLight(0x0d0d1a, 0x1a0d0d, 0.5);
-        const cityGlow = new THREE.PointLight(0xff9944, 1.2, 80);
-        cityGlow.position.set(0, -5, 0);
-        const blueA = new THREE.PointLight(0x4488ff, 0.8, 20);
-        blueA.position.set(-26, 0.45, -16);
-        const blueB = new THREE.PointLight(0x4488ff, 0.8, 20);
-        blueB.position.set(26, 0.45, 16);
-        const warmA = new THREE.PointLight(0xff6633, 0.6, 15);
-        warmA.position.set(-7, 0.4, 6);
-        ghostTownLights = [ambient, hemi, cityGlow, blueA, blueB, warmA];
-        ghostTownLights.forEach((light) => {
-          light.castShadow = false;
-          scene.add(light);
-        });
+        renderer.toneMappingExposure = 0.96;
+        renderer.shadowMap.enabled = true;
+        const ambient = new THREE.AmbientLight(0xffffff, 0.95);
+        const hemi = new THREE.HemisphereLight(0xb8e8ff, 0xa9c884, 1.45);
+        const sun = new THREE.DirectionalLight(0xfff2cc, 2.55);
+        sun.position.set(42, 86, 24);
+        sun.castShadow = true;
+        sun.shadow.mapSize.set(2048, 2048);
+        sun.shadow.camera.left = -60;
+        sun.shadow.camera.right = 60;
+        sun.shadow.camera.top = 60;
+        sun.shadow.camera.bottom = -60;
+        sun.shadow.camera.far = 200;
+        sun.shadow.bias = -0.0001;
+        sun.target.position.set(0, 0, 0);
+        scene.add(sun.target);
+        ghostTownLights = [ambient, hemi, sun, sun.target];
+        ghostTownLights.forEach((light) => scene.add(light));
         return;
       }
       if (active && active.ambient === 'ghosttown') {
