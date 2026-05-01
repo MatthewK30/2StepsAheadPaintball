@@ -6,19 +6,23 @@
   <title>2 Steps Ahead Paintball</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0a0a0a;
-      --panel: rgba(15, 15, 17, 0.86);
       --red: #cc1515;
-      --red-soft: rgba(204, 21, 21, 0.22);
+      --red-dark: #8b0000;
       --blue: #1566cc;
+      --bg: #080a0c;
+      --bg-1: #0d1117;
+      --border: rgba(255,255,255,0.08);
+      --border-bright: rgba(255,255,255,0.18);
+      --text-dim: #7a8a9a;
+      --text-muted: #3a4a5a;
+      --gold: #e8a020;
+      --green: #20c050;
+      --white: #edf2f7;
+      --red-glow: rgba(204, 21, 21, 0.36);
       --blue-soft: rgba(21, 102, 204, 0.22);
-      --white: #f5f5f5;
-      --muted: rgba(255, 255, 255, 0.66);
-      --green: #38d46b;
-      --border: rgba(255, 255, 255, 0.15);
     }
 
     * {
@@ -38,6 +42,20 @@
       overflow-x: hidden;
     }
 
+    h1,
+    h2,
+    h3,
+    .brandMini,
+    .titleLine,
+    .cardName,
+    .sectionTitle,
+    .teamHeader,
+    .bigCode,
+    .playerName,
+    button {
+      font-family: 'Bebas Neue', Impact, sans-serif;
+    }
+
     button,
     input,
     select {
@@ -54,11 +72,7 @@
       position: relative;
       min-height: 100vh;
       overflow: hidden;
-      background:
-        radial-gradient(circle at 50% -12%, rgba(204, 21, 21, 0.26), transparent 34%),
-        radial-gradient(circle at 8% 28%, rgba(21, 102, 204, 0.18), transparent 28%),
-        radial-gradient(circle at 92% 34%, rgba(204, 21, 21, 0.16), transparent 28%),
-        linear-gradient(135deg, #050505 0%, var(--bg) 50%, #111114 100%);
+      background: var(--bg);
     }
 
     .screen::before,
@@ -72,22 +86,20 @@
 
     .screen::before {
       background:
-        repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.03) 0 1px, transparent 1px 4px),
-        linear-gradient(105deg, transparent 0 18%, rgba(255, 255, 255, 0.07) 19%, transparent 31%, transparent 63%, rgba(204, 21, 21, 0.09) 65%, transparent 78%);
+        repeating-linear-gradient(0deg, rgba(255,255,255,0.032) 0 1px, transparent 1px 4px),
+        linear-gradient(90deg, rgba(204,21,21,0.05), transparent 18%, transparent 82%, rgba(21,102,204,0.04));
       mix-blend-mode: screen;
-      opacity: 0.55;
-      animation: scan 7s linear infinite;
+      opacity: 0.48;
+      animation: scan 8s linear infinite;
     }
 
     .screen::after {
       background:
-        radial-gradient(circle at 18% 24%, rgba(255, 255, 255, 0.24) 0 1px, transparent 2px),
-        radial-gradient(circle at 34% 74%, rgba(204, 21, 21, 0.38) 0 1px, transparent 2px),
-        radial-gradient(circle at 70% 18%, rgba(255, 255, 255, 0.18) 0 1px, transparent 2px),
-        radial-gradient(circle at 84% 68%, rgba(21, 102, 204, 0.35) 0 1px, transparent 2px);
-      background-size: 260px 190px, 340px 250px, 300px 220px, 380px 280px;
-      opacity: 0.5;
-      animation: particles 14s linear infinite;
+        radial-gradient(circle at 50% -10%, rgba(204,21,21,0.22), transparent 34%),
+        radial-gradient(circle at 6% 20%, rgba(21,102,204,0.14), transparent 26%),
+        radial-gradient(circle at 94% 74%, rgba(204,21,21,0.14), transparent 28%),
+        linear-gradient(135deg, rgba(255,255,255,0.025), transparent 38%, rgba(255,255,255,0.018));
+      opacity: 1;
     }
 
     @keyframes scan {
@@ -95,18 +107,13 @@
       to { transform: translateY(20px); }
     }
 
-    @keyframes particles {
-      from { background-position: 0 0, 0 0, 0 0, 0 0; }
-      to { background-position: 130px -190px, -170px -250px, 150px -220px, -190px -280px; }
-    }
-
     .view {
       position: relative;
-      z-index: 1;
+      z-index: 2;
       min-height: 100vh;
-      padding: clamp(24px, 4vw, 56px);
+      padding: clamp(20px, 4vw, 56px);
       display: none;
-      animation: viewIn 360ms ease both;
+      animation: viewIn 260ms ease both;
     }
 
     .view.active {
@@ -119,80 +126,285 @@
     }
 
     .heroView {
-      place-items: center;
-      text-align: center;
+      align-items: center;
     }
 
     .heroStack {
-      width: min(980px, 100%);
+      width: min(1240px, 100%);
+      margin: 0 auto;
       display: grid;
-      gap: 28px;
-      justify-items: center;
+      gap: clamp(18px, 3vw, 30px);
+    }
+
+    .cornerBracket {
+      position: fixed;
+      width: clamp(42px, 7vw, 86px);
+      height: clamp(42px, 7vw, 86px);
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    .cornerBracket::before,
+    .cornerBracket::after {
+      content: "";
+      position: absolute;
+      background: var(--red);
+      box-shadow: 0 0 18px var(--red-glow);
+    }
+
+    .cornerBracket::before { width: 100%; height: 2px; }
+    .cornerBracket::after { width: 2px; height: 100%; }
+    .cornerBracket.tl { left: 22px; top: 22px; }
+    .cornerBracket.tr { right: 22px; top: 22px; transform: scaleX(-1); }
+    .cornerBracket.bl { left: 22px; bottom: 22px; transform: scaleY(-1); }
+    .cornerBracket.br { right: 22px; bottom: 22px; transform: scale(-1); }
+
+    .heroHeader {
+      text-align: center;
     }
 
     .title {
       margin: 0;
-      font-family: 'Bebas Neue', Impact, sans-serif;
-      font-size: clamp(78px, 15vw, 190px);
+      display: grid;
       line-height: 0.82;
-      letter-spacing: 0.045em;
-      text-shadow: 0 0 28px rgba(204, 21, 21, 0.35), 0 18px 48px rgba(0, 0, 0, 0.95);
+      letter-spacing: 0.055em;
     }
 
-    .title span {
+    .titleLine {
+      display: block;
+      font-size: clamp(82px, 16vw, 188px);
+      text-shadow: 0 20px 60px rgba(0,0,0,0.92);
+    }
+
+    .titleAhead {
       color: var(--red);
+      text-shadow: 0 0 18px rgba(204,21,21,0.75), 0 0 46px rgba(204,21,21,0.42), 0 20px 60px rgba(0,0,0,0.94);
     }
 
-    .subtitle {
-      margin: 0;
-      color: rgba(255, 255, 255, 0.72);
-      font-size: clamp(16px, 2.4vw, 26px);
-      font-weight: 600;
-      letter-spacing: 0.38em;
+    .redDivider {
+      width: min(520px, 74vw);
+      height: 1px;
+      margin: 18px auto 0;
+      background: linear-gradient(90deg, transparent, var(--red), rgba(255,255,255,0.5), var(--red), transparent);
+      box-shadow: 0 0 18px rgba(204,21,21,0.45);
+    }
+
+    .subtitle,
+    .eyebrow,
+    label {
+      color: var(--text-dim);
+      font-weight: 700;
+      letter-spacing: 0.18em;
       text-transform: uppercase;
     }
 
-    .heroButtons,
+    .subtitle {
+      margin-top: 12px;
+      font-size: clamp(14px, 2vw, 21px);
+      letter-spacing: 0.42em;
+    }
+
+    .menuGrid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .mapGrid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: clamp(12px, 2vw, 18px);
+    }
+
+    .mapCard,
+    .optionGroup,
+    .panel,
+    .teamColumn,
+    .centerConsole {
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018));
+      box-shadow: 0 22px 70px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+
+    .mapCard {
+      position: relative;
+      min-height: 168px;
+      padding: 18px;
+      display: grid;
+      align-content: end;
+      gap: 8px;
+      clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 170ms ease, border-color 170ms ease, box-shadow 170ms ease, background 170ms ease;
+    }
+
+    .mapCard::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(145deg, rgba(204,21,21,0.16), transparent 42%),
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 16px);
+      opacity: 0.64;
+    }
+
+    .mapCard.selected,
+    .mapCard:hover {
+      transform: translateY(-3px);
+      border-color: rgba(204,21,21,0.72);
+      background: linear-gradient(180deg, rgba(204,21,21,0.17), rgba(255,255,255,0.025));
+      box-shadow: 0 0 0 1px rgba(204,21,21,0.3), 0 0 34px rgba(204,21,21,0.32), 0 24px 70px rgba(0,0,0,0.58);
+    }
+
+    .mapCard.selected::after {
+      content: "";
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--red);
+      box-shadow: 0 0 16px rgba(204,21,21,0.9);
+    }
+
+    .mapCard.disabled {
+      cursor: default;
+      opacity: 0.52;
+    }
+
+    .mapCard > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .cardTag {
+      width: fit-content;
+      padding: 4px 8px;
+      color: var(--red);
+      border: 1px solid rgba(204,21,21,0.36);
+      background: rgba(204,21,21,0.09);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .cardName {
+      margin: 0;
+      font-size: clamp(32px, 4vw, 48px);
+      line-height: 0.9;
+      letter-spacing: 0.08em;
+    }
+
+    .cardSub {
+      margin: 0;
+      color: var(--text-dim);
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .optionGrid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .optionGroup {
+      padding: 16px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .choiceSet {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .choice {
+      min-height: 42px;
+      padding: 11px 12px 9px;
+      border: 1px solid var(--border-bright);
+      background: rgba(255,255,255,0.035);
+      color: var(--text-dim);
+      font-family: 'Rajdhani', Arial, sans-serif;
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-align: center;
+      text-transform: uppercase;
+      transition: border-color 160ms ease, color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+    }
+
+    .choice.selected,
+    .choice:hover {
+      border-color: rgba(204,21,21,0.78);
+      background: rgba(204,21,21,0.16);
+      color: #fff;
+      box-shadow: 0 0 22px rgba(204,21,21,0.2);
+    }
+
+    .mapCard.choice {
+      min-height: 168px;
+      padding: 18px;
+      display: grid;
+      align-content: end;
+      text-align: left;
+      font-family: 'Rajdhani', Arial, sans-serif;
+    }
+
+    .deployDock,
     .buttonRow {
       display: flex;
       flex-wrap: wrap;
-      gap: 14px;
       justify-content: center;
+      gap: 12px;
     }
 
     .primaryBtn,
     .secondaryBtn,
-    .smallBtn,
-    .teamBtn {
-      position: relative;
-      min-width: 210px;
-      padding: 16px 24px 14px;
+    .teamBtn,
+    .deployBtn {
+      min-width: 190px;
+      padding: 14px 22px 12px;
+      border: 1px solid var(--border-bright);
       color: #ffffff;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.045);
       clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
       font-family: 'Bebas Neue', Impact, sans-serif;
-      font-size: 31px;
-      line-height: 0.9;
-      letter-spacing: 0.12em;
-      transition: transform 170ms ease, box-shadow 170ms ease, border-color 170ms ease, filter 170ms ease;
+      font-size: 28px;
+      line-height: 0.95;
+      letter-spacing: 0.14em;
+      transition: transform 160ms ease, filter 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
     }
 
-    .primaryBtn {
-      background: linear-gradient(135deg, #7a0707, var(--red) 48%, #ff3333);
-      box-shadow: 0 16px 44px rgba(0, 0, 0, 0.55), 0 0 28px rgba(204, 21, 21, 0.32);
+    .primaryBtn,
+    .deployBtn {
+      background: linear-gradient(135deg, var(--red-dark), var(--red) 52%, #f43a3a);
+      box-shadow: 0 0 28px rgba(204,21,21,0.32), 0 22px 60px rgba(0,0,0,0.58);
     }
 
-    .secondaryBtn {
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+    .deployBtn {
+      min-width: min(430px, 100%);
+      padding: 18px 32px 16px;
+      font-size: clamp(38px, 5vw, 58px);
+      letter-spacing: 0.2em;
+    }
+
+    .secondaryBtn,
+    .teamBtn {
+      background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.025));
     }
 
     .primaryBtn:hover,
     .secondaryBtn:hover,
-    .smallBtn:hover,
-    .teamBtn:hover:not(:disabled) {
+    .teamBtn:hover:not(:disabled),
+    .deployBtn:hover {
       transform: translateY(-2px);
-      border-color: rgba(255, 255, 255, 0.36);
+      border-color: rgba(255,255,255,0.34);
       filter: brightness(1.08);
     }
 
@@ -212,12 +424,11 @@
     .lobbyLeaveBtn {
       min-width: auto;
       padding: 9px 13px 8px;
-      font-size: 18px;
+      font-size: 20px;
       opacity: 0.74;
     }
 
     .brandMini {
-      font-family: 'Bebas Neue', Impact, sans-serif;
       font-size: clamp(32px, 5vw, 58px);
       letter-spacing: 0.08em;
     }
@@ -229,8 +440,8 @@
     .statusPill {
       padding: 8px 12px;
       border: 1px solid var(--border);
-      background: rgba(255, 255, 255, 0.06);
-      color: var(--muted);
+      background: rgba(255,255,255,0.045);
+      color: var(--text-dim);
       font-weight: 700;
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -240,9 +451,6 @@
       width: min(1040px, 100%);
       margin: 0 auto;
       padding: clamp(20px, 3vw, 34px);
-      border: 1px solid var(--border);
-      background: linear-gradient(180deg, rgba(20, 20, 23, 0.92), rgba(9, 9, 11, 0.88));
-      box-shadow: 0 28px 80px rgba(0, 0, 0, 0.62), inset 0 1px 0 rgba(255, 255, 255, 0.06);
       clip-path: polygon(0 0, calc(100% - 28px) 0, 100% 28px, 100% 100%, 28px 100%, 0 calc(100% - 28px));
     }
 
@@ -257,7 +465,6 @@
 
     .sectionTitle {
       margin: 0;
-      font-family: 'Bebas Neue', Impact, sans-serif;
       font-size: clamp(42px, 6vw, 80px);
       line-height: 0.9;
       letter-spacing: 0.08em;
@@ -267,7 +474,7 @@
     .sectionCopy {
       margin: -8px auto 0;
       max-width: 680px;
-      color: var(--muted);
+      color: var(--text-dim);
       font-size: 18px;
       font-weight: 600;
       text-align: center;
@@ -279,18 +486,11 @@
       gap: 14px;
     }
 
-    label {
-      color: rgba(255, 255, 255, 0.78);
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-    }
-
     input {
       width: 100%;
       padding: 16px 18px;
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border-bright);
+      background: rgba(255,255,255,0.055);
       color: #ffffff;
       outline: none;
       font-size: 24px;
@@ -302,53 +502,6 @@
     input:focus {
       border-color: rgba(204, 21, 21, 0.8);
       box-shadow: 0 0 24px rgba(204, 21, 21, 0.18);
-    }
-
-    .optionGrid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 16px;
-    }
-
-    .optionGroup {
-      display: grid;
-      gap: 10px;
-      padding: 16px;
-      border: 1px solid var(--border);
-      background: rgba(255, 255, 255, 0.045);
-    }
-
-    .choiceSet {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 8px;
-    }
-
-    .choice {
-      padding: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      background: rgba(255, 255, 255, 0.055);
-      color: rgba(255, 255, 255, 0.8);
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      text-align: center;
-      text-transform: uppercase;
-      transition: border-color 160ms ease, color 160ms ease, background 160ms ease, box-shadow 160ms ease;
-    }
-
-    .choice.selected {
-      border-color: rgba(204, 21, 21, 0.85);
-      background: var(--red-soft);
-      color: #ffffff;
-      box-shadow: 0 0 20px rgba(204, 21, 21, 0.16);
-    }
-
-    .smallBtn,
-    .teamBtn {
-      min-width: 150px;
-      padding: 12px 18px 10px;
-      font-size: 24px;
-      background: rgba(255, 255, 255, 0.07);
     }
 
     .errorText {
@@ -365,14 +518,14 @@
       width: min(430px, 100%);
       padding: 18px;
       border: 1px solid rgba(204, 21, 21, 0.58);
-      background: var(--red-soft);
+      background: rgba(204,21,21,0.12);
       text-align: center;
       box-shadow: 0 0 28px rgba(204, 21, 21, 0.2);
     }
 
     .roomCodePanel span {
       display: block;
-      color: var(--muted);
+      color: var(--text-dim);
       font-weight: 700;
       letter-spacing: 0.16em;
       text-transform: uppercase;
@@ -400,9 +553,6 @@
     .centerConsole {
       min-height: 560px;
       padding: clamp(16px, 2vw, 26px);
-      border: 1px solid var(--border);
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02));
-      box-shadow: 0 22px 62px rgba(0, 0, 0, 0.46);
     }
 
     .teamColumn {
@@ -412,16 +562,15 @@
     }
 
     .redColumn {
-      border-color: rgba(204, 21, 21, 0.42);
+      border-top: 3px solid var(--red);
     }
 
     .blueColumn {
-      border-color: rgba(21, 102, 204, 0.48);
+      border-top: 3px solid var(--blue);
     }
 
     .teamHeader {
       margin: 0;
-      font-family: 'Bebas Neue', Impact, sans-serif;
       font-size: clamp(42px, 4vw, 64px);
       line-height: 0.9;
       letter-spacing: 0.1em;
@@ -441,7 +590,8 @@
       min-height: 138px;
       padding: 18px;
       display: grid;
-      align-content: center;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
       gap: 8px;
       animation: cardIn 260ms ease both;
     }
@@ -468,40 +618,71 @@
     .emptySlot {
       border: 2px dashed rgba(255, 255, 255, 0.18);
       color: rgba(255, 255, 255, 0.38);
-      font-family: 'Bebas Neue', Impact, sans-serif;
       font-size: 34px;
       letter-spacing: 0.12em;
       text-align: center;
+      grid-template-columns: 1fr;
     }
 
     .playerName {
-      font-family: 'Bebas Neue', Impact, sans-serif;
       font-size: clamp(34px, 4vw, 52px);
       line-height: 0.9;
       letter-spacing: 0.08em;
     }
 
     .playerMeta {
-      color: var(--muted);
+      color: var(--text-dim);
       font-weight: 700;
       letter-spacing: 0.12em;
       text-transform: uppercase;
     }
 
+    .avatar {
+      width: 52px;
+      height: 52px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      color: #fff;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid var(--border-bright);
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: 28px;
+      letter-spacing: 0.05em;
+    }
+
+    .redColumn .avatar { background: rgba(204,21,21,0.2); }
+    .blueColumn .avatar { background: rgba(21,102,204,0.24); }
+
     .readyStatus {
-      color: #ff7777;
-      font-weight: 800;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      transition: color 180ms ease;
+      position: relative;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #46515c;
+      color: transparent;
+      overflow: hidden;
+      box-shadow: 0 0 0 4px rgba(255,255,255,0.035);
     }
 
     .readyStatus.ready {
-      color: var(--green);
+      background: var(--green);
+      box-shadow: 0 0 18px rgba(32,192,80,0.65);
     }
 
     .readyStatus.ready::before {
-      content: "✓ ";
+      content: "";
+    }
+
+    .playerInfo {
+      min-width: 0;
+    }
+
+    .slotHint {
+      color: var(--text-muted);
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
     }
 
     .centerConsole {
@@ -512,7 +693,7 @@
     }
 
     .consoleLabel {
-      color: var(--muted);
+      color: var(--text-dim);
       font-weight: 700;
       letter-spacing: 0.16em;
       text-transform: uppercase;
@@ -530,7 +711,7 @@
     .matchInfo {
       display: grid;
       gap: 6px;
-      color: rgba(255, 255, 255, 0.78);
+      color: rgba(255,255,255,0.78);
       font-size: 18px;
       font-weight: 700;
       letter-spacing: 0.08em;
@@ -538,7 +719,7 @@
     }
 
     .startReady {
-      background: linear-gradient(135deg, #1a7f3d, #38d46b);
+      background: linear-gradient(135deg, #116c32, var(--green));
       color: #06110b;
       animation: pulseStart 1s ease-in-out infinite alternate;
     }
@@ -574,6 +755,10 @@
       .optionGrid {
         grid-template-columns: 1fr;
       }
+
+      .mapGrid {
+        grid-template-columns: 1fr;
+      }
     }
 
     @media (max-width: 640px) {
@@ -602,15 +787,61 @@
 </head>
 <body>
   <div class="screen">
+    <div class="cornerBracket tl"></div>
+    <div class="cornerBracket tr"></div>
+    <div class="cornerBracket bl"></div>
+    <div class="cornerBracket br"></div>
+
     <section id="heroView" class="view heroView active">
       <div class="heroStack">
-        <div>
-          <h1 class="title">2 STEPS <span>AHEAD</span></h1>
-          <p class="subtitle">COMPETITIVE PAINTBALL</p>
+        <div class="heroHeader">
+          <h1 class="title" aria-label="2 Steps Ahead">
+            <span class="titleLine">2 STEPS</span>
+            <span class="titleLine titleAhead">AHEAD</span>
+          </h1>
+          <div class="redDivider"></div>
+          <p class="subtitle">Competitive Paintball</p>
         </div>
-        <div class="heroButtons">
-          <button id="playMultiplayerBtn" class="primaryBtn">Play Multiplayer</button>
-          <button id="practiceBtn" class="secondaryBtn">Practice vs AI</button>
+
+        <div class="menuGrid" aria-label="Match setup">
+          <div class="mapGrid" data-option-group="map" aria-label="Map selection">
+            <button class="mapCard choice selected" data-value="speedball" type="button">
+              <span class="cardTag">Tournament</span>
+              <span class="cardName">Speedball</span>
+              <span class="cardSub">Clean lanes / fast breakouts</span>
+            </button>
+            <button class="mapCard choice" data-value="scrapyard" type="button">
+              <span class="cardTag">Scenario</span>
+              <span class="cardName">Scrapyard</span>
+              <span class="cardSub">Hard cover / long angles</span>
+            </button>
+            <div class="mapCard disabled" aria-disabled="true">
+              <span class="cardTag">Locked</span>
+              <span class="cardName">Night Ops</span>
+              <span class="cardSub">Future field rotation</span>
+            </div>
+          </div>
+
+          <div class="optionGrid">
+            <div class="optionGroup" data-option-group="firstTo">
+              <label>Win Condition</label>
+              <div class="choiceSet">
+                <button class="choice selected" data-value="5" type="button">First to 5</button>
+                <button class="choice" data-value="10" type="button">First to 10</button>
+              </div>
+            </div>
+            <div class="optionGroup" data-option-group="gameMode">
+              <label>Squad Size</label>
+              <div class="choiceSet">
+                <button class="choice selected" data-value="1v1" type="button">1v1</button>
+                <button class="choice" data-value="2v2" type="button">2v2</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="deployDock">
+          <button id="playMultiplayerBtn" class="deployBtn" type="button">Deploy</button>
         </div>
       </div>
     </section>
@@ -637,28 +868,38 @@
       </div>
 
       <div id="createPanel" class="panel step">
-        <h2 class="sectionTitle">Create Room</h2>
-        <p class="sectionCopy">Choose your match settings before the room code is generated.</p>
+        <h2 class="sectionTitle">Create Deployment</h2>
+        <p class="sectionCopy">Confirm the selected field, mode, and win condition before generating the private room code.</p>
+        <div class="mapGrid" data-option-group="map" aria-label="Room map selection">
+          <button class="mapCard choice selected" data-value="speedball" type="button">
+            <span class="cardTag">Tournament</span>
+            <span class="cardName">Speedball</span>
+            <span class="cardSub">Clean lanes / fast breakouts</span>
+          </button>
+          <button class="mapCard choice" data-value="scrapyard" type="button">
+            <span class="cardTag">Scenario</span>
+            <span class="cardName">Scrapyard</span>
+            <span class="cardSub">Hard cover / long angles</span>
+          </button>
+          <div class="mapCard disabled" aria-disabled="true">
+            <span class="cardTag">Locked</span>
+            <span class="cardName">Night Ops</span>
+            <span class="cardSub">Future field rotation</span>
+          </div>
+        </div>
         <div class="optionGrid">
-          <div class="optionGroup" data-option-group="gameMode">
-            <label>Game Mode</label>
-            <div class="choiceSet">
-              <button class="choice selected" data-value="1v1">1v1</button>
-              <button class="choice" data-value="2v2">2v2</button>
-            </div>
-          </div>
-          <div class="optionGroup" data-option-group="map">
-            <label>Map</label>
-            <div class="choiceSet">
-              <button class="choice selected" data-value="speedball">Speedball</button>
-              <button class="choice" data-value="scrapyard">Scrapyard</button>
-            </div>
-          </div>
           <div class="optionGroup" data-option-group="firstTo">
-            <label>First To</label>
+            <label>Win Condition</label>
             <div class="choiceSet">
-              <button class="choice selected" data-value="5">First to 5</button>
-              <button class="choice" data-value="10">First to 10</button>
+              <button class="choice selected" data-value="5" type="button">First to 5</button>
+              <button class="choice" data-value="10" type="button">First to 10</button>
+            </div>
+          </div>
+          <div class="optionGroup" data-option-group="gameMode">
+            <label>Squad Size</label>
+            <div class="choiceSet">
+              <button class="choice selected" data-value="1v1" type="button">1v1</button>
+              <button class="choice" data-value="2v2" type="button">2v2</button>
             </div>
           </div>
         </div>
@@ -784,9 +1025,6 @@
 
       function bindUi() {
         $('#playMultiplayerBtn').addEventListener('click', () => showView('lobby'))
-        $('#practiceBtn').addEventListener('click', () => {
-          window.location.href = '/game.html?mode=singleplayer'
-        })
         $('#showCreateBtn').addEventListener('click', () => {
           if (!captureUsername(ui.entryError)) return
           showPanel('create')
@@ -873,9 +1111,11 @@
       }
 
       function selectOption(groupName, choice) {
-        choice.parentElement.querySelectorAll('.choice').forEach((item) => item.classList.toggle('selected', item === choice))
         const value = choice.dataset.value
         state.createOptions[groupName] = groupName === 'firstTo' ? Number(value) : value
+        document.querySelectorAll('[data-option-group="' + groupName + '"]').forEach((group) => {
+          group.querySelectorAll('.choice').forEach((item) => item.classList.toggle('selected', item.dataset.value === value))
+        })
       }
 
       function createRoom() {
@@ -944,9 +1184,12 @@
         card.className = 'playerCard'
         const isHost = player.id === room.host
         card.innerHTML = `
-          <div class="playerName">${escapeHtml(player.username || 'PLAYER')}</div>
-          <div class="playerMeta">${isHost ? 'HOST' : 'PLAYER'}</div>
-          <div class="readyStatus ${player.ready ? 'ready' : ''}">${player.ready ? 'Ready' : 'Not Ready'}</div>
+          <div class="avatar">${escapeHtml(initials(player.username || 'P'))}</div>
+          <div class="playerInfo">
+            <div class="playerName">${escapeHtml(player.username || 'PLAYER')}</div>
+            <div class="playerMeta">${isHost ? 'HOST' : 'PLAYER'}</div>
+          </div>
+          <div class="readyStatus ${player.ready ? 'ready' : ''}" title="${player.ready ? 'Ready' : 'Not Ready'}">${player.ready ? 'Ready' : 'Not Ready'}</div>
         `
         return card
       }
@@ -954,7 +1197,7 @@
       function createEmptySlot() {
         const slot = document.createElement('div')
         slot.className = 'emptySlot'
-        slot.textContent = 'Add Player'
+        slot.innerHTML = '<span class="slotHint">Empty Slot</span>'
         return slot
       }
 
@@ -1037,6 +1280,10 @@
 
       function formatMap(map) {
         return map === 'scrapyard' ? 'Scrapyard' : 'Speedball'
+      }
+
+      function initials(value) {
+        return String(value || 'P').trim().slice(0, 2).toUpperCase()
       }
 
       function escapeHtml(value) {
