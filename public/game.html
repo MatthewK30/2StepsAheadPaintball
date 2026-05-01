@@ -4955,11 +4955,14 @@
         audio.empty();
         return true;
       }
-      const dir = new THREE.Vector3();
-      camera.getWorldDirection(dir);
-      tmpVecB.copy(dir);
-      if (gun.barrelTip) gun.barrelTip.getWorldPosition(tmpVecA);
-      else camera.getWorldPosition(tmpVecA);
+      const shootDir = new THREE.Vector3();
+      camera.getWorldDirection(shootDir);
+      const spawnPos = new THREE.Vector3();
+      camera.getWorldPosition(spawnPos);
+      spawnPos.addScaledVector(shootDir, 0.3);
+      coverRaycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+      tmpVecA.copy(spawnPos);
+      tmpVecB.copy(shootDir);
       const shotTeam = MULTIPLAYER ? MY_TEAM : 'red';
       fireProjectile(shotTeam, tmpVecA, tmpVecB);
       if (MULTIPLAYER && multiplayer.socket && multiplayer.socket.connected) {
@@ -4987,9 +4990,10 @@
           p.team = team;
           p.life = PAINTBALL_LIFE;
           p.mesh.material = team === 'red' ? materials.paintRed : materials.paintBlue;
-          p.pos.copy(origin);
+          p.mesh.position.copy(origin);
           p.prev.copy(origin);
-          p.vel.copy(direction).normalize().multiplyScalar(PAINTBALL_SPEED);
+          p.mesh.userData.velocity = direction.clone().multiplyScalar(PAINTBALL_SPEED);
+          p.vel.copy(p.mesh.userData.velocity);
           if (!p.mesh.parent) scene.add(p.mesh);
           p.mesh.visible = true;
           return p;
