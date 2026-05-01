@@ -1645,7 +1645,8 @@
     const colliderAxis = new THREE.Vector3();
     let segmentHitT = 0;
     const urlParams = new URLSearchParams(window.location.search);
-    const MULTIPLAYER = urlParams.has('room');
+    const PREVIEW_MODE = urlParams.get('preview') === '1';
+    const MULTIPLAYER = !PREVIEW_MODE && urlParams.has('room');
     const PRACTICE_MODE = !MULTIPLAYER && urlParams.get('practice') === '1';
     const ROOM_CODE = (urlParams.get('room') || '').toUpperCase();
     const MY_TEAM = urlParams.get('team') === 'blue' ? 'blue' : 'red';
@@ -1727,7 +1728,7 @@
     };
 
     const state = {
-      selectedMap: MULTIPLAYER || PRACTICE_MODE ? SELECTED_MAP : 'funland',
+      selectedMap: MULTIPLAYER || PRACTICE_MODE || PREVIEW_MODE ? SELECTED_MAP : 'funland',
       firstTo: MULTIPLAYER || PRACTICE_MODE ? FIRST_TO : 5,
       roundDuration: ROUND_TIME,
       phase: 'menu',
@@ -1953,15 +1954,19 @@
     createAiModel(MULTIPLAYER ? OPPONENT_TEAM : 'blue');
     createPlayerShadowModel();
     applyMatchSettings();
-    setupMenu();
-    setupInput();
-    setupMultiplayerSocket();
-    setupPostProcessing();
-    loadPostProcessingModules();
-    loadHdrEnvironment();
-    updateHud();
-    hideAllMaps();
-    if (MULTIPLAYER || PRACTICE_MODE) startMatch();
+    if (PREVIEW_MODE) {
+      setupLivePreviewMode();
+    } else {
+      setupMenu();
+      setupInput();
+      setupMultiplayerSocket();
+      setupPostProcessing();
+      loadPostProcessingModules();
+      loadHdrEnvironment();
+      updateHud();
+      hideAllMaps();
+      if (MULTIPLAYER || PRACTICE_MODE) startMatch();
+    }
 
     let lastTime = performance.now();
     requestAnimationFrame(tick);
@@ -4797,6 +4802,30 @@
       });
     }
 
+    function setupLivePreviewMode() {
+      document.body.classList.add('previewMode');
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.35));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      hideAllMaps();
+      const active = maps[state.selectedMap] || maps.speedball;
+      state.selectedMap = active === maps.funland ? 'funland' : active === maps.ghosttown ? 'ghosttown' : 'speedball';
+      active.group.visible = true;
+      if (!active.group.parent) scene.add(active.group);
+      applyMapLighting(active);
+      ui.menu.style.display = 'none';
+      ui.hud.classList.remove('visible');
+      ui.matchScreen.style.display = 'none';
+      ui.pauseScreen.style.display = 'none';
+      ai.group.visible = false;
+      gun.group.visible = false;
+      player.root.position.set(0, 0, 0);
+      player.root.rotation.set(0, 0, 0);
+      player.root.traverse((child) => {
+        if (child.isMesh) child.visible = false;
+      });
+      window.addEventListener('resize', onResize);
+    }
+
     function tick(now) {
       const rawDt = (now - lastTime) / 1000;
       lastTime = now;
@@ -4808,6 +4837,12 @@
       }
       const dt = Math.min(rawDt, 0.05);
       state.elapsed += dt;
+      if (PREVIEW_MODE) {
+        updateLivePreview(dt);
+        renderer.render(scene, camera);
+        requestAnimationFrame(tick);
+        return;
+      }
       updateFps(dt);
       updateVisualQuality();
       updateGame(dt);
@@ -4816,6 +4851,33 @@
       if (postEnabled && composer) composer.render();
       else renderer.render(scene, camera);
       requestAnimationFrame(tick);
+    }
+
+    function updateLivePreview(dt) {
+      const mapName = state.selectedMap || 'speedball';
+      updateFunlandCarousel(dt);
+      updateClouds(dt);
+      updateSpectators();
+      const t = state.elapsed;
+      if (mapName === 'funland') {
+        const angle = t * 0.34;
+        const radius = 27 + Math.sin(t * 0.45) * 4;
+        camera.position.set(-3 + Math.cos(angle) * radius, 13.5 + Math.sin(t * 0.58) * 2.2, Math.sin(angle) * 21);
+        tmpVecA.set(-3 + Math.sin(angle * 1.35) * 4.8, 1.45, Math.cos(angle * 1.2) * 4.8);
+      } else if (mapName === 'ghosttown') {
+        const phase = (t * 0.105) % 1;
+        const sweep = 0.5 - 0.5 * Math.cos(phase * Math.PI * 2);
+        const side = Math.sin(phase * Math.PI * 2);
+        camera.position.set(-32 + sweep * 64, 12 + (1 - Math.abs(side)) * 7.5, -18 + side * 18);
+        tmpVecA.set(-8 + sweep * 16, 1.6, side * 3.5);
+      } else {
+        const angle = t * 0.46;
+        const descend = 0.5 + 0.5 * Math.sin(t * 0.42 - 1.1);
+        const radius = 30 + Math.sin(t * 0.58) * 4;
+        camera.position.set(Math.cos(angle) * radius, 31 - descend * 13, Math.sin(angle) * radius);
+        tmpVecA.set(Math.sin(angle * 0.7) * 2.5, 1.2, Math.cos(angle * 0.8) * 2.5);
+      }
+      camera.lookAt(tmpVecA);
     }
 
     function updateGame(dt) {
