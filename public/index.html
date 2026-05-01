@@ -781,6 +781,49 @@
       text-transform: uppercase;
     }
 
+    .roomSettingsPanel {
+      display: grid;
+      gap: 12px;
+      padding: 16px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.035);
+      text-align: left;
+    }
+
+    .roomSettingsHeader {
+      display: grid;
+      gap: 4px;
+      text-align: center;
+    }
+
+    .roomSettingsHeader strong {
+      color: #ffffff;
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: 30px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .roomSettingsHeader span {
+      color: var(--text-dim);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .roomSettingGroup {
+      padding: 12px;
+      gap: 8px;
+    }
+
+    .roomSettingGroup .choice {
+      min-height: 38px;
+      padding: 9px 8px 7px;
+      font-size: 13px;
+      letter-spacing: 0.08em;
+    }
+
     .startReady {
       background: linear-gradient(135deg, #116c32, var(--green));
       color: #06110b;
@@ -945,43 +988,7 @@
 
       <div id="createPanel" class="panel step">
         <h2 class="sectionTitle">Create Deployment</h2>
-        <p class="sectionCopy">Confirm the selected field, mode, and win condition before generating the private room code.</p>
-        <div class="mapGrid" data-option-group="map" aria-label="Room map selection">
-          <button class="mapCard choice selected" data-value="speedball" type="button">
-            <iframe class="mapPreviewFrame" data-map-preview="speedball" title="Speedball drone preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
-            <span class="cardTag">Tournament</span>
-            <span class="cardName">Speedball</span>
-            <span class="cardSub">Clean lanes / fast breakouts</span>
-          </button>
-          <button class="mapCard choice" data-value="funland" type="button">
-            <iframe class="mapPreviewFrame" data-map-preview="funland" title="Abandoned Funland drone preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
-            <span class="cardTag">Scenario</span>
-            <span class="cardName">Abandoned Funland</span>
-            <span class="cardSub">Theme park / eerie lanes</span>
-          </button>
-          <button class="mapCard choice" data-value="ghosttown" type="button">
-            <iframe class="mapPreviewFrame" data-map-preview="ghosttown" title="Ghost Town drone preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
-            <span class="cardTag">Scenario</span>
-            <span class="cardName">Ghost Town</span>
-            <span class="cardSub">Desert streets / western cover</span>
-          </button>
-        </div>
-        <div class="optionGrid">
-          <div class="optionGroup" data-option-group="firstTo">
-            <label>Win Condition</label>
-            <div class="choiceSet">
-              <button class="choice selected" data-value="5" type="button">First to 5</button>
-              <button class="choice" data-value="10" type="button">First to 10</button>
-            </div>
-          </div>
-          <div class="optionGroup" data-option-group="gameMode">
-            <label>Squad Size</label>
-            <div class="choiceSet">
-              <button class="choice selected" data-value="1v1" type="button">1v1</button>
-              <button class="choice" data-value="2v2" type="button">2v2</button>
-            </div>
-          </div>
-        </div>
+        <p class="sectionCopy">Generate a private room code. The host can change the field, squad size, and win condition inside the room lobby.</p>
         <div class="buttonRow">
           <button id="createRoomBtn" class="primaryBtn">Generate Code</button>
           <button class="secondaryBtn backToEntryBtn">Back</button>
@@ -1022,6 +1029,34 @@
             <div id="modeDisplay">Mode: --</div>
             <div id="mapDisplay">Map: --</div>
             <div id="firstToDisplay">FIRST TO --</div>
+          </div>
+          <div id="roomSettingsPanel" class="roomSettingsPanel hidden">
+            <div class="roomSettingsHeader">
+              <strong>Host Settings</strong>
+              <span>Changing settings clears ready states</span>
+            </div>
+            <div class="optionGroup roomSettingGroup" data-room-setting="map">
+              <label>Field</label>
+              <div class="choiceSet threeChoices">
+                <button class="choice selected" data-value="speedball" type="button">Speedball</button>
+                <button class="choice" data-value="funland" type="button">Funland</button>
+                <button class="choice" data-value="ghosttown" type="button">Ghost Town</button>
+              </div>
+            </div>
+            <div class="optionGroup roomSettingGroup" data-room-setting="gameMode">
+              <label>Squad Size</label>
+              <div class="choiceSet">
+                <button class="choice selected" data-value="1v1" type="button">1v1</button>
+                <button class="choice" data-value="2v2" type="button">2v2</button>
+              </div>
+            </div>
+            <div class="optionGroup roomSettingGroup" data-room-setting="firstTo">
+              <label>Win Condition</label>
+              <div class="choiceSet">
+                <button class="choice selected" data-value="5" type="button">First to 5</button>
+                <button class="choice" data-value="10" type="button">First to 10</button>
+              </div>
+            </div>
           </div>
           <button id="switchTeamBtn" class="teamBtn">Switch Team</button>
           <button id="readyBtn" class="teamBtn">Ready</button>
@@ -1088,6 +1123,7 @@
         modeDisplay: $('#modeDisplay'),
         mapDisplay: $('#mapDisplay'),
         firstToDisplay: $('#firstToDisplay'),
+        roomSettingsPanel: $('#roomSettingsPanel'),
         redSlots: $('#redSlots'),
         blueSlots: $('#blueSlots'),
         switchTeamBtn: $('#switchTeamBtn'),
@@ -1123,6 +1159,11 @@
         document.querySelectorAll('[data-option-group]').forEach((group) => {
           group.querySelectorAll('.choice').forEach((choice) => {
             choice.addEventListener('click', () => selectOption(group.dataset.optionGroup, choice))
+          })
+        })
+        document.querySelectorAll('[data-room-setting]').forEach((group) => {
+          group.querySelectorAll('.choice').forEach((choice) => {
+            choice.addEventListener('click', () => updateRoomSetting(group.dataset.roomSetting, choice.dataset.value))
           })
         })
         $('#createRoomBtn').addEventListener('click', createRoom)
@@ -1170,6 +1211,7 @@
         state.socket.on('lobby_update', (room) => renderRoom(room))
         state.socket.on('join_error', (message) => setError(ui.joinError, message))
         state.socket.on('switch_error', (message) => setError(ui.lobbyError, message))
+        state.socket.on('settings_error', (message) => setError(ui.lobbyError, message))
         state.socket.on('start_error', (message) => setError(ui.lobbyError, message))
         state.socket.on('player_disconnected', () => setError(ui.lobbyError, 'Player disconnected'))
         state.socket.on('game_start', (room) => startGame(room))
@@ -1261,10 +1303,7 @@
           return
         }
         state.socket.emit('create_room', {
-          username: state.username,
-          gameMode: state.createOptions.gameMode,
-          map: state.createOptions.map,
-          firstTo: state.createOptions.firstTo
+          username: state.username
         })
       }
 
@@ -1309,6 +1348,7 @@
         ui.modeDisplay.textContent = 'Mode: ' + room.gameMode
         ui.mapDisplay.textContent = 'Map: ' + formatMap(room.map)
         ui.firstToDisplay.textContent = 'FIRST TO ' + (room.firstTo || 5)
+        renderRoomSettingsControls(room)
         renderTeam('red', ui.redSlots, room)
         renderTeam('blue', ui.blueSlots, room)
         renderControls(room)
@@ -1352,9 +1392,28 @@
         const isHost = me && room.host === me.id
         const allReady = room.players.length > 0 && room.players.every((player) => player.ready)
         ui.readyBtn.textContent = me && me.ready ? 'Not Ready' : 'Ready'
+        ui.roomSettingsPanel.classList.toggle('hidden', !isHost)
         ui.startMatchBtn.classList.toggle('hidden', !isHost)
         ui.startMatchBtn.disabled = !allReady
         ui.startMatchBtn.classList.toggle('startReady', isHost && allReady)
+      }
+
+      function renderRoomSettingsControls(room) {
+        document.querySelectorAll('[data-room-setting]').forEach((group) => {
+          const setting = group.dataset.roomSetting
+          const value = setting === 'firstTo' ? String(room.firstTo || 5) : String(room[setting] || '')
+          group.querySelectorAll('.choice').forEach((choice) => {
+            choice.classList.toggle('selected', choice.dataset.value === value)
+          })
+        })
+      }
+
+      function updateRoomSetting(setting, value) {
+        const me = currentPlayer(state.room)
+        if (!state.code || !me || state.room.host !== me.id) return
+        const payload = { code: state.code }
+        payload[setting] = setting === 'firstTo' ? Number(value) : value
+        state.socket.emit('update_room_settings', payload)
       }
 
       function toggleReady() {

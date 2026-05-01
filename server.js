@@ -32,8 +32,28 @@ function normalizeTeam(team) {
   return team === 'blue' ? 'blue' : 'red'
 }
 
+function normalizeMap(map) {
+  return map === 'funland' || map === 'ghosttown' ? map : 'speedball'
+}
+
+function normalizeGameMode(gameMode) {
+  return gameMode === '2v2' ? '2v2' : '1v1'
+}
+
 function normalizeFirstTo(firstTo) {
   return Number(firstTo) === 10 ? 10 : 5
+}
+
+function isValidMap(map) {
+  return map === 'speedball' || map === 'funland' || map === 'ghosttown'
+}
+
+function isValidGameMode(gameMode) {
+  return gameMode === '1v1' || gameMode === '2v2'
+}
+
+function isValidFirstTo(firstTo) {
+  return Number(firstTo) === 5 || Number(firstTo) === 10
 }
 
 function removePlayerFromRoom(socket, code) {
@@ -55,13 +75,13 @@ function removePlayerFromRoom(socket, code) {
 io.on('connection', (socket) => {
   console.log('Player connected:', socket.id)
 
-  socket.on('create_room', ({ username, gameMode, map, firstTo }) => {
+  socket.on('create_room', ({ username, gameMode, map, firstTo } = {}) => {
     const code = generateCode()
     rooms[code] = {
       code, host: socket.id,
-      gameMode, map, firstTo: normalizeFirstTo(firstTo),
+      gameMode: normalizeGameMode(gameMode), map: normalizeMap(map), firstTo: normalizeFirstTo(firstTo),
       players: [{
-        id: socket.id, username,
+        id: socket.id, username: String(username || 'Player').slice(0, 16),
         team: 'red', ready: false, connected: true, returningToLobby: false
       }],
       state: 'lobby'
@@ -123,6 +143,50 @@ io.on('connection', (socket) => {
       socket.emit('switch_error', 'Team is full'); return
     }
     player.team = newTeam
+    io.to(code).emit('lobby_update', room)
+  })
+
+  socket.on('update_room_settings', ({ code, gameMode, map, firstTo } = {}) => {
+    code = normalizeCode(code)
+    const room = rooms[code]
+    if (!room) return
+    if (room.host !== socket.id) {
+      socket.emit('settings_error', 'Only host can change settings')
+      return
+    }
+    if (room.state !== 'lobby') {
+      socket.emit('settings_error', 'Settings can only change in lobby')
+      return
+    }
+
+    const updates = {}
+    if (map !== undefined) {
+      map = String(map)
+      if (!isValidMap(map)) { socket.emit('settings_error', 'Invalid map'); return }
+      updates.map = map
+    }
+    if (gameMode !== undefined) {
+      gameMode = String(gameMode)
+      if (!isValidGameMode(gameMode)) { socket.emit('settings_error', 'Invalid squad size'); return }
+      if (gameMode === '1v1' && room.players.length > 2) {
+        socket.emit('settings_error', 'Too many players for 1v1')
+        return
+      }
+      updates.gameMode = gameMode
+    }
+    if (firstTo !== undefined) {
+      if (!isValidFirstTo(firstTo)) { socket.emit('settings_error', 'Invalid win condition'); return }
+      updates.firstTo = Number(firstTo)
+    }
+
+    const changed = Object.keys(updates).some(key => room[key] !== updates[key])
+    if (!changed) return
+    Object.assign(room, updates)
+    if (room.gameMode === '1v1' && room.players.length === 2) {
+      room.players[0].team = 'red'
+      room.players[1].team = 'blue'
+    }
+    room.players.forEach(player => { player.ready = false })
     io.to(code).emit('lobby_update', room)
   })
 
