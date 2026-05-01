@@ -815,11 +815,11 @@
               <span class="cardName">Scrapyard</span>
               <span class="cardSub">Hard cover / long angles</span>
             </button>
-            <div class="mapCard disabled" aria-disabled="true">
-              <span class="cardTag">Locked</span>
-              <span class="cardName">Night Ops</span>
-              <span class="cardSub">Future field rotation</span>
-            </div>
+            <button class="mapCard choice" data-value="ghosttown" type="button">
+              <span class="cardTag">Scenario</span>
+              <span class="cardName">Ghost Town</span>
+              <span class="cardSub">Desert streets / western cover</span>
+            </button>
           </div>
 
           <div class="optionGrid">
@@ -881,11 +881,11 @@
             <span class="cardName">Scrapyard</span>
             <span class="cardSub">Hard cover / long angles</span>
           </button>
-          <div class="mapCard disabled" aria-disabled="true">
-            <span class="cardTag">Locked</span>
-            <span class="cardName">Night Ops</span>
-            <span class="cardSub">Future field rotation</span>
-          </div>
+          <button class="mapCard choice" data-value="ghosttown" type="button">
+            <span class="cardTag">Scenario</span>
+            <span class="cardName">Ghost Town</span>
+            <span class="cardSub">Desert streets / western cover</span>
+          </button>
         </div>
         <div class="optionGrid">
           <div class="optionGroup" data-option-group="firstTo">
@@ -1279,6 +1279,7 @@
       }
 
       function formatMap(map) {
+        if (map === 'ghosttown') return 'Ghost Town'
         return map === 'scrapyard' ? 'Scrapyard' : 'Speedball'
       }
 
