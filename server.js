@@ -33,7 +33,7 @@ function normalizeTeam(team) {
 }
 
 function normalizeMap(map) {
-  return map === 'funland' || map === 'ghosttown' ? map : 'speedball'
+  return map === 'funland' || map === 'ghosttown' || map === 'rooftop' ? map : 'speedball'
 }
 
 function normalizeGameMode(gameMode) {
@@ -45,7 +45,7 @@ function normalizeFirstTo(firstTo) {
 }
 
 function isValidMap(map) {
-  return map === 'speedball' || map === 'funland' || map === 'ghosttown'
+  return map === 'speedball' || map === 'funland' || map === 'ghosttown' || map === 'rooftop'
 }
 
 function isValidGameMode(gameMode) {

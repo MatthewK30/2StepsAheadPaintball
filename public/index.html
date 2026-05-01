@@ -235,7 +235,7 @@
 
     .mapGrid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: clamp(12px, 2vw, 18px);
     }
 
@@ -943,6 +943,12 @@
               <span class="cardName">Ghost Town</span>
               <span class="cardSub">Desert streets / western cover</span>
             </button>
+            <button class="mapCard choice" data-value="rooftop" type="button">
+              <iframe class="mapPreviewFrame" data-map-preview="rooftop" title="Rooftop City drone preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+              <span class="cardTag">Night Ops</span>
+              <span class="cardName">Rooftop City</span>
+              <span class="cardSub">Skyscraper roof / city glow</span>
+            </button>
           </div>
 
           <div class="optionGrid">
@@ -1077,6 +1083,12 @@
               <span class="cardTag">Scenario</span>
               <span class="cardName">Ghost Town</span>
               <span class="cardSub">Desert streets / western cover</span>
+            </button>
+            <button class="mapCard choice" data-value="rooftop" type="button">
+              <iframe class="mapPreviewFrame" data-map-preview="rooftop" title="Rooftop City drone preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+              <span class="cardTag">Night Ops</span>
+              <span class="cardName">Rooftop City</span>
+              <span class="cardSub">Skyscraper roof / city glow</span>
             </button>
           </div>
           <div class="optionGrid roomSettingsOptions">
@@ -1514,6 +1526,7 @@
       }
 
       function formatMap(map) {
+        if (map === 'rooftop') return 'Rooftop City'
         if (map === 'ghosttown') return 'Ghost Town'
         return map === 'funland' ? 'Abandoned Funland' : 'Speedball'
       }
