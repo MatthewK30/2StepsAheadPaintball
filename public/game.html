@@ -2760,35 +2760,47 @@
     function createRooftopMaterials() {
       const standard = (color, opts = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.74, metalness: 0.1, envMap: environmentMap, envMapIntensity: 0.35, ...opts });
       const basic = (color, opts = {}) => new THREE.MeshBasicMaterial({ color, ...opts });
-      const turf = standard(0x4d9a3f, { roughness: 1, metalness: 0, envMapIntensity: 0.22, vertexColors: true });
-      textureLibrary.apply(turf, 'grass', 18, 18);
-      textureLibrary.apply(turf, 'grassNormal', 18, 18, 'normalMap', THREE.NoColorSpace || THREE.LinearSRGBColorSpace);
-      turf.normalScale = new THREE.Vector2(0.16, 0.16);
+      const maxAniso = renderer.capabilities.getMaxAnisotropy ? renderer.capabilities.getMaxAnisotropy() : 1;
+      const roofTex = new THREE.TextureLoader().load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/hardwood2_diffuse.jpg');
+      roofTex.wrapS = roofTex.wrapT = THREE.RepeatWrapping;
+      roofTex.repeat.set(20, 14);
+      roofTex.anisotropy = maxAniso;
+      roofTex.colorSpace = THREE.SRGBColorSpace;
+      const turf = new THREE.MeshStandardMaterial({ color: 0x2a2a35, roughness: 0.9, metalness: 0.1, envMapIntensity: 0.8 });
+      turf.map = roofTex;
+      turf.color.set(0x333340);
       const windowTexture = createCityWindowTexture();
+      const buildingMaterial = () => new THREE.MeshStandardMaterial({ color: 0x334455, roughness: 0.8, metalness: 0.2, emissiveMap: windowTexture, emissive: 0xffffff, emissiveIntensity: 0.4 });
+      const neon = (color, intensity = 0.9) => new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: intensity, roughness: 0.2, metalness: 0.1 });
       return {
         turf,
-        joint: standard(0x2e6f2f, { roughness: 1, metalness: 0, transparent: true, opacity: 0.34, depthWrite: false }),
-        marking: standard(0xf2d14d, { roughness: 0.82, metalness: 0, transparent: true, opacity: 0.48, depthWrite: false }),
-        drain: standard(0x33343b, { roughness: 0.82, metalness: 0.48 }),
-        steel: standard(0x888899, { roughness: 0.34, metalness: 0.78, envMapIntensity: 0.65 }),
-        glass: new THREE.MeshPhysicalMaterial({ color: 0xcff3ff, transmission: 0.9, transparent: true, opacity: 0.16, roughness: 0.025, thickness: 0.08, metalness: 0, envMap: environmentMap, envMapIntensity: 1.0, side: THREE.DoubleSide }),
-        hvac: standard(0x686f78, { roughness: 0.62, metalness: 0.38 }),
-        hvacDark: standard(0x30313a, { roughness: 0.72, metalness: 0.45 }),
-        rust: standard(0x8a4a28, { roughness: 0.86, metalness: 0.2 }),
-        duct: standard(0x999aaa, { roughness: 0.46, metalness: 0.62, envMapIntensity: 0.55 }),
-        waterWood: standard(0x8b6914, { roughness: 0.9, metalness: 0.02 }),
-        concrete: standard(0x686875, { roughness: 0.9, metalness: 0.02 }),
-        planter: standard(0x6b5840, { roughness: 0.88, metalness: 0.02 }),
-        hedge: standard(0x2f7c34, { roughness: 0.96, metalness: 0.0 }),
-        yellow: standard(0xbda33a, { roughness: 0.7, metalness: 0.12 }),
-        whitePaint: standard(0xf4f1dd, { roughness: 0.66, metalness: 0.02 }),
-        warning: standard(0xf3c93c, { roughness: 0.72, metalness: 0.04 }),
-        flowerPink: standard(0xff5aa9, { roughness: 0.78, metalness: 0 }),
-        flowerYellow: standard(0xffd44d, { roughness: 0.78, metalness: 0 }),
-        signPink: standard(0xff4fa2, { emissive: 0xff4fa2, emissiveIntensity: 0.2, roughness: 0.42, metalness: 0.02 }),
-        signBlue: standard(0x2ea2ff, { emissive: 0x2ea2ff, emissiveIntensity: 0.2, roughness: 0.42, metalness: 0.02 }),
-        signGreen: standard(0x31d787, { emissive: 0x31d787, emissiveIntensity: 0.18, roughness: 0.42, metalness: 0.02 }),
-        signOrange: standard(0xff7a2a, { emissive: 0xff7a2a, emissiveIntensity: 0.18, roughness: 0.42, metalness: 0.02 }),
+        joint: standard(0x20202a, { roughness: 0.95, metalness: 0.08, envMapIntensity: 0.45 }),
+        marking: standard(0xbfa13a, { roughness: 0.82, metalness: 0.05, transparent: true, opacity: 0.55, depthWrite: false, envMapIntensity: 0.5 }),
+        drain: standard(0x2a2a30, { roughness: 0.65, metalness: 0.75, envMapIntensity: 0.8 }),
+        steel: new THREE.MeshStandardMaterial({ color: 0x999aaa, roughness: 0.3, metalness: 0.85, envMapIntensity: 1.2 }),
+        glass: new THREE.MeshPhysicalMaterial({ color: 0xaabbff, roughness: 0.05, metalness: 0.0, transmission: 0.88, thickness: 0.15, ior: 1.5, clearcoat: 1.0, clearcoatRoughness: 0.05, envMapIntensity: 1.5 }),
+        hvac: new THREE.MeshStandardMaterial({ color: 0x666677, roughness: 0.7, metalness: 0.6, envMapIntensity: 1.0 }),
+        hvacDark: new THREE.MeshStandardMaterial({ color: 0x444455, roughness: 0.7, metalness: 0.6 }),
+        rust: standard(0x8a4a28, { roughness: 0.86, metalness: 0.2, envMapIntensity: 0.5 }),
+        duct: new THREE.MeshStandardMaterial({ color: 0x888899, roughness: 0.5, metalness: 0.7, envMapIntensity: 1.0 }),
+        waterWood: new THREE.MeshStandardMaterial({ color: 0x8b6914, roughness: 0.85, metalness: 0.1, envMapIntensity: 0.6 }),
+        waterLegs: new THREE.MeshStandardMaterial({ color: 0x333344, roughness: 0.6, metalness: 0.8 }),
+        satellite: new THREE.MeshStandardMaterial({ color: 0xccccdd, roughness: 0.4, metalness: 0.5, envMapIntensity: 1.2 }),
+        generator: new THREE.MeshStandardMaterial({ color: 0xddaa00, roughness: 0.6, metalness: 0.4, envMapIntensity: 0.8 }),
+        accessDoor: new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.85, metalness: 0.1, envMapIntensity: 0.5 }),
+        concrete: standard(0x686875, { roughness: 0.9, metalness: 0.08, envMapIntensity: 0.45 }),
+        planter: standard(0x6b5840, { roughness: 0.88, metalness: 0.05, envMapIntensity: 0.45 }),
+        hedge: standard(0x2f7c34, { roughness: 0.96, metalness: 0.0, envMapIntensity: 0.25 }),
+        yellow: new THREE.MeshStandardMaterial({ color: 0xddaa00, roughness: 0.6, metalness: 0.4, envMapIntensity: 0.8 }),
+        whitePaint: standard(0xd8d5c7, { roughness: 0.66, metalness: 0.02, envMapIntensity: 0.5 }),
+        warning: standard(0xf3c93c, { roughness: 0.72, metalness: 0.08, envMapIntensity: 0.6 }),
+        flowerPink: standard(0xc85a86, { roughness: 0.78, metalness: 0, envMapIntensity: 0.25 }),
+        flowerYellow: standard(0xd8b94d, { roughness: 0.78, metalness: 0, envMapIntensity: 0.25 }),
+        neonFrame: new THREE.MeshStandardMaterial({ color: 0x999aaa, roughness: 0.3, metalness: 0.8, envMapIntensity: 1.2 }),
+        signPink: neon(0xff4fa2),
+        signBlue: neon(0x2ea2ff),
+        signGreen: neon(0x31d787),
+        signOrange: neon(0xff7a2a),
         beach: basic(0xd8c37a, { side: THREE.DoubleSide }),
         ocean: basic(0x176fa8, { side: THREE.DoubleSide }),
         glow: basic(0xffd49a, { transparent: true, opacity: 0.22, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }),
@@ -2810,13 +2822,13 @@
         carWhite: basic(0xe8eee9),
         palmTrunk: basic(0x8b5a2b),
         palmLeaf: basic(0x2f8c45, { side: THREE.DoubleSide }),
-        city: new THREE.MeshBasicMaterial({ color: 0xffffff, map: windowTexture }),
-        cityWarm: new THREE.MeshBasicMaterial({ color: 0xd5c4aa, map: windowTexture }),
-        cityBlue: new THREE.MeshBasicMaterial({ color: 0xa8bed2, map: windowTexture }),
-        cityDark: new THREE.MeshBasicMaterial({ color: 0x607082, map: windowTexture }),
-        cityFar: new THREE.MeshBasicMaterial({ color: 0xb7c7cc, map: windowTexture, transparent: true, opacity: 0.58 }),
-        cityFarWarm: new THREE.MeshBasicMaterial({ color: 0xcbbfae, map: windowTexture, transparent: true, opacity: 0.52 }),
-        cityFarBlue: new THREE.MeshBasicMaterial({ color: 0x95afc0, map: windowTexture, transparent: true, opacity: 0.5 })
+        city: buildingMaterial(),
+        cityWarm: buildingMaterial(),
+        cityBlue: buildingMaterial(),
+        cityDark: buildingMaterial(),
+        cityFar: buildingMaterial(),
+        cityFarWarm: buildingMaterial(),
+        cityFarBlue: buildingMaterial()
       };
     }
 
@@ -2825,19 +2837,17 @@
       canvas.width = 128;
       canvas.height = 128;
       const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#8f9aaa';
+      ctx.fillStyle = '#1a1a2a';
       ctx.fillRect(0, 0, 128, 128);
-      for (let y = 8; y < 120; y += 16) {
-        for (let x = 8; x < 120; x += 16) {
-          const tint = ((x * 13 + y * 7) % 5) / 5;
-          ctx.fillStyle = tint > 0.55 ? 'rgba(186,225,255,0.9)' : 'rgba(72,93,122,0.72)';
+      for (let y = 6; y < 122; y += 12) {
+        for (let x = 6; x < 122; x += 10) {
+          const lit = ((x * 17 + y * 23) % 7) > 2;
+          ctx.fillStyle = lit ? (((x + y) % 4) ? '#ffb34a' : '#ffd47a') : '#232538';
           ctx.fillRect(x, y, 6, 8);
         }
       }
-      ctx.fillStyle = 'rgba(255,255,255,0.18)';
-      ctx.fillRect(0, 0, 128, 22);
       const texture = new THREE.CanvasTexture(canvas);
-      configureTexture(texture, 3, 5, 1, THREE.SRGBColorSpace);
+      configureTexture(texture, 1, 1, 1, THREE.SRGBColorSpace);
       return texture;
     }
 
@@ -2956,7 +2966,7 @@
 
     function addRooftopCar(group, roof, x, z, yaw, material) {
       addRooftopBackdropBox(group, x, -71.35, z, 1.25, 0.34, 0.62, material, yaw);
-      addRooftopBackdropBox(group, x, -71.04, z - Math.cos(yaw || 0) * 0.04, 0.58, 0.2, 0.5, roof.cityDark, yaw);
+      addRooftopBackdropBox(group, x, -71.04, z - Math.cos(yaw || 0) * 0.04, 0.58, 0.2, 0.5, roof.roadLight, yaw);
     }
 
     function addRooftopCityBelow(group, roof) {
@@ -3073,15 +3083,15 @@
     }
 
     function addRooftopSurfaceDetails(group, roof) {
-      for (let x = -24; x <= 24; x += 8) addBox(group, x, 0.025, 0, 0.045, 0.02, ARENA_HALF_Z * 2, roof.joint, null, 0).userData.rooftopGround = true;
-      for (let z = -16; z <= 16; z += 8) addBox(group, 0, 0.028, z, ARENA_HALF_X * 2, 0.02, 0.045, roof.joint, null, 0).userData.rooftopGround = true;
-      [[-21, -12], [-7, 13], [11, -9], [23, 10], [2, 3], [-16, 5]].forEach((p, i) => {
-        const drain = new THREE.Mesh(new THREE.CircleGeometry(0.42 + (i % 2) * 0.08, 18), roof.drain);
-        drain.rotation.x = -Math.PI / 2;
-        drain.position.set(p[0], 0.04, p[1]);
+      for (let x = -24; x <= 24; x += 8) addBox(group, x, 0.014, 0, 0.08, 0.015, ARENA_HALF_Z * 2, roof.joint, null, 0).userData.rooftopGround = true;
+      for (let z = -16; z <= 16; z += 8) addBox(group, 0, 0.016, z, ARENA_HALF_X * 2, 0.015, 0.08, roof.joint, null, 0).userData.rooftopGround = true;
+      [[-21, -12], [-7, 13], [11, -9], [23, 10]].forEach((p) => {
+        const drain = addCylinder(group, p[0], 0.1, p[1], 0.08, 0.2, roof.drain, null, 0, false, 1);
         drain.userData.rooftopGround = true;
-        group.add(drain);
       });
+      addBox(group, 0, 0.075, 0, 1.5, 0.15, 1.0, roof.hvacDark, null, 0).userData.rooftopGround = true;
+      addCylinder(group, -0.42, 0.18, -0.54, 0.04, 0.38, roof.drain, null, 0, true, 1).userData.rooftopGround = true;
+      addCylinder(group, 0.42, 0.18, -0.54, 0.04, 0.38, roof.drain, null, 0, true, 1).userData.rooftopGround = true;
       addBox(group, -24, 0.035, 0, 3.2, 0.018, 15.0, roof.marking, null, 0).userData.rooftopGround = true;
       addBox(group, 24, 0.035, 0, 3.2, 0.018, 15.0, roof.marking, null, 0).userData.rooftopGround = true;
       addBox(group, 0, 0.038, 0, 10.0, 0.018, 0.18, roof.marking, null, 0).userData.rooftopGround = true;
@@ -3164,6 +3174,16 @@
       return mesh;
     }
 
+    function addLocalPointLight(group, originX, originY, originZ, yaw, localX, localY, localZ, color, intensity, distance) {
+      const cos = Math.cos(yaw || 0);
+      const sin = Math.sin(yaw || 0);
+      const light = new THREE.PointLight(color, intensity, distance);
+      light.position.set(originX + localX * cos + localZ * sin, originY + localY, originZ - localX * sin + localZ * cos);
+      light.castShadow = false;
+      group.add(light);
+      return light;
+    }
+
     function addRooftopGlassFence(group, colliders, roof) {
       addBox(group, 0, 0.88, -ARENA_HALF_Z - 0.12, ARENA_HALF_X * 2 + 0.35, 1.5, 0.08, roof.glass, colliders, 0);
       addBox(group, 0, 0.88, ARENA_HALF_Z + 0.12, ARENA_HALF_X * 2 + 0.35, 1.5, 0.08, roof.glass, colliders, 0);
@@ -3231,7 +3251,7 @@
       const tank = addCylinder(group, x, 3.15, z, 1.2, 2.0, roof.waterWood, colliders, 0, false, 1);
       tank.userData.rooftopShadow = true;
       for (let y = 2.35; y <= 3.85; y += 0.48) {
-        const band = new THREE.Mesh(geometries.seamRing, roof.steel);
+        const band = new THREE.Mesh(geometries.seamRing, roof.waterLegs);
         band.position.set(x, y, z);
         band.scale.setScalar(1.22);
         band.rotation.x = Math.PI / 2;
@@ -3244,26 +3264,26 @@
       cap.userData.rooftopShadow = true;
       shadowMesh(cap, true, true);
       group.add(cap);
-      addBox(group, x + 1.45, 2.0, z - 0.15, 0.08, 2.4, 0.08, roof.steel, null, 0);
-      addBox(group, x + 1.45, 2.0, z + 0.45, 0.08, 2.4, 0.08, roof.steel, null, 0);
-      for (let i = 0; i < 5; i++) addBox(group, x + 1.45, 0.95 + i * 0.42, z + 0.15, 0.1, 0.035, 0.7, roof.steel, null, 0);
+      addBox(group, x + 1.45, 2.0, z - 0.15, 0.08, 2.4, 0.08, roof.waterLegs, null, 0);
+      addBox(group, x + 1.45, 2.0, z + 0.45, 0.08, 2.4, 0.08, roof.waterLegs, null, 0);
+      for (let i = 0; i < 5; i++) addBox(group, x + 1.45, 0.95 + i * 0.42, z + 0.15, 0.1, 0.035, 0.7, roof.waterLegs, null, 0);
       for (let sx = -1; sx <= 1; sx += 2) {
-        for (let sz = -1; sz <= 1; sz += 2) addCylinder(group, x + sx * 0.85, 1.35, z + sz * 0.85, 0.055, 2.7, roof.steel, null, 0, false, 1);
+        for (let sz = -1; sz <= 1; sz += 2) addCylinder(group, x + sx * 0.85, 1.35, z + sz * 0.85, 0.055, 2.7, roof.waterLegs, null, 0, false, 1);
       }
-      addBox(group, x, 1.55, z, 2.2, 0.08, 0.08, roof.steel, null, Math.PI / 4);
-      addBox(group, x, 1.55, z, 2.2, 0.08, 0.08, roof.steel, null, -Math.PI / 4);
-      addCylinder(group, x, 1.45, z, 0.7, 2.9, roof.steel, colliders, 0, false, 1);
+      addBox(group, x, 1.55, z, 2.2, 0.08, 0.08, roof.waterLegs, null, Math.PI / 4);
+      addBox(group, x, 1.55, z, 2.2, 0.08, 0.08, roof.waterLegs, null, -Math.PI / 4);
+      addCylinder(group, x, 1.45, z, 0.7, 2.9, roof.waterLegs, colliders, 0, false, 1);
       addCoverPoints(points, x, z, 3.0, 3.0, x < 0 ? 'red' : 'blue', 4.4);
     }
 
     function addSatelliteDish(group, colliders, points, roof, x, z, yaw) {
-      const dish = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), roof.concrete);
+      const dish = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), roof.satellite);
       dish.position.set(x, 1.35, z);
       dish.rotation.set(Math.PI / 2, yaw, 0);
       dish.scale.set(1.15, 1.15, 0.42);
       shadowMesh(dish, false, true);
       group.add(dish);
-      addBox(group, x, 0.72, z, 1.8, 1.2, 0.35, roof.concrete, colliders, yaw);
+      addBox(group, x, 0.72, z, 1.8, 1.2, 0.35, roof.satellite, colliders, yaw);
       addCylinder(group, x - Math.sin(yaw) * 0.65, 0.62, z - Math.cos(yaw) * 0.65, 0.1, 1.15, roof.steel, null, 0, false, 1);
       addLocalBox(group, x, 0, z, yaw, 0, 1.46, -0.78, 0.08, 0.08, 1.35, roof.steel);
       addLocalSphere(group, x, 0, z, yaw, 0, 1.52, -1.46, 0.18, 0.18, 0.18, roof.hvacDark);
@@ -3288,11 +3308,9 @@
     }
 
     function addAccessDoor(group, colliders, points, roof, x, z, yaw) {
-      addLocalColliderBox(group, colliders, x, z, yaw, -0.78, 1.1, 0, 0.18, 2.2, 0.3, roof.concrete);
-      addLocalColliderBox(group, colliders, x, z, yaw, 0.78, 1.1, 0, 0.18, 2.2, 0.3, roof.concrete);
-      addLocalColliderBox(group, colliders, x, z, yaw, 0, 2.12, 0, 1.75, 0.18, 0.34, roof.concrete);
-      addLocalBox(group, x, 0, z, yaw, 0, 2.36, -0.08, 2.05, 0.26, 0.56, roof.steel);
-      addLocalBox(group, x, 0, z, yaw, 0, 1.04, -0.2, 1.18, 1.72, 0.08, roof.hvacDark);
+      addLocalColliderBox(group, colliders, x, z, yaw, -0.78, 1.1, 0, 0.18, 2.2, 0.3, roof.accessDoor);
+      addLocalColliderBox(group, colliders, x, z, yaw, 0.78, 1.1, 0, 0.18, 2.2, 0.3, roof.accessDoor);
+      addLocalBox(group, x, 0, z, yaw, 0, 1.04, -0.2, 1.18, 1.72, 0.08, roof.accessDoor);
       addLocalBox(group, x, 0, z, yaw, 0.36, 1.06, -0.26, 0.08, 1.48, 0.055, roof.steel);
       addLocalSphere(group, x, 0, z, yaw, 0.44, 1.08, -0.36, 0.08, 0.08, 0.08, roof.warning);
       for (let i = -1; i <= 1; i++) addLocalBox(group, x, 0, z, yaw, i * 0.42, 0.38, -0.31, 0.35, 0.08, 0.05, roof.warning);
@@ -3312,7 +3330,7 @@
     }
 
     function addGeneratorCover(group, colliders, points, roof, x, z) {
-      addBox(group, x, 0.75, z, 2.0, 1.5, 3.0, roof.yellow, colliders, 0);
+      addBox(group, x, 0.75, z, 2.0, 1.5, 3.0, roof.generator, colliders, 0);
       addBox(group, x, 1.05, z - 1.55, 1.7, 0.6, 0.08, roof.hvacDark, null, 0);
       addCylinder(group, x + 0.58, 1.72, z + 0.52, 0.18, 0.85, roof.hvacDark, null, 0, false, 1);
       addBox(group, x, 1.56, z, 2.28, 0.18, 3.28, roof.steel, null, 0);
@@ -3329,16 +3347,20 @@
     }
 
     function addNeonSign(group, colliders, points, roof, x, z, yaw, faceMat) {
-      addLocalColliderBox(group, colliders, x, z, yaw, -1.82, 1.25, 0, 0.14, 2.5, 0.16, roof.steel);
-      addLocalColliderBox(group, colliders, x, z, yaw, 1.82, 1.25, 0, 0.14, 2.5, 0.16, roof.steel);
-      addLocalColliderBox(group, colliders, x, z, yaw, 0, 2.42, 0, 3.8, 0.14, 0.16, roof.steel);
-      addLocalColliderBox(group, colliders, x, z, yaw, 0, 0.12, 0, 3.8, 0.14, 0.16, roof.steel);
-      addLocalBox(group, x, 0, z, yaw, 0, 1.25, -0.035, 3.2, 1.75, 0.035, faceMat);
-      addLocalBox(group, x, 0, z, yaw, -0.78, 1.25, -0.08, 0.16, 1.1, 0.045, roof.whitePaint);
-      addLocalBox(group, x, 0, z, yaw, 0, 1.75, -0.08, 1.1, 0.16, 0.045, roof.whitePaint);
-      addLocalBox(group, x, 0, z, yaw, 0.78, 1.25, -0.08, 0.16, 1.1, 0.045, roof.whitePaint);
-      addLocalBox(group, x, 0, z, yaw, 0, 0.8, -0.08, 1.1, 0.16, 0.045, roof.whitePaint);
-      [-1.45, 1.45].forEach((sx) => addLocalSphere(group, x, 0, z, yaw, sx, 2.42, -0.12, 0.12, 0.12, 0.12, faceMat));
+      const signColor = faceMat.color ? faceMat.color.getHex() : 0xffffff;
+      const glowPanel = new THREE.MeshStandardMaterial({ color: 0x11121a, emissive: signColor, emissiveIntensity: 1.2, roughness: 0.1, metalness: 0.0 });
+      const glowStrip = new THREE.MeshStandardMaterial({ color: signColor, emissive: signColor, emissiveIntensity: 1.2, roughness: 0.1, metalness: 0.0 });
+      addLocalColliderBox(group, colliders, x, z, yaw, -1.82, 1.25, 0, 0.12, 2.5, 0.16, roof.neonFrame);
+      addLocalColliderBox(group, colliders, x, z, yaw, 1.82, 1.25, 0, 0.12, 2.5, 0.16, roof.neonFrame);
+      addLocalColliderBox(group, colliders, x, z, yaw, 0, 2.42, 0, 3.8, 0.12, 0.16, roof.neonFrame);
+      addLocalColliderBox(group, colliders, x, z, yaw, 0, 0.12, 0, 3.8, 0.12, 0.16, roof.neonFrame);
+      addLocalBox(group, x, 0, z, yaw, 0, 1.25, -0.045, 3.24, 1.72, 0.035, glowPanel);
+      addLocalBox(group, x, 0, z, yaw, -0.88, 1.58, -0.09, 0.96, 0.08, 0.045, glowStrip);
+      addLocalBox(group, x, 0, z, yaw, 0.7, 1.58, -0.09, 0.72, 0.08, 0.045, glowStrip);
+      addLocalBox(group, x, 0, z, yaw, -0.42, 1.22, -0.09, 1.36, 0.08, 0.045, glowStrip);
+      addLocalBox(group, x, 0, z, yaw, 0.56, 0.88, -0.09, 1.04, 0.08, 0.045, glowStrip);
+      addLocalBox(group, x, 0, z, yaw, -1.12, 0.88, -0.09, 0.36, 0.08, 0.045, glowStrip);
+      addLocalPointLight(group, x, 0, z, yaw, 0, 1.35, -0.55, signColor, 0.4, 4);
       addCoverPoints(points, x, z, 4.0, 0.7, 'any', 2.5);
     }
 
@@ -3377,9 +3399,9 @@
       addLocalBox(group, x, 0, z, yaw, 0, 1.33, 0, 2.9, 0.14, 1.4, roof.steel);
       addLocalBox(group, x, 0, z, yaw, 0, 0.22, -0.78, 3.08, 0.42, 0.22, roof.steel);
       addLocalBox(group, x, 0, z, yaw, 0, 0.78, 0.78, 2.25, 0.28, 0.22, roof.concrete);
-      addLocalBox(group, x, 0, z, yaw, -0.84, 0.92, -0.68, 0.5, 0.28, 0.05, roof.signPink);
-      addLocalBox(group, x, 0, z, yaw, 0, 0.78, -0.69, 0.5, 0.28, 0.05, roof.signBlue);
-      addLocalBox(group, x, 0, z, yaw, 0.84, 0.92, -0.68, 0.5, 0.28, 0.05, roof.signGreen);
+      addLocalBox(group, x, 0, z, yaw, -0.84, 0.92, -0.68, 0.5, 0.28, 0.05, roof.whitePaint);
+      addLocalBox(group, x, 0, z, yaw, 0, 0.78, -0.69, 0.5, 0.28, 0.05, roof.warning);
+      addLocalBox(group, x, 0, z, yaw, 0.84, 0.92, -0.68, 0.5, 0.28, 0.05, roof.whitePaint);
       addLocalCylinder(group, x, 0, z, yaw, -1.18, 1.55, 0, 0.055, 0.82, roof.steel, false, 1);
       addLocalCylinder(group, x, 0, z, yaw, 1.18, 1.55, 0, 0.055, 0.82, roof.steel, false, 1);
       addCoverPoints(points, x, z, 3.0, 1.5, 'any', 1.35);
@@ -5124,7 +5146,7 @@
         const previewRenderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'low-power' });
         previewRenderer.outputColorSpace = THREE.SRGBColorSpace;
         previewRenderer.toneMapping = THREE.ACESFilmicToneMapping;
-        previewRenderer.toneMappingExposure = mapName === 'rooftop' ? 1.0 : mapName === 'ghosttown' ? 1.08 : mapName === 'funland' ? 0.86 : 0.7;
+        previewRenderer.toneMappingExposure = mapName === 'rooftop' ? 0.85 : mapName === 'ghosttown' ? 1.08 : mapName === 'funland' ? 0.86 : 0.7;
         previewRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
 
         const mapClone = map.group.clone(true);
@@ -5145,13 +5167,16 @@
 
     function applyDronePreviewLighting(previewScene, mapName) {
       if (mapName === 'rooftop') {
-        previewScene.background = new THREE.Color(0x79cfff);
-        previewScene.fog = new THREE.Fog(0x79cfff, 130, 520);
-        previewScene.add(new THREE.AmbientLight(0xffffff, 0.95));
-        previewScene.add(new THREE.HemisphereLight(0xb8e8ff, 0xa9c884, 1.45));
-        const sun = new THREE.DirectionalLight(0xfff2cc, 2.3);
-        sun.position.set(42, 82, 24);
+        previewScene.background = new THREE.Color(0xffa36f);
+        previewScene.fog = new THREE.Fog(0xffa36f, 130, 520);
+        previewScene.add(new THREE.AmbientLight(0xff6622, 0.3));
+        previewScene.add(new THREE.HemisphereLight(0xff8844, 0x221133, 0.8));
+        const sun = new THREE.DirectionalLight(0xff7733, 2.5);
+        sun.position.set(-60, 40, -20);
         previewScene.add(sun);
+        const cityGlow = new THREE.PointLight(0xff9944, 1.0, 100);
+        cityGlow.position.set(0, -10, 0);
+        previewScene.add(cityGlow);
         return;
       }
       if (mapName === 'ghosttown') {
@@ -7440,27 +7465,28 @@
       renderer.shadowMap.enabled = false;
       if (active && active.ambient === 'rooftop') {
         scene.remove(ambientLight, keyLight, keyLight.target, hemiLight);
-        scene.background = new THREE.Color(0x79cfff);
-        scene.fog = new THREE.Fog(0x79cfff, 135, 540);
-        skyStatus = 'rooftop-la-day';
+        scene.background = new THREE.Color(0xffa36f);
+        scene.fog = new THREE.Fog(0xffa36f, 135, 540);
+        skyStatus = 'rooftop-sunset';
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 0.96;
+        renderer.toneMappingExposure = 0.85;
         renderer.shadowMap.enabled = true;
-        const ambient = new THREE.AmbientLight(0xffffff, 0.95);
-        const hemi = new THREE.HemisphereLight(0xb8e8ff, 0xa9c884, 1.45);
-        const sun = new THREE.DirectionalLight(0xfff2cc, 2.55);
-        sun.position.set(42, 86, 24);
-        sun.castShadow = true;
-        sun.shadow.mapSize.set(2048, 2048);
-        sun.shadow.camera.left = -60;
-        sun.shadow.camera.right = 60;
-        sun.shadow.camera.top = 60;
-        sun.shadow.camera.bottom = -60;
-        sun.shadow.camera.far = 200;
-        sun.shadow.bias = -0.0001;
-        sun.target.position.set(0, 0, 0);
-        scene.add(sun.target);
-        ghostTownLights = [ambient, hemi, sun, sun.target];
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        const sunLight = new THREE.DirectionalLight(0xff7733, 2.5);
+        sunLight.position.set(-60, 40, -20);
+        sunLight.castShadow = true;
+        sunLight.shadow.mapSize.width = 2048;
+        sunLight.shadow.mapSize.height = 2048;
+        sunLight.shadow.camera.left = -50;
+        sunLight.shadow.camera.right = 50;
+        sunLight.shadow.camera.top = 50;
+        sunLight.shadow.camera.bottom = -50;
+        sunLight.shadow.bias = -0.0001;
+        const hemi = new THREE.HemisphereLight(0xff8844, 0x221133, 0.8);
+        const ambient = new THREE.AmbientLight(0xff6622, 0.3);
+        const cityGlow = new THREE.PointLight(0xff9944, 1.0, 100);
+        cityGlow.position.set(0, -10, 0);
+        ghostTownLights = [sunLight, hemi, ambient, cityGlow];
         ghostTownLights.forEach((light) => scene.add(light));
         return;
       }
