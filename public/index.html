@@ -782,12 +782,15 @@
     }
 
     .roomSettingsPanel {
+      grid-column: 1 / -1;
+      justify-self: center;
+      width: min(1240px, 100%);
       display: grid;
-      gap: 12px;
-      padding: 16px;
-      border: 1px solid rgba(255,255,255,0.14);
-      background: rgba(255,255,255,0.035);
-      text-align: left;
+      gap: clamp(16px, 2vw, 22px);
+      padding: clamp(18px, 2.5vw, 30px);
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018));
+      box-shadow: 0 22px 70px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04);
     }
 
     .roomSettingsHeader {
@@ -799,7 +802,8 @@
     .roomSettingsHeader strong {
       color: #ffffff;
       font-family: 'Bebas Neue', Impact, sans-serif;
-      font-size: 30px;
+      font-size: clamp(36px, 5vw, 60px);
+      line-height: 0.9;
       letter-spacing: 0.14em;
       text-transform: uppercase;
     }
@@ -812,16 +816,21 @@
       text-transform: uppercase;
     }
 
+    .roomSettingsOptions {
+      width: min(720px, 100%);
+      justify-self: center;
+    }
+
     .roomSettingGroup {
-      padding: 12px;
-      gap: 8px;
+      padding: 16px;
+      gap: 10px;
     }
 
     .roomSettingGroup .choice {
-      min-height: 38px;
-      padding: 9px 8px 7px;
-      font-size: 13px;
-      letter-spacing: 0.08em;
+      min-height: 42px;
+      padding: 11px 12px 9px;
+      font-size: 16px;
+      letter-spacing: 0.12em;
     }
 
     .startReady {
@@ -851,6 +860,10 @@
 
       .centerConsole {
         min-height: auto;
+        order: -1;
+      }
+
+      .roomSettingsPanel {
         order: -1;
       }
 
@@ -1030,19 +1043,43 @@
             <div id="mapDisplay">Map: --</div>
             <div id="firstToDisplay">FIRST TO --</div>
           </div>
-          <div id="roomSettingsPanel" class="roomSettingsPanel hidden">
-            <div class="roomSettingsHeader">
-              <strong>Host Settings</strong>
-              <span>Changing settings clears ready states</span>
-            </div>
-            <div class="optionGroup roomSettingGroup" data-room-setting="map">
-              <label>Field</label>
-              <div class="choiceSet threeChoices">
-                <button class="choice selected" data-value="speedball" type="button">Speedball</button>
-                <button class="choice" data-value="funland" type="button">Funland</button>
-                <button class="choice" data-value="ghosttown" type="button">Ghost Town</button>
-              </div>
-            </div>
+          <button id="switchTeamBtn" class="teamBtn">Switch Team</button>
+          <button id="readyBtn" class="teamBtn">Ready</button>
+          <button id="startMatchBtn" class="teamBtn">Start Match</button>
+          <div id="lobbyError" class="errorText"></div>
+        </section>
+
+        <aside class="teamColumn blueColumn">
+          <h2 class="teamHeader">Blue Team</h2>
+          <div id="blueSlots" class="slots"></div>
+        </aside>
+
+        <section id="roomSettingsPanel" class="roomSettingsPanel hidden" aria-label="Host room settings">
+          <div class="roomSettingsHeader">
+            <strong>Host Settings</strong>
+            <span>Changing settings clears ready states</span>
+          </div>
+          <div class="mapGrid" data-room-setting="map" aria-label="Lobby map selection">
+            <button class="mapCard choice selected" data-value="speedball" type="button">
+              <iframe class="mapPreviewFrame" data-map-preview="speedball" title="Speedball drone preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+              <span class="cardTag">Tournament</span>
+              <span class="cardName">Speedball</span>
+              <span class="cardSub">Clean lanes / fast breakouts</span>
+            </button>
+            <button class="mapCard choice" data-value="funland" type="button">
+              <iframe class="mapPreviewFrame" data-map-preview="funland" title="Abandoned Funland drone preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+              <span class="cardTag">Scenario</span>
+              <span class="cardName">Abandoned Funland</span>
+              <span class="cardSub">Theme park / eerie lanes</span>
+            </button>
+            <button class="mapCard choice" data-value="ghosttown" type="button">
+              <iframe class="mapPreviewFrame" data-map-preview="ghosttown" title="Ghost Town drone preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+              <span class="cardTag">Scenario</span>
+              <span class="cardName">Ghost Town</span>
+              <span class="cardSub">Desert streets / western cover</span>
+            </button>
+          </div>
+          <div class="optionGrid roomSettingsOptions">
             <div class="optionGroup roomSettingGroup" data-room-setting="gameMode">
               <label>Squad Size</label>
               <div class="choiceSet">
@@ -1058,16 +1095,7 @@
               </div>
             </div>
           </div>
-          <button id="switchTeamBtn" class="teamBtn">Switch Team</button>
-          <button id="readyBtn" class="teamBtn">Ready</button>
-          <button id="startMatchBtn" class="teamBtn">Start Match</button>
-          <div id="lobbyError" class="errorText"></div>
         </section>
-
-        <aside class="teamColumn blueColumn">
-          <h2 class="teamHeader">Blue Team</h2>
-          <div id="blueSlots" class="slots"></div>
-        </aside>
       </div>
     </section>
   </div>
@@ -1403,7 +1431,9 @@
           const setting = group.dataset.roomSetting
           const value = setting === 'firstTo' ? String(room.firstTo || 5) : String(room[setting] || '')
           group.querySelectorAll('.choice').forEach((choice) => {
-            choice.classList.toggle('selected', choice.dataset.value === value)
+            const selected = choice.dataset.value === value
+            choice.classList.toggle('selected', selected)
+            if (selected && choice.classList.contains('mapCard')) loadMapPreview(choice)
           })
         })
       }
