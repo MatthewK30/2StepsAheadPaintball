@@ -2505,6 +2505,21 @@
       ctx.stroke();
     }
 
+    function createSkinPreviewFaceCubeMaterials(skin) {
+      const selected = normalizeSkin(skin?.id, skin?.file, skin?.name) || DEFAULT_SKIN;
+      const faceTexture = skinTextureLoader.load(skinImageUrl(selected));
+      faceTexture.wrapS = THREE.ClampToEdgeWrapping;
+      faceTexture.wrapT = THREE.ClampToEdgeWrapping;
+      faceTexture.colorSpace = THREE.SRGBColorSpace;
+      const faceMat = new THREE.MeshStandardMaterial({
+        map: faceTexture,
+        roughness: 0.6,
+        metalness: 0.0
+      });
+      faceMat.userData.skinMaterial = true;
+      return [faceMat, faceMat, faceMat, faceMat, faceMat, faceMat];
+    }
+
     function createEnvironmentMap() {
       if (!THREE.PMREMGenerator || !THREE.RoomEnvironment) return null;
       try {
@@ -5505,15 +5520,15 @@
         rubber: new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.88, metalness: 0 }),
         white: new THREE.MeshStandardMaterial({ color: 0xf0f0ea, roughness: 0.35, metalness: 0 }),
         metal: new THREE.MeshStandardMaterial({ color: 0xd87718, roughness: 0.22, metalness: 0.7 }),
-        glass: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.08, metalness: 0, transparent: true, opacity: 0.16, side: THREE.DoubleSide }),
-        photo: createSkinPreviewPhotoMaterial(skin)
+        photo: createSkinPreviewPhotoMaterial(skin),
+        faceCube: createSkinPreviewFaceCubeMaterials(skin)
       };
       const geos = {
         box: new THREE.BoxGeometry(1, 1, 1),
         sphere: new THREE.SphereGeometry(1, 16, 16),
         cylinder: new THREE.CylinderGeometry(1, 1, 1, 16, 1),
         cylinderLow: new THREE.CylinderGeometry(1, 1, 1, 10, 1),
-        visor: new THREE.PlaneGeometry(0.34, 0.16),
+        headCube: new THREE.BoxGeometry(0.4, 0.4, 0.4),
         torsoPhoto: new THREE.PlaneGeometry(0.62, 0.52)
       };
       const add = (geo, mat, x, y, z, sx, sy, sz, rx, ry, rz, parent) => {
@@ -5531,14 +5546,7 @@
       add(geos.box, mats.white, -0.13, 1.03, -0.23, 0.035, 0.42, 0.018, 0, 0, -0.22);
       add(geos.box, mats.white, 0.13, 1.03, -0.23, 0.035, 0.42, 0.018, 0, 0, 0.22);
       add(geos.cylinderLow, mats.black, 0, 1.42, 0, 0.07, 0.12, 0.07);
-      add(geos.sphere, mats.photo, 0, 1.62, -0.01, 0.35, 0.336, 0.308, 0, Math.PI / 2, 0);
-      add(geos.sphere, mats.photo, 0, 1.51, -0.16, 0.322, 0.224, 0.182, 0, Math.PI / 2, 0);
-      add(geos.visor, mats.glass, 0, 1.58, -0.305, 1, 1, 1);
-      add(geos.box, mats.rim, 0, 1.67, -0.275, 0.39, 0.018, 0.018);
-      add(geos.box, mats.rim, 0, 1.49, -0.275, 0.39, 0.018, 0.018);
-      add(geos.box, mats.rim, -0.195, 1.58, -0.275, 0.018, 0.1, 0.018);
-      add(geos.box, mats.rim, 0.195, 1.58, -0.275, 0.018, 0.1, 0.018);
-      add(geos.box, mats.black, 0, 1.46, -0.245, 0.24, 0.08, 0.055);
+      add(geos.headCube, mats.faceCube, 0, 1.62, -0.01, 1.4, 1.4, 1.4);
       for (let side = -1; side <= 1; side += 2) {
         add(geos.sphere, mats.jersey, side * 0.34, 1.22, 0, 0.09, 0.1, 0.1);
         add(geos.cylinderLow, mats.jersey, side * 0.47, 0.96, -0.03, 0.065, 0.34, 0.065, 0, 0, side * 0.34);
