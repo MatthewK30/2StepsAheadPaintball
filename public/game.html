@@ -321,12 +321,17 @@
 
     #perf {
       position: absolute;
-      top: 16px;
-      right: 18px;
+      top: 224px;
+      right: 16px;
+      width: 200px;
+      padding: 5px 8px;
+      background: rgba(13,17,23,0.74);
+      border: 1px solid rgba(255,255,255,0.18);
       color: var(--text-dim);
       font-family: 'Share Tech Mono', monospace;
       font-size: 13px;
       letter-spacing: 0.06em;
+      text-align: center;
     }
 
     #ammoHud {
@@ -401,49 +406,63 @@
 
     #minimap {
       position: absolute;
-      left: 18px;
-      bottom: 24px;
-      width: 110px;
-      height: 110px;
-      padding: 8px;
-      background: rgba(13,17,23,0.74);
-      border: 1px solid var(--border-bright);
+      top: 16px;
+      right: 16px;
+      width: 200px;
+      height: 200px;
+      padding: 0;
+      background: rgba(8,12,16,0.78);
+      border: 2px solid rgba(255,255,255,0.32);
       backdrop-filter: blur(12px);
       box-shadow: 0 18px 55px rgba(0,0,0,0.42), inset 0 1px 0 rgba(255,255,255,0.05);
+      overflow: hidden;
     }
 
     .miniLabel {
+      position: absolute;
+      top: 8px;
+      left: 28px;
+      right: 28px;
       color: var(--text-dim);
-      font-size: 9px;
+      font-size: 11px;
       font-weight: 800;
       letter-spacing: 0.18em;
+      line-height: 1;
+      text-align: center;
       text-transform: uppercase;
     }
 
     .miniField {
       position: relative;
-      height: 80px;
-      margin-top: 6px;
-      border: 1px solid var(--border);
-      background:
-        linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px),
-        linear-gradient(0deg, rgba(255,255,255,0.04) 1px, transparent 1px),
-        rgba(255,255,255,0.025);
-      background-size: 20px 20px;
+      left: 10px;
+      top: 42px;
+      width: 180px;
+      height: 120px;
+      border: 1px solid rgba(255,255,255,0.42);
+      background: rgba(255,255,255,0.06);
       overflow: hidden;
     }
 
-    .miniCover {
+    #miniLayout {
       position: absolute;
-      background: rgba(122,138,154,0.28);
-      border: 1px solid rgba(255,255,255,0.08);
+      inset: 0;
+      width: 100%;
+      height: 100%;
     }
 
-    .miniCover.c1 { left: 18px; top: 16px; width: 18px; height: 8px; }
-    .miniCover.c2 { right: 16px; bottom: 16px; width: 20px; height: 8px; }
-    .miniCover.c3 { left: 42px; top: 35px; width: 26px; height: 10px; }
-    .miniCover.c4 { left: 12px; bottom: 18px; width: 8px; height: 22px; }
-    .miniCover.c5 { right: 12px; top: 14px; width: 8px; height: 22px; }
+    .miniCompass {
+      position: absolute;
+      color: rgba(255,255,255,0.82);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      line-height: 1;
+      text-shadow: 0 1px 4px #000;
+    }
+
+    .miniCompass.north { top: 25px; left: 50%; transform: translateX(-50%); }
+    .miniCompass.south { bottom: 8px; left: 50%; transform: translateX(-50%); }
+    .miniCompass.east { right: 7px; top: 99px; }
+    .miniCompass.west { left: 7px; top: 99px; }
 
     #miniPlayer {
       position: absolute;
@@ -451,23 +470,25 @@
       top: 50%;
       width: 0;
       height: 0;
-      border-left: 5px solid transparent;
-      border-right: 5px solid transparent;
-      border-bottom: 12px solid rgba(255,255,255,0.92);
+      border-left: 7px solid transparent;
+      border-right: 7px solid transparent;
+      border-bottom: 15px solid rgba(255,255,255,0.96);
       transform: translate(-50%, -50%);
-      filter: drop-shadow(0 0 5px rgba(255,255,255,0.45));
+      filter: drop-shadow(0 0 6px rgba(255,255,255,0.8)) drop-shadow(0 1px 3px #000);
+      z-index: 3;
     }
 
     #miniOpponent {
       position: absolute;
       left: 68%;
       top: 50%;
-      width: 7px;
-      height: 7px;
+      width: 9px;
+      height: 9px;
       border-radius: 50%;
       background: var(--blue);
       box-shadow: 0 0 10px rgba(21,102,204,0.9);
       transform: translate(-50%, -50%);
+      z-index: 3;
     }
 
     @keyframes ammoPulse {
@@ -1187,13 +1208,13 @@
     </div>
     <div id="teamBadge">Red Team</div>
     <div id="minimap" aria-label="Tactical minimap">
-      <div class="miniLabel">TACTICAL</div>
+      <div id="miniMapName" class="miniLabel">TACTICAL</div>
+      <div class="miniCompass north">N</div>
+      <div class="miniCompass south">S</div>
+      <div class="miniCompass east">E</div>
+      <div class="miniCompass west">W</div>
       <div class="miniField">
-        <div class="miniCover c1"></div>
-        <div class="miniCover c2"></div>
-        <div class="miniCover c3"></div>
-        <div class="miniCover c4"></div>
-        <div class="miniCover c5"></div>
+        <svg id="miniLayout" viewBox="0 0 180 120" preserveAspectRatio="none" aria-hidden="true"></svg>
         <div id="miniPlayer"></div>
         <div id="miniOpponent"></div>
       </div>
@@ -1265,12 +1286,12 @@
     const HOPPER_CAPACITY = 50;
     const POD_CAPACITY = 50;
     const STARTING_PODS = 3;
-    const STAND_HEIGHT = 1.68;
-    const CROUCH_HEIGHT = 0.84;
-    const CRAWL_HEIGHT = 0.34;
-    const PLAYER_RADIUS = 0.42;
-    const CROUCH_RADIUS = 0.36;
-    const CRAWL_RADIUS = 0.26;
+    const STAND_HEIGHT = 1.8;
+    const CROUCH_HEIGHT = 0.9;
+    const CRAWL_HEIGHT = 0.36;
+    const PLAYER_RADIUS = 0.3;
+    const CROUCH_RADIUS = 0.3;
+    const CRAWL_RADIUS = 0.28;
     const SHOT_COOLDOWN = 0.1;
     const PAINTBALL_RADIUS = 0.06;
     const PAINTBALL_SPEED = 70;
@@ -1321,12 +1342,15 @@
     let segmentHitT = 0;
     const urlParams = new URLSearchParams(window.location.search);
     const MULTIPLAYER = urlParams.has('room');
+    const PRACTICE_MODE = !MULTIPLAYER && urlParams.get('practice') === '1';
     const ROOM_CODE = (urlParams.get('room') || '').toUpperCase();
     const MY_TEAM = urlParams.get('team') === 'blue' ? 'blue' : 'red';
     const MY_USERNAME = urlParams.get('username') || 'Player';
     const GAME_MODE = urlParams.get('mode') || '1v1';
     const requestedMap = urlParams.get('map');
     const SELECTED_MAP = requestedMap === 'scrapyard' || requestedMap === 'ghosttown' ? requestedMap : 'speedball';
+    const requestedDifficulty = urlParams.get('difficulty');
+    const SELECTED_DIFFICULTY = AI_DIFFICULTIES[requestedDifficulty] ? requestedDifficulty : 'pro';
     const FIRST_TO = parseInt(urlParams.get('firstto'), 10) === 10 ? 10 : 5;
     const OPPONENT_TEAM = MY_TEAM === 'blue' ? 'red' : 'blue';
     const SOCKET_URL = window.location.hostname === 'localhost'
@@ -1389,13 +1413,15 @@
       matchTitle: document.getElementById('matchTitle'),
       matchWinner: document.getElementById('matchWinner'),
       matchCopy: document.getElementById('matchCopy'),
+      miniMapName: document.getElementById('miniMapName'),
+      miniLayout: document.getElementById('miniLayout'),
       miniPlayer: document.getElementById('miniPlayer'),
       miniOpponent: document.getElementById('miniOpponent')
     };
 
     const state = {
-      selectedMap: MULTIPLAYER ? SELECTED_MAP : 'scrapyard',
-      firstTo: MULTIPLAYER ? FIRST_TO : 5,
+      selectedMap: MULTIPLAYER || PRACTICE_MODE ? SELECTED_MAP : 'scrapyard',
+      firstTo: MULTIPLAYER || PRACTICE_MODE ? FIRST_TO : 5,
       roundDuration: ROUND_TIME,
       phase: 'menu',
       round: 1,
@@ -1413,7 +1439,7 @@
       winnerText: '',
       playerEliminated: false,
       aiEliminated: false,
-      aiDifficulty: 'pro',
+      aiDifficulty: PRACTICE_MODE ? SELECTED_DIFFICULTY : 'pro',
       lastRoundMessage: '',
       running: false,
       fps: 60,
@@ -1505,9 +1531,9 @@
       spawn: new THREE.Vector3(24, 0, 0),
       target: new THREE.Vector3(24, 0, 0),
       bodyCenter: new THREE.Vector3(),
-      radius: 0.48,
-      height: 1.72,
-      tacticalHeight: 1.72,
+      radius: 0.3,
+      height: 1.8,
+      tacticalHeight: 1.8,
       peekSide: 0,
       reactClock: 0,
       cover: null,
@@ -1608,7 +1634,7 @@
     loadHdrEnvironment();
     updateHud();
     hideAllMaps();
-    if (MULTIPLAYER) startMatch();
+    if (MULTIPLAYER || PRACTICE_MODE) startMatch();
 
     let lastTime = performance.now();
     requestAnimationFrame(tick);
@@ -1726,10 +1752,12 @@
       const metal = (color) => mat(color, { roughness: 0.5, metalness: 0.75, envMapIntensity: 1.0 });
       const paint = (color) => phys(color, { roughness: 0.14, metalness: 0, transparent: true, opacity: 0.95, clearcoat: 1.0, clearcoatRoughness: 0.05, envMapIntensity: 1.0, side: THREE.DoubleSide });
       const m = {
-        red: mat(RED, { roughness: 0.8 }),
-        redDark: mat(0x8d121c, { roughness: 0.85 }),
-        blue: mat(BLUE, { roughness: 0.8 }),
-        blueDark: mat(0x133b94, { roughness: 0.85 }),
+        red: mat(0xdd1111, { roughness: 0.72, emissive: 0xdd1111, emissiveIntensity: 0.15 }),
+        redDark: mat(0xcc0000, { roughness: 0.78, emissive: 0xcc0000, emissiveIntensity: 0.15 }),
+        redRim: mat(0xff3a3a, { roughness: 0.62, emissive: 0xff1f1f, emissiveIntensity: 0.35, transparent: true, opacity: 0.58 }),
+        blue: mat(0x1155ee, { roughness: 0.72, emissive: 0x1155ee, emissiveIntensity: 0.15 }),
+        blueDark: mat(0x0044cc, { roughness: 0.78, emissive: 0x0044cc, emissiveIntensity: 0.15 }),
+        blueRim: mat(0x3f8cff, { roughness: 0.62, emissive: 0x1f66ff, emissiveIntensity: 0.35, transparent: true, opacity: 0.58 }),
         skin: mat(0xb9875d, { roughness: 0.72 }),
         foam: mat(0x050607, { roughness: 0.94 }),
         white: vinyl(WHITE),
@@ -1835,7 +1863,7 @@
         textureLibrary.apply(material, 'fabric', 3, 3, 'bumpMap', THREE.NoColorSpace || THREE.LinearSRGBColorSpace);
         material.bumpScale = 0.018;
       });
-      [m.red, m.redDark, m.blue, m.blueDark, m.bannerRed, m.bannerBlue].forEach((material) => {
+      [m.red, m.redDark, m.redRim, m.blue, m.blueDark, m.blueRim, m.bannerRed, m.bannerBlue].forEach((material) => {
         textureLibrary.apply(material, 'fabric', 2, 2);
         textureLibrary.apply(material, 'fabric', 2, 2, 'bumpMap', THREE.NoColorSpace || THREE.LinearSRGBColorSpace);
         material.bumpScale = 0.012;
@@ -1874,8 +1902,8 @@
 
     function getTeamMaterials(team) {
       return team === 'blue'
-        ? { primary: materials.blue, dark: materials.blueDark, paint: materials.paintBlue }
-        : { primary: materials.red, dark: materials.redDark, paint: materials.paintRed };
+        ? { primary: materials.blue, dark: materials.blueDark, helmet: materials.blueDark, rim: materials.blueRim, paint: materials.paintBlue }
+        : { primary: materials.red, dark: materials.redDark, helmet: materials.redDark, rim: materials.redRim, paint: materials.paintRed };
     }
 
     function createCurvedPyramidGeometry() {
@@ -3217,8 +3245,9 @@
       gunGroup.rotation.set(-0.04, 0.08, 0);
       gunGroup.scale.set(0.6, 0.6, 0.6);
 
-      const jerseyMat = MY_TEAM === 'blue' ? materials.blueDark : materials.redDark;
-      const armMat = MY_TEAM === 'blue' ? materials.blue : materials.red;
+      const teamMats = getTeamMaterials(MY_TEAM);
+      const jerseyMat = teamMats.primary;
+      const armMat = teamMats.primary;
       const gloveMat = materials.glove;
       const speedFeedPetals = [];
       const hopperBalls = [];
@@ -3337,6 +3366,7 @@
       gunGroup.add(leftHand);
       addCylinder(jerseyMat, -0.25, -0.31, -0.02, 0.062, 0.28, 1.02, 0.18, -0.44, leftHand);
       addCylinder(armMat, -0.12, -0.16, -0.33, 0.054, 0.3, 1.2, 0.05, -0.12, leftHand);
+      addBoxPart(materials.white, -0.19, -0.21, -0.22, 0.028, 0.018, 0.22, 1.02, 0.18, -0.44, leftHand, 'leftArmStripe');
       addSpherePart(gloveMat, -0.025, -0.038, -0.5, 0.105, 0.074, 0.095, leftHand);
       addBoxPart(materials.gunRubber, -0.015, 0.006, -0.49, 0.12, 0.02, 0.082, -0.18, 0, 0.04, leftHand);
       for (let i = 0; i < 5; i++) {
@@ -3349,6 +3379,7 @@
       gunGroup.add(rightHand);
       addCylinder(jerseyMat, 0.24, -0.33, 0.1, 0.067, 0.32, 0.84, -0.08, 0.46, rightHand);
       addCylinder(armMat, 0.15, -0.2, -0.08, 0.056, 0.29, 1.0, -0.18, 0.22, rightHand);
+      addBoxPart(materials.white, 0.2, -0.26, 0.0, 0.028, 0.018, 0.22, 0.84, -0.08, 0.46, rightHand, 'rightArmStripe');
       addSpherePart(gloveMat, 0.058, -0.14, -0.015, 0.118, 0.095, 0.11, rightHand);
       for (let i = 0; i < 4; i++) addCylinder(gloveMat, 0.012 + i * 0.024, -0.155 - i * 0.006, -0.11, 0.012, 0.072, 1.18, -0.12, 0.08 + i * 0.04, rightHand);
 
@@ -3383,41 +3414,43 @@
     function createAiModel(team) {
       const teamMats = getTeamMaterials(team || 'blue');
       ai.group.visible = false;
+      ai.group.clear();
       ai.limbs = {};
       const root = new THREE.Group();
-      root.name = 'opponentMannequinRoot';
+      root.name = 'paintballPlayerRoot';
       ai.limbs.root = root;
 
-      const addMesh = (mesh, parent, name) => {
+      const addMesh = (mesh, parent, name, teamSlot) => {
         if (name) mesh.name = name;
+        if (teamSlot) mesh.userData.teamSlot = teamSlot;
         shadowMesh(mesh, true, true);
         mesh.frustumCulled = false;
         mesh.userData.coverCull = true;
         (parent || root).add(mesh);
         return mesh;
       };
-      const addBox = (name, mat, x, y, z, sx, sy, sz, parent, rx, ry, rz) => {
+      const addBox = (name, mat, x, y, z, sx, sy, sz, parent, rx, ry, rz, teamSlot) => {
         const mesh = new THREE.Mesh(geometries.box, mat);
         mesh.position.set(x, y, z);
         mesh.scale.set(sx, sy, sz);
         mesh.rotation.set(rx || 0, ry || 0, rz || 0);
-        return addMesh(mesh, parent, name);
+        return addMesh(mesh, parent, name, teamSlot);
       };
-      const addSphere = (name, mat, x, y, z, sx, sy, sz, parent) => {
+      const addSphere = (name, mat, x, y, z, sx, sy, sz, parent, teamSlot) => {
         const mesh = new THREE.Mesh(geometries.sphere, mat);
         mesh.position.set(x, y, z);
         mesh.scale.set(sx, sy, sz);
-        return addMesh(mesh, parent, name);
+        return addMesh(mesh, parent, name, teamSlot);
       };
-      const addCylinder = (name, mat, x, y, z, radiusTop, radiusBottom, length, parent, radialSegments) => {
+      const addCylinder = (name, mat, x, y, z, radiusTop, radiusBottom, length, parent, radialSegments, teamSlot) => {
         const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radiusTop, radiusBottom, length, radialSegments || 16, 1), mat);
         mesh.position.set(x, y, z);
-        return addMesh(mesh, parent, name);
+        return addMesh(mesh, parent, name, teamSlot);
       };
-      const addSegment = (name, mat, length, radiusTop, radiusBottom, parent) => {
-        const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radiusTop, radiusBottom, length, 14, 1), mat);
+      const addSegment = (name, mat, length, radiusTop, radiusBottom, parent, teamSlot) => {
+        const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radiusTop, radiusBottom, length, 16, 1), mat);
         mesh.position.y = -length * 0.5;
-        addMesh(mesh, parent, name + 'Mesh');
+        addMesh(mesh, parent, name + 'Mesh', teamSlot);
         return mesh;
       };
       const addPivot = (name, x, y, z, parent) => {
@@ -3429,93 +3462,113 @@
       };
 
       const jersey = teamMats.primary;
-      const jerseyDark = teamMats.dark;
-      const jointMat = teamMats.dark;
-      const pants = teamMats.dark;
+      const helmet = teamMats.helmet;
+      const rim = teamMats.rim;
+      const pants = materials.rubber;
+      const pad = materials.black;
       const glove = materials.glove;
       const boot = materials.rubber;
 
-      const hips = addBox('hips', jerseyDark, 0, 0.88, 0, 0.25, 0.105, 0.16, root);
+      const hips = addBox('hips', pants, 0, 0.92, 0.01, 0.24, 0.11, 0.17, root);
       ai.limbs.hips = hips;
-      ai.body = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.135, 0.45, 8, 1), jersey);
-      ai.body.position.set(0, 1.135, 0);
-      ai.body.scale.set(1.18, 1, 0.62);
-      addMesh(ai.body, root, 'torso');
-      addBox('torsoBelt', materials.black, 0, 0.925, -0.002, 0.24, 0.025, 0.17, root);
-      addBox('chestPlate', jerseyDark, 0, 1.19, -0.115, 0.17, 0.075, 0.018, root);
+      ai.body = new THREE.Mesh(new THREE.CylinderGeometry(0.23, 0.17, 0.58, 12, 1), jersey);
+      ai.body.position.set(0, 1.22, 0);
+      ai.body.scale.set(1.0, 1, 0.68);
+      addMesh(ai.body, root, 'torso', 'primary');
+      addBox('torsoBelt', pad, 0, 0.94, -0.002, 0.27, 0.026, 0.18, root);
+      addBox('chestProtector', pad, 0, 1.24, -0.155, 0.19, 0.16, 0.026, root);
+      addBox('frontJerseyStripeLeft', materials.white, -0.09, 1.25, -0.183, 0.022, 0.28, 0.012, root, 0, 0, -0.28);
+      addBox('frontJerseyStripeRight', materials.white, 0.09, 1.25, -0.183, 0.022, 0.28, 0.012, root, 0, 0, 0.28);
+      addBox('backNumberTop', materials.white, 0, 1.3, 0.155, 0.12, 0.035, 0.012, root);
+      addBox('backNumberBottom', materials.white, 0, 1.22, 0.155, 0.12, 0.035, 0.012, root);
+      addBox('harnessLeft', pad, -0.075, 1.16, -0.17, 0.034, 0.34, 0.014, root, 0, 0, -0.48);
+      addBox('harnessRight', pad, 0.075, 1.16, -0.17, 0.034, 0.34, 0.014, root, 0, 0, 0.48);
+      addBox('rimLeftTorso', rim, -0.245, 1.22, 0, 0.018, 0.45, 0.13, root, 0, 0, 0, 'rim');
+      addBox('rimRightTorso', rim, 0.245, 1.22, 0, 0.018, 0.45, 0.13, root, 0, 0, 0, 'rim');
 
-      addCylinder('neck', jointMat, 0, 1.405, 0, 0.045, 0.04, 0.1, root, 16);
-      ai.head = addSphere('head', jersey, 0, 1.59, -0.01, 0.15, 0.18, 0.135, root);
-      addBox('mask', materials.black, 0, 1.58, -0.13, 0.16, 0.115, 0.04, root);
-      addBox('visor', materials.hopperGlass, 0, 1.615, -0.155, 0.13, 0.035, 0.014, root);
-      addBox('maskMouth', jerseyDark, 0, 1.525, -0.156, 0.105, 0.03, 0.014, root);
+      addCylinder('neck', pad, 0, 1.47, 0, 0.045, 0.04, 0.1, root, 16);
+      ai.head = addSphere('helmetShell', helmet, 0, 1.62, -0.005, 0.17, 0.16, 0.15, root, 'helmet');
+      addSphere('maskShell', helmet, 0, 1.57, -0.095, 0.17, 0.135, 0.095, root, 'helmet');
+      addBox('visor', materials.hopperGlass, 0, 1.61, -0.18, 0.145, 0.038, 0.018, root);
+      addBox('maskFrame', rim, 0, 1.61, -0.193, 0.17, 0.058, 0.012, root, 0, 0, 0, 'rim');
+      addBox('chinGuard', pad, 0, 1.495, -0.17, 0.13, 0.055, 0.03, root);
+      for (let i = -2; i <= 2; i++) addBox('ventSlot' + i, materials.darkGrey, i * 0.026, 1.495, -0.193, 0.014, 0.008, 0.01, root);
+      addBox('goggleStrap', pad, 0, 1.61, 0.13, 0.22, 0.045, 0.024, root);
+      addBox('helmetRim', rim, 0, 1.76, -0.02, 0.2, 0.018, 0.13, root, 0, 0, 0, 'rim');
 
-      ai.limbs.leftShoulderJoint = addSphere('leftShoulderJoint', jointMat, -0.28, 1.34, 0, 0.07, 0.07, 0.07, root);
-      ai.limbs.rightShoulderJoint = addSphere('rightShoulderJoint', jointMat, 0.28, 1.34, 0, 0.07, 0.07, 0.07, root);
+      ai.limbs.leftShoulderJoint = addSphere('leftShoulderPad', jersey, -0.24, 1.4, 0, 0.06, 0.07, 0.075, root, 'primary');
+      ai.limbs.rightShoulderJoint = addSphere('rightShoulderPad', jersey, 0.24, 1.4, 0, 0.06, 0.07, 0.075, root, 'primary');
 
       function buildArm(prefix, side) {
-        const upper = addPivot(prefix + 'UpperArm', side * 0.28, 1.31, 0, root);
+        const upper = addPivot(prefix + 'UpperArm', side * 0.245, 1.37, -0.01, root);
         upper.userData.side = side;
-        addSegment(prefix + 'UpperArm', jersey, 0.34, 0.044, 0.04, upper);
+        addSegment(prefix + 'UpperArm', jersey, 0.36, 0.052, 0.046, upper, 'primary');
+        addBox(prefix + 'ArmStripe', materials.white, side * 0.012, -0.18, -0.048, 0.018, 0.2, 0.012, upper, 0, 0, side * 0.12);
         ai.limbs[prefix + 'UpperArm'] = upper;
-        ai.limbs[prefix + 'ElbowJoint'] = addSphere(prefix + 'ElbowJoint', jointMat, 0, -0.34, 0, 0.052, 0.052, 0.052, upper);
-        const fore = addPivot(prefix + 'ForeArm', 0, -0.34, 0, upper);
+        ai.limbs[prefix + 'ElbowJoint'] = addSphere(prefix + 'ElbowPad', pad, 0, -0.36, 0, 0.058, 0.05, 0.058, upper);
+        const fore = addPivot(prefix + 'ForeArm', 0, -0.36, 0, upper);
         fore.userData.side = side;
-        addSegment(prefix + 'ForeArm', jerseyDark, 0.31, 0.037, 0.033, fore);
+        addSegment(prefix + 'ForeArm', jersey, 0.34, 0.046, 0.04, fore, 'primary');
+        addBox(prefix + 'ForearmPad', pad, 0, -0.17, -0.045, 0.055, 0.15, 0.018, fore);
         ai.limbs[prefix + 'ForeArm'] = fore;
-        ai.limbs[prefix + 'Hand'] = addBox(prefix + 'Hand', glove, 0, -0.325, -0.015, 0.055, 0.055, 0.07, fore);
+        ai.limbs[prefix + 'Hand'] = addBox(prefix + 'Glove', glove, 0, -0.36, -0.02, 0.06, 0.055, 0.08, fore);
       }
       buildArm('left', -1);
       buildArm('right', 1);
 
-      ai.limbs.leftHipJoint = addSphere('leftHipJoint', jointMat, -0.135, 0.88, 0, 0.06, 0.06, 0.06, root);
-      ai.limbs.rightHipJoint = addSphere('rightHipJoint', jointMat, 0.135, 0.88, 0, 0.06, 0.06, 0.06, root);
+      ai.limbs.leftHipJoint = addSphere('leftHipJoint', pants, -0.13, 0.91, 0, 0.055, 0.055, 0.055, root);
+      ai.limbs.rightHipJoint = addSphere('rightHipJoint', pants, 0.13, 0.91, 0, 0.055, 0.055, 0.055, root);
 
       function buildLeg(prefix, side) {
-        const thigh = addPivot(prefix + 'Thigh', side * 0.135, 0.86, 0, root);
+        const thigh = addPivot(prefix + 'Thigh', side * 0.13, 0.88, 0, root);
         thigh.userData.side = side;
-        addSegment(prefix + 'Thigh', pants, 0.42, 0.06, 0.05, thigh);
+        addSegment(prefix + 'Thigh', pants, 0.44, 0.075, 0.063, thigh);
+        addBox(prefix + 'PantCrease', materials.darkGrey, 0, -0.22, -0.045, 0.045, 0.3, 0.012, thigh);
         ai.limbs[prefix + 'Thigh'] = thigh;
-        ai.limbs[prefix + 'KneeJoint'] = addSphere(prefix + 'KneeJoint', materials.black, 0, -0.42, 0, 0.055, 0.055, 0.055, thigh);
-        const shin = addPivot(prefix + 'Shin', 0, -0.42, 0, thigh);
+        ai.limbs[prefix + 'KneeJoint'] = addSphere(prefix + 'KneePad', pad, 0, -0.44, -0.035, 0.072, 0.055, 0.045, thigh);
+        const shin = addPivot(prefix + 'Shin', 0, -0.44, 0, thigh);
         shin.userData.side = side;
-        addSegment(prefix + 'Shin', pants, 0.43, 0.047, 0.04, shin);
+        addSegment(prefix + 'Shin', pants, 0.44, 0.062, 0.05, shin);
+        addBox(prefix + 'ShinGuard', materials.darkGrey, 0, -0.22, -0.052, 0.055, 0.26, 0.016, shin);
         ai.limbs[prefix + 'Shin'] = shin;
-        ai.limbs[prefix + 'Foot'] = addBox(prefix + 'Foot', boot, 0, -0.445, -0.055, 0.09, 0.045, 0.2, shin);
+        ai.limbs[prefix + 'Foot'] = addBox(prefix + 'Cleat', boot, 0, -0.405, -0.07, 0.095, 0.055, 0.21, shin);
       }
       buildLeg('left', -1);
       buildLeg('right', 1);
 
       ai.podTubes = [];
-      const podPack = addBox('podPack', materials.black, 0, 0.92, 0.18, 0.22, 0.09, 0.06, root);
+      addBox('podPack', pad, 0, 0.93, 0.205, 0.24, 0.095, 0.06, root);
       for (let i = 0; i < STARTING_PODS; i++) {
-        const pod = addCylinder('podTube' + i, i % 2 ? materials.darkGrey : materials.grey, (i - 1) * 0.075, 0.95, 0.235, 0.028, 0.028, 0.18, root, 12);
+        const pod = addCylinder('podTube' + i, i % 2 ? materials.darkGrey : materials.grey, (i - 1) * 0.078, 1.0, 0.255, 0.032, 0.032, 0.22, root, 14);
         pod.rotation.x = 0.18;
         ai.podTubes.push(pod);
       }
-      podPack.userData.coverCull = true;
 
       ai.marker = new THREE.Group();
       ai.marker.name = 'marker';
-      ai.marker.position.set(0.08, 1.11, -0.36);
+      ai.marker.position.set(0.08, 1.12, -0.42);
       root.add(ai.marker);
-      const body = new THREE.Mesh(geometries.box, materials.gunAccent);
-      body.position.set(0.02, 0, -0.04);
-      body.scale.set(0.17, 0.07, 0.22);
+      const markerBody = new THREE.Mesh(geometries.box, materials.gunAccent);
+      markerBody.position.set(0.02, 0, -0.04);
+      markerBody.scale.set(0.18, 0.075, 0.23);
+      const markerReg = new THREE.Mesh(geometries.cylinderLow, materials.gunMetal);
+      markerReg.position.set(0.045, -0.1, 0.03);
+      markerReg.scale.set(0.026, 0.11, 0.026);
       const barrel = new THREE.Mesh(geometries.cylinderLow, materials.black);
-      barrel.position.set(0.02, 0.015, -0.32);
-      barrel.scale.set(0.024, 0.34, 0.024);
+      barrel.position.set(0.02, 0.015, -0.35);
+      barrel.scale.set(0.024, 0.38, 0.024);
       barrel.rotation.x = Math.PI / 2;
       const hopper = new THREE.Mesh(geometries.sphere, materials.hopper);
-      hopper.position.set(0.02, 0.14, -0.03);
-      hopper.scale.set(0.12, 0.085, 0.12);
-      ai.marker.add(body, barrel, hopper);
+      hopper.position.set(0.02, 0.15, -0.03);
+      hopper.scale.set(0.13, 0.09, 0.12);
+      [markerBody, markerReg, barrel, hopper].forEach((part) => addMesh(part, ai.marker));
+
       ai.splat = new THREE.Mesh(geometries.splat, getTeamMaterials(MY_TEAM).paint);
-      ai.splat.position.set(0, 1.18, -0.14);
+      ai.splat.position.set(0, 1.22, -0.19);
       ai.splat.scale.set(0.32, 0.26, 1);
       ai.splat.visible = false;
       const splat2 = new THREE.Mesh(geometries.splat, getTeamMaterials(MY_TEAM).paint);
-      splat2.position.set(0.08, 1.6, -0.16);
+      splat2.position.set(0.08, 1.6, -0.19);
       splat2.scale.set(0.16, 0.13, 1);
       splat2.visible = false;
       ai.limbs.splat2 = splat2;
@@ -3810,8 +3863,13 @@
       const teamMats = getTeamMaterials(team);
       ai.group.traverse((child) => {
         if (!child.isMesh || child === ai.splat || child === ai.limbs?.splat2) return;
+        if (child.userData && child.userData.teamSlot && teamMats[child.userData.teamSlot]) {
+          child.material = teamMats[child.userData.teamSlot];
+          return;
+        }
         if (child.material === materials.red || child.material === materials.blue) child.material = teamMats.primary;
         else if (child.material === materials.redDark || child.material === materials.blueDark) child.material = teamMats.dark;
+        else if (child.material === materials.redRim || child.material === materials.blueRim) child.material = teamMats.rim;
       });
     }
 
@@ -4522,6 +4580,18 @@
       return false;
     }
 
+    function distanceToWallAhead(maxDistance) {
+      if (!state.running || activeCoverMeshes.length === 0) return maxDistance;
+      camera.getWorldPosition(tmpVecC);
+      camera.getWorldDirection(tmpVecD);
+      coverRaycaster.set(tmpVecC, tmpVecD);
+      coverRaycaster.near = 0;
+      coverRaycaster.far = maxDistance;
+      for (let i = 0; i < activeCoverMeshes.length; i++) activeCoverMeshes[i].updateWorldMatrix(true, true);
+      const hits = coverRaycaster.intersectObjects(activeCoverMeshes, true);
+      return hits[0] ? hits[0].distance : maxDistance;
+    }
+
     function updateGun(dt, canMove) {
       const moveMag = Math.min(1, Math.hypot(player.velocity.x, player.velocity.z) / WALK_SPEED);
       const sprintLift = player.sprinting ? 1.65 : 1;
@@ -4532,7 +4602,10 @@
       gun.recoil = Math.max(0, gun.recoil - dt * 5.8);
       const targetX = gun.baseX + sway;
       const targetY = gun.baseY - bob + (input.crawl ? -0.055 : input.crouch ? -0.035 : 0);
-      const targetZ = gun.baseZ + gun.recoil * 0.05;
+      const clearZ = gun.baseZ + gun.recoil * 0.05;
+      const wallDistance = distanceToWallAhead(0.6);
+      const wallTuck = clamp(1 - wallDistance / 0.6, 0, 1);
+      const targetZ = clearZ + (-0.2 - clearZ) * wallTuck;
       gun.group.position.x += (targetX - gun.group.position.x) * Math.min(1, dt * 16);
       gun.group.position.y += (targetY - gun.group.position.y) * Math.min(1, dt * 16);
       gun.group.position.z += (targetZ - gun.group.position.z) * Math.min(1, dt * 16);
@@ -4555,8 +4628,6 @@
       }
       camera.getWorldPosition(tmpVecA);
       camera.getWorldDirection(tmpVecB);
-      tmpVecA.addScaledVector(tmpVecB, 0.78);
-      tmpVecA.y -= 0.08;
       const shotTeam = MULTIPLAYER ? MY_TEAM : 'red';
       fireProjectile(shotTeam, tmpVecA, tmpVecB);
       if (MULTIPLAYER && multiplayer.socket && multiplayer.socket.connected) {
@@ -4704,12 +4775,12 @@
 
     function projectileHitsAi(p) {
       const height = Math.max(0.62, ai.tacticalHeight || ai.height);
-      const radius = height < 1.1 ? 0.34 : ai.radius;
+      const radius = height < 1.1 ? 0.24 : ai.radius;
       return segmentHitsBody(p.prev, p.pos, ai.position.x, ai.position.z, radius + p.radius, 0.12, height);
     }
 
     function projectileHitsPlayer(p) {
-      return segmentHitsBody(p.prev, p.pos, player.bodyCenter.x, player.bodyCenter.z, player.radius + p.radius + 0.04, 0.12, player.height + 0.05);
+      return segmentHitsBody(p.prev, p.pos, player.bodyCenter.x, player.bodyCenter.z, player.radius + p.radius, 0.12, player.height + 0.05);
     }
 
     function segmentHitsBody(start, end, x, z, radius, minY, maxY) {
@@ -5230,7 +5301,7 @@
 
       const sideLean = atCover ? ai.peekSide * 0.1 : 0;
       ai.group.rotation.z += (sideLean - ai.group.rotation.z) * Math.min(1, dt * 8);
-      ai.body.position.y = 1.135 + idle * 0.008 * (1 - moving) * (1 - prone);
+      ai.body.position.y = 1.22 + idle * 0.008 * (1 - moving) * (1 - prone);
       ai.body.rotation.x += ((-0.08 * crouch - 0.08 * run) - ai.body.rotation.x) * rate;
 
       const leftLeg = stride * legAmp;
@@ -5252,7 +5323,7 @@
       if (ai.marker) {
         const aimBlend = aim * (1 - prone);
         const targetX = 0.28 * (1 - aimBlend) + 0.08 * aimBlend;
-        const targetY = (0.68 * (1 - aimBlend) + 1.1 * aimBlend) - crouch * 0.16 + prone * -0.54;
+        const targetY = (0.72 * (1 - aimBlend) + 1.16 * aimBlend) - crouch * 0.16 + prone * -0.54;
         const targetZ = -0.08 * (1 - aimBlend) - 0.43 * aimBlend + prone * 0.08;
         ai.marker.position.x += (targetX - ai.marker.position.x) * rate;
         ai.marker.position.y += (targetY - ai.marker.position.y) * rate;
@@ -5683,17 +5754,117 @@
       }
     }
 
+    function formatMapName(mapName) {
+      if (mapName === 'ghosttown') return 'Ghost Town';
+      return mapName === 'scrapyard' ? 'Scrapyard' : 'Speedball';
+    }
+
+    function miniX(x) {
+      return clamp((x + ARENA_HALF_X) / (ARENA_HALF_X * 2), 0, 1) * 180;
+    }
+
+    function miniY(z) {
+      return clamp((z + ARENA_HALF_Z) / (ARENA_HALF_Z * 2), 0, 1) * 120;
+    }
+
+    function miniRect(x, z, width, depth, fill, stroke, yaw, opacity) {
+      const cx = miniX(x);
+      const cy = miniY(z);
+      const w = width / (ARENA_HALF_X * 2) * 180;
+      const h = depth / (ARENA_HALF_Z * 2) * 120;
+      const angle = -((yaw || 0) * 180 / Math.PI);
+      const transform = angle ? ' transform="rotate(' + angle.toFixed(1) + ' ' + cx.toFixed(1) + ' ' + cy.toFixed(1) + ')"' : '';
+      return '<rect x="' + (cx - w / 2).toFixed(1) + '" y="' + (cy - h / 2).toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + h.toFixed(1) + '" fill="' + fill + '" stroke="' + (stroke || 'none') + '" opacity="' + (opacity || 1) + '"' + transform + '/>';
+    }
+
+    function miniCircle(x, z, radius, fill, stroke, opacity) {
+      return '<circle cx="' + miniX(x).toFixed(1) + '" cy="' + miniY(z).toFixed(1) + '" r="' + radius.toFixed(1) + '" fill="' + fill + '" stroke="' + (stroke || 'none') + '" opacity="' + (opacity || 1) + '"/>';
+    }
+
+    function miniTriangle(x, z, size, fill, stroke, yaw, opacity) {
+      const cx = miniX(x);
+      const cy = miniY(z);
+      const angle = -((yaw || 0) * 180 / Math.PI);
+      const points = [cx.toFixed(1) + ',' + (cy - size).toFixed(1), (cx - size).toFixed(1) + ',' + (cy + size).toFixed(1), (cx + size).toFixed(1) + ',' + (cy + size).toFixed(1)].join(' ');
+      const transform = angle ? ' transform="rotate(' + angle.toFixed(1) + ' ' + cx.toFixed(1) + ' ' + cy.toFixed(1) + ')"' : '';
+      return '<polygon points="' + points + '" fill="' + fill + '" stroke="' + (stroke || 'none') + '" opacity="' + (opacity || 1) + '"' + transform + '/>';
+    }
+
+    function buildSpeedballMiniMap() {
+      let html = '<rect width="180" height="120" fill="rgba(62,142,55,0.78)"/>';
+      html += '<rect x="1" y="1" width="178" height="118" fill="none" stroke="rgba(255,255,255,0.86)" stroke-width="2"/>';
+      html += miniRect(-27.2, 0, 4.8, 34, 'rgba(221,17,17,0.28)', 'rgba(255,70,70,0.95)', 0, 1);
+      html += miniRect(27.2, 0, 4.8, 34, 'rgba(17,85,238,0.28)', 'rgba(70,130,255,0.95)', 0, 1);
+      const bunkers = [[-24,-13,'small',1.7,2.5,0],[-24,13,'pyramid',2.5,2.6,0.15],[-18,-15.5,'snake',7.2,1.15,0],[-18,0,'upright',2.1,3.8,0],[-18,15.5,'small',1.6,2.4,0],[-11,-9,'pyramid',2.7,2.8,-0.08],[-11,8,'upright',2.0,3.5,0],[-5,-16,'snake',6.8,1.15,0],[-5,14,'pyramid',2.6,2.6,0.1]];
+      bunkers.forEach((b) => {
+        const redFill = '#dd1111';
+        const blueFill = '#1155ee';
+        if (b[2] === 'snake') html += miniRect(b[0], b[1], b[3], b[4], redFill, 'rgba(255,255,255,0.75)', b[5], 0.94);
+        else if (b[2] === 'pyramid') html += miniTriangle(b[0], b[1], 5.2, redFill, 'rgba(255,255,255,0.75)', b[5], 0.94);
+        else html += miniCircle(b[0], b[1], b[2] === 'upright' ? 4.2 : 3.2, redFill, 'rgba(255,255,255,0.75)', 0.94);
+        if (b[2] === 'snake') html += miniRect(-b[0], b[1], b[3], b[4], blueFill, 'rgba(255,255,255,0.75)', -b[5], 0.94);
+        else if (b[2] === 'pyramid') html += miniTriangle(-b[0], b[1], 5.2, blueFill, 'rgba(255,255,255,0.75)', -b[5], 0.94);
+        else html += miniCircle(-b[0], b[1], b[2] === 'upright' ? 4.2 : 3.2, blueFill, 'rgba(255,255,255,0.75)', 0.94);
+      });
+      html += miniCircle(0, 0, 6.2, '#ffffff', '#111111', 0.96);
+      html += miniCircle(0, -10, 4.4, '#ffffff', '#111111', 0.96);
+      html += miniTriangle(0, 10, 5.8, '#f1c94c', '#111111', 0, 0.98);
+      html += miniRect(0, 17, 8.0, 1.2, '#dd1111', 'rgba(255,255,255,0.75)', 0, 0.94);
+      return html;
+    }
+
+    function buildScrapyardMiniMap() {
+      let html = '<rect width="180" height="120" fill="rgba(200,168,112,0.82)"/>';
+      html += '<rect x="1" y="1" width="178" height="118" fill="none" stroke="rgba(80,67,49,0.95)" stroke-width="2"/>';
+      html += miniRect(-27.2, 0, 4.8, 34, 'rgba(221,17,17,0.25)', '#dd1111', 0, 1);
+      html += miniRect(27.2, 0, 4.8, 34, 'rgba(17,85,238,0.25)', '#1155ee', 0, 1);
+      [[-16,-9,8,0.4,0.04],[-16,-12.5,8,0.4,0.04],[-20,-9,0.4,7,0.04],[-12,-9,0.4,7,0.04],[0,6,10,0.4,Math.PI/2],[0,2,10,0.4,Math.PI/2],[-4,6,0.4,8,Math.PI],[4,6,0.4,8,Math.PI],[16,-8,8,0.4,-0.03],[16,-11.5,8,0.4,-0.03],[12,-8,0.4,7,-0.03],[20,-8,0.4,7,-0.03],[-23,10,6,0.44,0.08],[23,10,6,0.44,-0.08],[-7,-15,7,0.36,0],[8,15,7,0.36,Math.PI],[-1,-4,8,0.36,Math.PI/2],[13,3,6,0.36,0.3],[-13,3,6,0.36,-0.3]].forEach((w) => { html += miniRect(w[0], w[1], w[2], w[3], '#8f9390', '#e6e6e0', w[4], 0.92); });
+      [[-23,-14,4.8,2.1,0.24],[-10,13,5.4,2.2,-0.42],[9,-13,5.0,2.1,0.4],[23,13,5.6,2.3,-0.22]].forEach((c) => { html += miniRect(c[0], c[1], c[2], c[3], '#4a2b1e', '#1c120d', c[4], 0.95); });
+      [[-24,1],[-4,-12],[4,13],[24,-1]].forEach((b) => {
+        html += miniCircle(b[0] - 0.7, b[1], 2.1, '#30231b', '#0d0a08', 0.95);
+        html += miniCircle(b[0] + 0.7, b[1] + 0.5, 2.1, '#30231b', '#0d0a08', 0.95);
+      });
+      return html;
+    }
+
+    function buildGhostTownMiniMap() {
+      let html = '<rect width="180" height="120" fill="rgba(200,168,112,0.84)"/>';
+      html += '<rect x="0" y="45" width="180" height="30" fill="rgba(224,194,132,0.72)"/>';
+      html += '<rect x="1" y="1" width="178" height="118" fill="none" stroke="rgba(92,59,31,0.95)" stroke-width="2"/>';
+      html += miniRect(-27.2, 0, 4.8, 34, 'rgba(221,17,17,0.25)', '#dd1111', 0, 1);
+      html += miniRect(27.2, 0, 4.8, 34, 'rgba(17,85,238,0.25)', '#1155ee', 0, 1);
+      html += miniRect(3, -7, 9, 7, '#805229', '#3a2412', Math.PI, 0.96);
+      [[-22,-11,5,4,Math.PI],[-9,-13,5,4,Math.PI],[15,-12,5,4,Math.PI],[-18,11,5,4,0],[4,13,5,4,0],[21,11,5,4,0]].forEach((h) => { html += miniRect(h[0], h[1], h[2], h[3], '#6e4827', '#2e1b0d', h[4], 0.95); });
+      [[-24,-2.7,4.6,2.0,0.12],[-17,3.2,4.9,2.1,-0.22],[-9,-2.4,4.5,2.0,0.34],[-2,3.2,5.2,2.2,-0.18],[8,-3.0,4.7,2.0,0.22],[16,2.6,4.9,2.1,-0.36],[23,-2.2,4.4,2.0,0.18],[25,7.6,4.7,2.0,-0.74]].forEach((c) => { html += miniRect(c[0], c[1], c[2], c[3], '#3d2a22', '#140d09', c[4], 0.96); });
+      [[-14,-5.8,6.2,0.08],[-1,-12.2,5.5,0],[10,-5.6,5,-0.08],[23,-7.2,4.6,0.32],[-25,6.2,5,-0.14],[-11,5.4,5.8,0.14],[9,5.7,6,-0.12],[18,6.2,4.8,0.18],[-5.4,14.6,5.6,Math.PI/2],[27.2,2.2,5.2,Math.PI/2]].forEach((f) => { html += miniRect(f[0], f[1], f[2], 0.35, '#4f321c', '#2a170b', f[3], 0.98); });
+      html += miniCircle(-4, 16, 4.0, '#6e6a5d', '#2b2b27', 0.98);
+      return html;
+    }
+
+    function updateMiniMapLayout() {
+      if (!ui.miniLayout) return;
+      const mapName = state.selectedMap || 'speedball';
+      if (ui.miniLayout.dataset.map === mapName) return;
+      ui.miniLayout.dataset.map = mapName;
+      ui.miniLayout.innerHTML = mapName === 'ghosttown' ? buildGhostTownMiniMap() : mapName === 'scrapyard' ? buildScrapyardMiniMap() : buildSpeedballMiniMap();
+      if (ui.miniMapName) ui.miniMapName.textContent = formatMapName(mapName);
+    }
+
     function updateMiniMap() {
       if (!ui.miniPlayer || !ui.miniOpponent) return;
+      updateMiniMapLayout();
       const setMarker = (el, x, z) => {
-        const px = clamp((x + ARENA_HALF_X) / (ARENA_HALF_X * 2), 0, 1) * 100;
-        const py = clamp((z + ARENA_HALF_Z) / (ARENA_HALF_Z * 2), 0, 1) * 100;
-        el.style.left = px.toFixed(1) + '%';
-        el.style.top = py.toFixed(1) + '%';
+        el.style.left = miniX(x).toFixed(1) + 'px';
+        el.style.top = miniY(z).toFixed(1) + 'px';
       };
       setMarker(ui.miniPlayer, player.root.position.x, player.root.position.z);
-      ui.miniPlayer.style.transform = 'translate(-50%, -50%) rotate(' + player.yaw + 'rad)';
+      const heading = Math.atan2(-Math.sin(player.yaw), Math.cos(player.yaw));
+      ui.miniPlayer.style.transform = 'translate(-50%, -50%) rotate(' + heading + 'rad)';
       setMarker(ui.miniOpponent, ai.position.x, ai.position.z);
+      const opponentTeam = MULTIPLAYER ? remotePlayer.team : 'blue';
+      const opponentColor = opponentTeam === 'red' ? '#ff2028' : '#2f7cff';
+      ui.miniOpponent.style.background = opponentColor;
+      ui.miniOpponent.style.boxShadow = '0 0 12px ' + opponentColor;
       ui.miniOpponent.style.display = state.aiEliminated ? 'none' : '';
     }
 
@@ -5760,15 +5931,15 @@
     function applyMapLighting(active) {
       if (active && active.ambient === 'ghosttown') {
         scene.background = new THREE.Color(0x87CEEB);
-        scene.fog = new THREE.Fog(0xd4c8a8, 50, 140);
+        scene.fog = new THREE.Fog(0xd4c8a8, 120, 240);
         skyStatus = 'ghost-town-desert';
-        ambientLight.color.setHex(0xfff5e0);
-        ambientLight.intensity = 0.4;
+        ambientLight.color.setHex(0xffffff);
+        ambientLight.intensity = 0.6;
         hemiLight.color.setHex(0x87CEEB);
         hemiLight.groundColor.setHex(0xc8a870);
-        hemiLight.intensity = 1.2;
-        keyLight.color.setHex(0xffe4b0);
-        keyLight.intensity = 2.8;
+        hemiLight.intensity = 1.8;
+        keyLight.color.setHex(0xfff5e0);
+        keyLight.intensity = 3.0;
         keyLight.castShadow = true;
         keyLight.shadow.mapSize.set(4096, 4096);
         keyLight.position.set(60, 80, 40);

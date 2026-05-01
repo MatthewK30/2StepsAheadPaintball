@@ -324,6 +324,10 @@
       gap: 8px;
     }
 
+    .choiceSet.threeChoices {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
     .choice {
       min-height: 42px;
       padding: 11px 12px 9px;
@@ -392,6 +396,11 @@
       padding: 18px 32px 16px;
       font-size: clamp(38px, 5vw, 58px);
       letter-spacing: 0.2em;
+    }
+
+    .practiceBtn {
+      background: linear-gradient(135deg, #12306f, var(--blue) 54%, #3f8cff);
+      box-shadow: 0 0 28px rgba(21,102,204,0.32), 0 22px 60px rgba(0,0,0,0.58);
     }
 
     .secondaryBtn,
@@ -837,11 +846,20 @@
                 <button class="choice" data-value="2v2" type="button">2v2</button>
               </div>
             </div>
+            <div class="optionGroup" data-option-group="difficulty">
+              <label>AI Difficulty</label>
+              <div class="choiceSet threeChoices">
+                <button class="choice" data-value="basic" type="button">Basic</button>
+                <button class="choice selected" data-value="pro" type="button">Pro</button>
+                <button class="choice" data-value="elite" type="button">Elite</button>
+              </div>
+            </div>
           </div>
         </div>
 
         <div class="deployDock">
           <button id="playMultiplayerBtn" class="deployBtn" type="button">Deploy</button>
+          <button id="playPracticeBtn" class="deployBtn practiceBtn" type="button">Practice</button>
         </div>
       </div>
     </section>
@@ -979,7 +997,8 @@
         createOptions: {
           gameMode: '1v1',
           map: 'speedball',
-          firstTo: 5
+          firstTo: 5,
+          difficulty: 'pro'
         }
       }
 
@@ -1025,6 +1044,7 @@
 
       function bindUi() {
         $('#playMultiplayerBtn').addEventListener('click', () => showView('lobby'))
+        $('#playPracticeBtn').addEventListener('click', startPractice)
         $('#showCreateBtn').addEventListener('click', () => {
           if (!captureUsername(ui.entryError)) return
           showPanel('create')
@@ -1144,6 +1164,16 @@
           return
         }
         state.socket.emit('join_room', { code, username: state.username })
+      }
+
+      function startPractice() {
+        const params = new URLSearchParams({
+          practice: '1',
+          map: state.createOptions.map,
+          difficulty: state.createOptions.difficulty,
+          firstto: String(state.createOptions.firstTo)
+        })
+        window.location.href = '/game.html?' + params.toString()
       }
 
       function enterRoom(code, room) {
