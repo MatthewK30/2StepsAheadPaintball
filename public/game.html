@@ -1550,8 +1550,8 @@
     const SPRINT_MULTIPLIER = 1.5;
     const CROUCH_SPEED = 3.6;
     const CRAWL_SPEED = 2.0;
-    const LEAN_DISTANCE = 1.8;
-    const LEAN_ANGLE = Math.PI * 18 / 180;
+    const LEAN_DISTANCE = 1.2;
+    const LEAN_ANGLE = Math.PI * 12 / 180;
     const LEAN_TRANSITION = 0.12;
     const HOPPER_CAPACITY = 50;
     const POD_CAPACITY = 50;
@@ -1562,7 +1562,7 @@
     const PLAYER_RADIUS = 0.3;
     const CROUCH_RADIUS = 0.3;
     const CRAWL_RADIUS = 0.28;
-    const SHOT_COOLDOWN = 0.1;
+    const SHOT_COOLDOWN = 1 / 7.5;
     const PAINTBALL_RADIUS = 0.06;
     const PAINTBALL_SPEED = 70;
     const PAINTBALL_GRAVITY = 2.0;
@@ -5495,7 +5495,7 @@
       const config = currentAiConfig();
       const base = hasSight ? config.shotDelay : config.searchDelay;
       const jitter = hasSight ? config.shotJitter : config.searchJitter;
-      return base + Math.random() * jitter + (fired ? 0 : 0.14);
+      return Math.max(SHOT_COOLDOWN, base + Math.random() * jitter + (fired ? 0 : 0.14));
     }
 
     function notePlayerShot() {
