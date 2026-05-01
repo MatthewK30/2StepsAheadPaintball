@@ -2013,6 +2013,7 @@
           material.needsUpdate = true;
         }
       });
+      if (maps && maps.ghosttown && maps.ghosttown.group) normalizeGhostTownMaterials(maps.ghosttown.group);
     }
 
     function loadHdrEnvironment() {
@@ -2394,7 +2395,7 @@
 
       addGhostTownAtmosphere(group);
       finalizeMapShadows(group);
-      return { group, colliders, shootables, coverPoints, sky: 0x87ceeb, fog: 0xd4c8a8, ambient: 'ghosttown' };
+      return { group, colliders, shootables, coverPoints, ambient: 'ghosttown' };
     }
 
     function makeGhostTownGround() {
@@ -2663,6 +2664,55 @@
         child.castShadow = Math.max(sizeX, sizeY, sizeZ) >= 1.35 && sizeY >= 0.18;
         child.receiveShadow = true;
       });
+    }
+
+    function normalizeGhostTownMaterials(group) {
+      const cache = new Map();
+      group.traverse((child) => {
+        if (!child.isMesh || !child.material) return;
+        child.material = Array.isArray(child.material)
+          ? child.material.map((material) => makeGhostTownMaterial(material, cache))
+          : makeGhostTownMaterial(child.material, cache);
+      });
+    }
+
+    function makeGhostTownMaterial(material, cache) {
+      if (!material) return material;
+      if (material.userData && material.userData.ghostTownBright) {
+        material.roughness = 0.7;
+        material.metalness = 0.1;
+        material.envMap = environmentMap;
+        material.envMapIntensity = 1.0;
+        material.needsUpdate = true;
+        return material;
+      }
+      if (cache.has(material)) return cache.get(material);
+      const next = new THREE.MeshStandardMaterial({
+        color: material.color ? material.color.clone() : 0xffffff,
+        roughness: 0.7,
+        metalness: 0.1,
+        envMap: environmentMap,
+        envMapIntensity: 1.0,
+        map: material.map || null,
+        normalMap: material.normalMap || null,
+        bumpMap: material.bumpMap || null,
+        roughnessMap: material.roughnessMap || null,
+        alphaMap: material.alphaMap || null,
+        emissive: material.emissive ? material.emissive.clone() : 0x000000,
+        emissiveMap: material.emissiveMap || null,
+        emissiveIntensity: material.emissiveIntensity || 0,
+        vertexColors: material.vertexColors,
+        transparent: material.transparent,
+        opacity: material.opacity,
+        depthWrite: material.depthWrite,
+        depthTest: material.depthTest,
+        side: material.side,
+        blending: material.blending
+      });
+      next.name = material.name || '';
+      next.userData.ghostTownBright = true;
+      cache.set(material, next);
+      return next;
     }
 
     function addTournamentTurfDetails(group) {
@@ -3504,7 +3554,8 @@
       for (let i = 0; i < PROJECTILE_POOL_SIZE; i++) {
         const mesh = new THREE.Mesh(geometries.paintball, materials.paintRed);
         mesh.visible = false;
-        pool.push({ mesh, active: false, team: 'red', life: 0, radius: PAINTBALL_RADIUS, pos: mesh.position, prev: new THREE.Vector3(), vel: new THREE.Vector3() });
+        mesh.userData.vel = new THREE.Vector3();
+        pool.push({ mesh, active: false, team: 'red', life: 0, radius: PAINTBALL_RADIUS, pos: mesh.position, prev: new THREE.Vector3(), vel: mesh.userData.vel });
       }
       return pool;
     }
@@ -4954,9 +5005,17 @@
         audio.empty();
         return true;
       }
-      camera.getWorldDirection(tmpVecB);
-      if (gun.barrelTip) gun.barrelTip.getWorldPosition(tmpVecA);
-      else camera.getWorldPosition(tmpVecA);
+      const shootDirection = new THREE.Vector3(0, 0, -1);
+      shootDirection.applyQuaternion(camera.quaternion);
+      shootDirection.normalize();
+
+      const shootOrigin = new THREE.Vector3();
+      camera.getWorldPosition(shootOrigin);
+      shootOrigin.addScaledVector(shootDirection, 0.5);
+
+      coverRaycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+      tmpVecA.copy(shootOrigin);
+      tmpVecB.copy(shootDirection);
       const shotTeam = MULTIPLAYER ? MY_TEAM : 'red';
       fireProjectile(shotTeam, tmpVecA, tmpVecB);
       if (MULTIPLAYER && multiplayer.socket && multiplayer.socket.connected) {
@@ -4984,9 +5043,9 @@
           p.team = team;
           p.life = PAINTBALL_LIFE;
           p.mesh.material = team === 'red' ? materials.paintRed : materials.paintBlue;
-          p.pos.copy(origin);
+          p.mesh.position.copy(origin);
           p.prev.copy(origin);
-          p.vel.copy(direction).normalize().multiplyScalar(PAINTBALL_SPEED);
+          p.mesh.userData.vel.copy(direction).normalize().multiplyScalar(PAINTBALL_SPEED);
           if (!p.mesh.parent) scene.add(p.mesh);
           p.mesh.visible = true;
           return p;
@@ -5720,6 +5779,11 @@
         tmpVecB.z += Math.cos(state.elapsed * 2.7) * spread;
       }
       tmpVecB.normalize();
+      const shootDirection = tmpVecB.clone().normalize();
+      const shootOrigin = new THREE.Vector3();
+      shootOrigin.copy(tmpVecA).addScaledVector(shootDirection, 0.5);
+      tmpVecA.copy(shootOrigin);
+      tmpVecB.copy(shootDirection);
       fireProjectile('blue', tmpVecA, tmpVecB);
       audio.fire();
       return true;
@@ -6368,6 +6432,27 @@
     }
 
     function applyMapLighting(active) {
+      if (active && active.ambient === 'ghosttown') {
+        scene.background = new THREE.Color(OVERCAST_SKY_COLOR);
+        skyStatus = 'overcast-color';
+        ambientLight.color.setHex(0xd8e0e8);
+        ambientLight.intensity = 0.8;
+        keyLight.intensity = 0.6;
+        keyLight.color.setHex(0xe8eef0);
+        keyLight.castShadow = false;
+        keyLight.position.set(36, 52, 34);
+        keyLight.target.position.set(0, 0, 0);
+        keyLight.target.updateMatrixWorld();
+        hemiLight.color.setHex(0xd0dce8);
+        hemiLight.groundColor.setHex(0x8a9a7a);
+        hemiLight.intensity = 1.2;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 0.55;
+        scene.environment = environmentMap;
+        scene.fog = null;
+        normalizeGhostTownMaterials(active.group);
+        return;
+      }
       setVenueSky();
       ambientLight.color.setHex(0xd8e0e8);
       ambientLight.intensity = 0.8;
