@@ -4657,7 +4657,87 @@
       addCoverPoints(points, x, z, sx, sz, 'any', sy);
     }
 
+    function addGhostTownDesertSurround(group) {
+      const sandMat = new THREE.MeshStandardMaterial({ color: 0xd9b377, roughness: 1, metalness: 0 });
+      const desert = new THREE.Mesh(new THREE.PlaneGeometry(900, 900, 32, 32), sandMat);
+      desert.rotation.x = -Math.PI / 2;
+      desert.position.y = -0.05;
+      const dpos = desert.geometry.attributes.position;
+      for (let i = 0; i < dpos.count; i++) {
+        const x = dpos.getX(i);
+        const y = dpos.getY(i);
+        const inArena = Math.abs(x) < ARENA_HALF_X + 8 && Math.abs(y) < ARENA_HALF_Z + 8;
+        const dune = inArena ? 0 : Math.sin(x * 0.04) * 0.8 + Math.cos(y * 0.05) * 0.7 + Math.sin((x + y) * 0.018) * 1.2;
+        dpos.setZ(i, dune);
+      }
+      desert.geometry.computeVertexNormals();
+      desert.receiveShadow = false;
+      desert.castShadow = false;
+      group.add(desert);
+
+      const mountainNear = new THREE.MeshStandardMaterial({ color: 0xa8794a, roughness: 1, metalness: 0, flatShading: true });
+      const mountainMid = new THREE.MeshStandardMaterial({ color: 0x8a6244, roughness: 1, metalness: 0, flatShading: true });
+      const mountainFar = new THREE.MeshStandardMaterial({ color: 0x6f5a52, roughness: 1, metalness: 0, transparent: true, opacity: 0.78, flatShading: true });
+
+      const buildRange = (radius, count, baseY, minH, maxH, mat, jitter) => {
+        for (let i = 0; i < count; i++) {
+          const ang = (i / count) * Math.PI * 2 + (i * 0.13) % 1.2;
+          const r = radius + (((i * 17) % 11) - 5) * jitter;
+          const x = Math.cos(ang) * r;
+          const z = Math.sin(ang) * r;
+          const h = minH + ((i * 23) % 100) / 100 * (maxH - minH);
+          const w = h * (0.9 + ((i * 7) % 7) / 14);
+          const peak = new THREE.Mesh(new THREE.ConeGeometry(w, h, 5 + (i % 3), 1), mat);
+          peak.position.set(x, baseY + h * 0.5, z);
+          peak.rotation.y = (i * 0.41) % (Math.PI * 2);
+          peak.castShadow = false;
+          peak.receiveShadow = false;
+          group.add(peak);
+        }
+      };
+      buildRange(110, 22, -2, 14, 26, mountainNear, 4);
+      buildRange(170, 28, -4, 22, 42, mountainMid, 6);
+      buildRange(240, 34, -6, 32, 60, mountainFar, 8);
+
+      const cactusMat = new THREE.MeshStandardMaterial({ color: 0x4a7a3a, roughness: 0.85, metalness: 0 });
+      for (let i = 0; i < 24; i++) {
+        const ang = (i / 24) * Math.PI * 2 + 0.21;
+        const r = 55 + ((i * 13) % 11);
+        const cx = Math.cos(ang) * r;
+        const cz = Math.sin(ang) * r;
+        if (Math.abs(cx) < ARENA_HALF_X + 6 && Math.abs(cz) < ARENA_HALF_Z + 6) continue;
+        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.55, 4 + (i % 3) * 0.7, 8), cactusMat);
+        trunk.position.set(cx, 2 + (i % 3) * 0.35, cz);
+        group.add(trunk);
+        if (i % 2 === 0) {
+          const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.35, 1.6, 8), cactusMat);
+          arm.position.set(cx + 0.7, 3.0, cz);
+          arm.rotation.z = -0.5;
+          group.add(arm);
+          const armUp = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 1.4, 8), cactusMat);
+          armUp.position.set(cx + 1.05, 3.9, cz);
+          group.add(armUp);
+        }
+      }
+
+      const rockMat = new THREE.MeshStandardMaterial({ color: 0x8e6a4a, roughness: 1, metalness: 0, flatShading: true });
+      for (let i = 0; i < 30; i++) {
+        const ang = (i / 30) * Math.PI * 2 + 0.7;
+        const r = 70 + ((i * 19) % 16);
+        const rx = Math.cos(ang) * r;
+        const rz = Math.sin(ang) * r;
+        if (Math.abs(rx) < ARENA_HALF_X + 6 && Math.abs(rz) < ARENA_HALF_Z + 6) continue;
+        const rock = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 0), rockMat);
+        const s = 1.5 + ((i * 31) % 7) * 0.4;
+        rock.position.set(rx, s * 0.4, rz);
+        rock.scale.set(s, s * 0.6, s * 0.85);
+        rock.rotation.y = (i * 0.29) % (Math.PI * 2);
+        group.add(rock);
+      }
+    }
+
     function addGhostTownAtmosphere(group) {
+      addGhostTownDesertSurround(group);
       addVenueBackdrop(group, 0xd4b47a);
       for (let i = 0; i < 4; i++) {
         const haze = new THREE.Mesh(geometries.plane, materials.dustMote);
