@@ -3881,14 +3881,18 @@
       const windowTexture = createCityWindowTexture();
       windowTexture.wrapS = windowTexture.wrapT = THREE.RepeatWrapping;
       windowTexture.repeat.set(2, 8);
+      const windowFrameTexture = createCityFrameTexture();
+      windowFrameTexture.wrapS = windowFrameTexture.wrapT = THREE.RepeatWrapping;
+      windowFrameTexture.repeat.set(2, 8);
       const buildingMaterial = () => new THREE.MeshPhysicalMaterial({
-        color: 0x0a0d18,
-        roughness: 0.12,
-        metalness: 0.95,
+        color: 0xffffff,
+        roughness: 0.18,
+        metalness: 0.92,
         envMap: environmentMap,
-        envMapIntensity: 1.8,
-        clearcoat: 1.0,
-        clearcoatRoughness: 0.08,
+        envMapIntensity: 1.7,
+        clearcoat: 0.8,
+        clearcoatRoughness: 0.12,
+        map: windowFrameTexture,
         roughnessMap: windowTexture
       });
       const neon = (color, intensity = 0.9) => new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: intensity, roughness: 0.2, metalness: 0.1 });
@@ -3958,7 +3962,7 @@
       canvas.width = size;
       canvas.height = size;
       const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#888888';
+      ctx.fillStyle = '#cccccc';
       ctx.fillRect(0, 0, size, size);
       const cols = 6;
       const rows = 8;
@@ -3966,7 +3970,7 @@
       const cellH = size / rows;
       const winW = cellW * 0.78;
       const winH = cellH * 0.82;
-      ctx.fillStyle = '#101010';
+      ctx.fillStyle = '#080808';
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
           const x = c * cellW + (cellW - winW) * 0.5;
@@ -3975,7 +3979,42 @@
         }
       }
       const texture = new THREE.CanvasTexture(canvas);
-      configureTexture(texture, 1, 1, 1, THREE.LinearSRGBColorSpace);
+      configureTexture(texture, 1, 1, 1, THREE.NoColorSpace);
+      return texture;
+    }
+
+    function createCityFrameTexture() {
+      const canvas = document.createElement('canvas');
+      const size = 256;
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#3a4055';
+      ctx.fillRect(0, 0, size, size);
+      const cols = 6;
+      const rows = 8;
+      const cellW = size / cols;
+      const cellH = size / rows;
+      const winW = cellW * 0.78;
+      const winH = cellH * 0.82;
+      ctx.fillStyle = '#0a0e1a';
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const x = c * cellW + (cellW - winW) * 0.5;
+          const y = r * cellH + (cellH - winH) * 0.5;
+          ctx.fillRect(x, y, winW, winH);
+        }
+      }
+      ctx.fillStyle = 'rgba(255,255,255,0.08)';
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const x = c * cellW + (cellW - winW) * 0.5;
+          const y = r * cellH + (cellH - winH) * 0.5;
+          ctx.fillRect(x + 1, y + 1, winW - 2, 1.5);
+        }
+      }
+      const texture = new THREE.CanvasTexture(canvas);
+      configureTexture(texture, 1, 1, 1, THREE.SRGBColorSpace);
       return texture;
     }
 
