@@ -3880,16 +3880,16 @@
       turf.color.set(0x555566);
       const windowTexture = createCityWindowTexture();
       windowTexture.wrapS = windowTexture.wrapT = THREE.RepeatWrapping;
-      windowTexture.repeat.set(1, 5);
-      const buildingMaterial = () => new THREE.MeshStandardMaterial({
-        color: 0x0f1220,
-        roughness: 0.22,
-        metalness: 0.85,
+      windowTexture.repeat.set(2, 8);
+      const buildingMaterial = () => new THREE.MeshPhysicalMaterial({
+        color: 0x0a0d18,
+        roughness: 0.12,
+        metalness: 0.95,
         envMap: environmentMap,
-        envMapIntensity: 1.5,
-        emissiveMap: windowTexture,
-        emissive: 0xffffff,
-        emissiveIntensity: 0.55
+        envMapIntensity: 1.8,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.08,
+        roughnessMap: windowTexture
       });
       const neon = (color, intensity = 0.9) => new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: intensity, roughness: 0.2, metalness: 0.1 });
       return {
@@ -3958,26 +3958,24 @@
       canvas.width = size;
       canvas.height = size;
       const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#000000';
+      ctx.fillStyle = '#888888';
       ctx.fillRect(0, 0, size, size);
       const cols = 6;
       const rows = 8;
       const cellW = size / cols;
       const cellH = size / rows;
-      const winW = cellW * 0.62;
-      const winH = cellH * 0.74;
-      const litColors = ['#ffd680', '#ffba50', '#ffe6a8', '#cfe6ff'];
+      const winW = cellW * 0.78;
+      const winH = cellH * 0.82;
+      ctx.fillStyle = '#101010';
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
-          const lit = ((r * 13 + c * 7 + Math.floor(r / 2) * 3) % 11) < 3;
           const x = c * cellW + (cellW - winW) * 0.5;
           const y = r * cellH + (cellH - winH) * 0.5;
-          ctx.fillStyle = lit ? litColors[(r + c) % litColors.length] : '#000000';
           ctx.fillRect(x, y, winW, winH);
         }
       }
       const texture = new THREE.CanvasTexture(canvas);
-      configureTexture(texture, 1, 1, 1, THREE.SRGBColorSpace);
+      configureTexture(texture, 1, 1, 1, THREE.LinearSRGBColorSpace);
       return texture;
     }
 
