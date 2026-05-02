@@ -3145,8 +3145,8 @@
       addFunlandStatues(group, colliders, coverPoints, fun);
       addFunhouseMirrors(group, colliders, coverPoints, fun);
       addFunlandExtraCover(group, colliders, coverPoints, fun);
-      addFunlandFloodlights(group, fun);
-      addFunlandFerrisWheel(group, fun);
+      addFunlandFloodlights(group, colliders, fun);
+      addFunlandFerrisWheel(group, colliders, fun);
       finalizeMapShadows(group);
       return { group, colliders, shootables, coverPoints, sky: 0xeaaad8, fog: 0xeaaad8, ambient: 'funland', carousel };
     }
@@ -3223,14 +3223,37 @@
       carousel.name = 'funlandCarousel';
       carousel.position.set(x, 0, z);
       group.add(carousel);
-      const base = new THREE.Mesh(new THREE.CylinderGeometry(4, 4, 0.5, 16, 1), fun.fadedRed);
-      base.position.y = 0.25;
+      const skirt = new THREE.Mesh(new THREE.CylinderGeometry(4.15, 4.35, 0.42, 32, 1), fun.fadedPink);
+      skirt.position.y = 0.21;
+      shadowMesh(skirt, true, true);
+      carousel.add(skirt);
+      addMeshCollider(colliders, skirt, 'vcylinder');
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(4, 4, 0.18, 32, 1), fun.fadedRed);
+      base.position.y = 0.51;
       shadowMesh(base, true, true);
       carousel.add(base);
-      const roof = new THREE.Mesh(new THREE.ConeGeometry(4.5, 2, 16, 1), fun.fadedYellow);
-      roof.position.y = 3.55;
+      addMeshCollider(colliders, base, 'vcylinder');
+      const trim = new THREE.Mesh(new THREE.TorusGeometry(4.05, 0.08, 8, 36), fun.gold);
+      trim.position.y = 0.62;
+      trim.rotation.x = Math.PI / 2;
+      shadowMesh(trim, true, true);
+      carousel.add(trim);
+      const roof = new THREE.Mesh(new THREE.ConeGeometry(4.7, 2.2, 32, 4), fun.fadedYellow);
+      roof.position.y = 3.65;
       shadowMesh(roof, true, true);
       carousel.add(roof);
+      const roofTrim = new THREE.Mesh(new THREE.TorusGeometry(4.65, 0.1, 8, 36), fun.gold);
+      roofTrim.position.y = 2.62;
+      roofTrim.rotation.x = Math.PI / 2;
+      shadowMesh(roofTrim, true, true);
+      carousel.add(roofTrim);
+      const finialPole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.8, 8), fun.gold);
+      finialPole.position.y = 4.95;
+      carousel.add(finialPole);
+      const finialBall = new THREE.Mesh(geometries.sphere, fun.gold);
+      finialBall.position.y = 5.45;
+      finialBall.scale.setScalar(0.28);
+      carousel.add(finialBall);
       const poleGeo = new THREE.CylinderGeometry(0.08, 0.08, 3, 8, 1);
       for (let i = 0; i < 8; i++) {
         const angle = i / 8 * Math.PI * 2;
@@ -3257,32 +3280,86 @@
 
     function addFunlandHorse(parent, colliders, fun, x, z, yaw, index) {
       const colorMats = [fun.fadedRed, fun.fadedBlue, fun.fadedYellow, fun.fadedGreen, fun.fadedPink, fun.fadedPurple];
+      const accentMats = [fun.fadedYellow, fun.fadedPink, fun.fadedRed, fun.fadedPurple, fun.fadedBlue, fun.fadedGreen];
+      const bodyMat = colorMats[index % colorMats.length];
+      const accentMat = accentMats[index % accentMats.length];
       const horse = new THREE.Group();
       horse.position.set(x, 0.86 + (index % 2) * 0.34, z);
       horse.rotation.y = yaw;
       parent.add(horse);
-      const body = new THREE.Mesh(geometries.box, colorMats[index % colorMats.length]);
-      body.scale.set(0.64, 0.28, 0.22);
+      const body = new THREE.Mesh(geometries.sphere, bodyMat);
+      body.scale.set(0.36, 0.24, 0.2);
       shadowMesh(body, true, true);
       horse.add(body);
-      const neck = new THREE.Mesh(geometries.cylinderLow, fun.wood);
-      neck.position.set(0.28, 0.22, 0);
-      neck.scale.set(0.045, 0.28, 0.045);
-      neck.rotation.z = 0.5;
+      const chest = new THREE.Mesh(geometries.sphere, bodyMat);
+      chest.position.set(0.22, 0.05, 0);
+      chest.scale.set(0.18, 0.22, 0.2);
+      shadowMesh(chest, true, true);
+      horse.add(chest);
+      const rump = new THREE.Mesh(geometries.sphere, bodyMat);
+      rump.position.set(-0.26, 0.04, 0);
+      rump.scale.set(0.2, 0.22, 0.2);
+      shadowMesh(rump, true, true);
+      horse.add(rump);
+      const neck = new THREE.Mesh(geometries.cylinderLow, bodyMat);
+      neck.position.set(0.32, 0.2, 0);
+      neck.rotation.z = -0.7;
+      neck.scale.set(0.085, 0.28, 0.085);
+      shadowMesh(neck, true, true);
       horse.add(neck);
-      const head = new THREE.Mesh(geometries.box, colorMats[index % colorMats.length]);
-      head.position.set(0.43, 0.38, 0);
-      head.scale.set(0.22, 0.18, 0.18);
+      const head = new THREE.Mesh(geometries.sphere, bodyMat);
+      head.position.set(0.46, 0.34, 0);
+      head.scale.set(0.13, 0.11, 0.1);
+      shadowMesh(head, true, true);
       horse.add(head);
+      const muzzle = new THREE.Mesh(geometries.sphere, bodyMat);
+      muzzle.position.set(0.56, 0.3, 0);
+      muzzle.scale.set(0.07, 0.07, 0.07);
+      horse.add(muzzle);
+      for (let sz = -1; sz <= 1; sz += 2) {
+        const ear = new THREE.Mesh(geometries.cone, bodyMat);
+        ear.position.set(0.42, 0.46, sz * 0.06);
+        ear.scale.set(0.035, 0.08, 0.035);
+        horse.add(ear);
+      }
+      const mane = new THREE.Mesh(geometries.box, accentMat);
+      mane.position.set(0.34, 0.36, 0);
+      mane.rotation.z = -0.6;
+      mane.scale.set(0.06, 0.34, 0.16);
+      shadowMesh(mane, true, true);
+      horse.add(mane);
+      const tail = new THREE.Mesh(geometries.cone, accentMat);
+      tail.position.set(-0.42, 0.06, 0);
+      tail.rotation.z = -1.4;
+      tail.scale.set(0.08, 0.32, 0.08);
+      horse.add(tail);
+      const saddle = new THREE.Mesh(geometries.sphere, accentMat);
+      saddle.position.set(0, 0.22, 0);
+      saddle.scale.set(0.18, 0.06, 0.21);
+      shadowMesh(saddle, true, true);
+      horse.add(saddle);
+      const saddleStrap = new THREE.Mesh(new THREE.TorusGeometry(0.21, 0.018, 6, 18), fun.gold);
+      saddleStrap.position.set(0, 0.06, 0);
+      saddleStrap.rotation.z = Math.PI / 2;
+      horse.add(saddleStrap);
       for (let sx = -1; sx <= 1; sx += 2) {
         for (let sz = -1; sz <= 1; sz += 2) {
           const leg = new THREE.Mesh(geometries.cylinderLow, fun.wood);
-          leg.position.set(sx * 0.22, -0.28, sz * 0.08);
-          leg.scale.set(0.035, 0.34, 0.035);
+          leg.position.set(sx * 0.18, -0.28, sz * 0.1);
+          leg.scale.set(0.045, 0.32, 0.045);
+          shadowMesh(leg, true, true);
           horse.add(leg);
+          const hoof = new THREE.Mesh(geometries.cylinderLow, fun.black);
+          hoof.position.set(sx * 0.18, -0.46, sz * 0.1);
+          hoof.scale.set(0.055, 0.05, 0.055);
+          horse.add(hoof);
         }
       }
-      addMeshCollider(colliders, body, 'box');
+      const collisionProxy = new THREE.Mesh(geometries.box, bodyMat);
+      collisionProxy.scale.set(0.9, 0.7, 0.5);
+      collisionProxy.visible = false;
+      horse.add(collisionProxy);
+      addMeshCollider(colliders, collisionProxy, 'box');
     }
 
     function addLocalColliderBox(group, colliders, x, z, yaw, localX, localY, localZ, sx, sy, sz, material) {
@@ -3311,7 +3388,7 @@
         addCoverPoints(points, x, z, 2.4, 1.5, i < 2 ? 'red' : 'any', 4.8);
       });
       [[-21, ARENA_HALF_Z - 4.0, 1.5, 0.3, 6, 0.12, 3.1], [-10, ARENA_HALF_Z - 4.7, 1.5, 0.3, 6, -0.12, 4.1], [1, ARENA_HALF_Z - 4.0, 1.5, 0.3, 6, 0.08, 5.0]].forEach((t) => {
-        addBox(group, t[0], t[6], t[1], t[2], t[3], t[4], fun.darkMetal, null, t[5]);
+        addBox(group, t[0], t[6], t[1], t[2], t[3], t[4], fun.darkMetal, colliders, t[5]);
       });
       const car = addBox(group, 17, 0.64, ARENA_HALF_Z - 6.3, 4.2, 1.25, 1.6, fun.fadedPurple, colliders, -0.18);
       addBox(group, 17, 1.32, ARENA_HALF_Z - 6.3, 3.0, 0.18, 1.3, fun.fadedYellow, null, -0.18);
@@ -3334,21 +3411,45 @@
       addBox(group, x, 2.04, z - 0.58, 0.58, 0.42, 0.04, fun.white, null, 0);
       addBox(group, x, 0.34, z, 0.72, 0.68, 0.28, fun.black, null, 0);
       addBox(group, x, 1.3, z, 1.6, 0.16, 0.16, fun.black, null, 0.1);
+      const headProxy = new THREE.Mesh(geometries.box, fun.black);
+      headProxy.position.set(x, 2.08, z);
+      headProxy.scale.set(1.05, 1.0, 0.95);
+      headProxy.visible = false;
+      group.add(headProxy);
+      addMeshCollider(colliders, headProxy, 'box');
       addCoverPoints(points, x, z, 1.7, 1.5, 'any', 3.0);
     }
 
     function addDonaldStatue(group, colliders, points, fun, x, z) {
       addCylinder(group, x, 0.95, z, 0.62, 1.55, fun.fadedBlue, colliders, 0, false, 1.05);
       addSpherePartToGroup(group, fun.white, x, 1.92, z, 0.54, 0.5, 0.5);
+      const beakProxy = new THREE.Mesh(geometries.box, fun.fadedYellow);
+      beakProxy.position.set(x, 1.9, z - 0.54);
+      beakProxy.scale.set(0.78, 0.34, 0.32);
+      beakProxy.visible = false;
+      group.add(beakProxy);
+      addMeshCollider(colliders, beakProxy, 'box');
       addBox(group, x, 1.9, z - 0.54, 0.78, 0.22, 0.22, fun.fadedYellow, null, 0);
       addCylinder(group, x, 2.42, z, 0.42, 0.1, fun.fadedBlue, null, 0, false, 1);
       addBox(group, x, 1.18, z, 1.55, 0.16, 0.16, fun.fadedBlue, null, 0);
+      const upperBody = new THREE.Mesh(geometries.box, fun.fadedBlue);
+      upperBody.position.set(x, 1.85, z);
+      upperBody.scale.set(0.95, 0.85, 0.85);
+      upperBody.visible = false;
+      group.add(upperBody);
+      addMeshCollider(colliders, upperBody, 'box');
       addCoverPoints(points, x, z, 1.6, 1.4, 'blue', 2.8);
     }
 
     function addGoofyStatue(group, colliders, points, fun, x, z) {
       addCylinder(group, x, 1.35, z, 0.5, 2.35, fun.orange, colliders, 0, false, 1.05);
       addSpherePartToGroup(group, fun.black, x, 2.75, z, 0.42, 0.72, 0.42);
+      const headProxy = new THREE.Mesh(geometries.box, fun.black);
+      headProxy.position.set(x, 2.75, z);
+      headProxy.scale.set(0.7, 0.95, 0.7);
+      headProxy.visible = false;
+      group.add(headProxy);
+      addMeshCollider(colliders, headProxy, 'box');
       const hat = new THREE.Mesh(geometries.cone, fun.fadedGreen);
       hat.position.set(x, 3.48, z);
       hat.scale.set(0.34, 0.72, 0.34);
@@ -3421,21 +3522,21 @@
       addBox(group, x, 0.95, z, 3.6, 1.65, 0.2, mat, colliders, yaw);
       addLocalBox(group, x, 0, z, yaw, -1.0, 1.0, -0.14, 0.65, 0.18, 0.06, fun.lamp);
       addLocalBox(group, x, 0, z, yaw, 1.0, 0.74, -0.14, 0.72, 0.16, 0.06, fun.lamp);
-      addLocalBox(group, x, 0, z, yaw, -1.65, 0.36, 0.14, 0.12, 0.72, 0.12, fun.darkMetal);
-      addLocalBox(group, x, 0, z, yaw, 1.65, 0.36, 0.14, 0.12, 0.72, 0.12, fun.darkMetal);
+      addLocalColliderBox(group, colliders, x, z, yaw, -1.65, 0.36, 0.14, 0.18, 0.72, 0.18, fun.darkMetal);
+      addLocalColliderBox(group, colliders, x, z, yaw, 1.65, 0.36, 0.14, 0.18, 0.72, 0.18, fun.darkMetal);
       addCoverPoints(points, x, z, 3.8, 0.8, team, 1.7);
     }
 
     function addQueueRailCover(group, colliders, points, fun, x, z, yaw, team) {
-      addBox(group, x, 0.78, z, 5.4, 0.18, 0.18, fun.darkMetal, colliders, yaw);
-      addBox(group, x, 1.18, z, 5.4, 0.15, 0.15, fun.metal, null, yaw);
-      for (let i = -2; i <= 2; i++) addLocalBox(group, x, 0, z, yaw, i * 1.25, 0.58, 0, 0.1, 1.16, 0.1, fun.metal);
+      addLocalColliderBox(group, colliders, x, z, yaw, 0, 0.78, 0, 5.4, 0.18, 0.22, fun.darkMetal);
+      addLocalColliderBox(group, colliders, x, z, yaw, 0, 1.18, 0, 5.4, 0.15, 0.18, fun.metal);
+      for (let i = -2; i <= 2; i++) addLocalColliderBox(group, colliders, x, z, yaw, i * 1.25, 0.58, 0, 0.16, 1.16, 0.16, fun.metal);
       addCoverPoints(points, x, z, 5.6, 0.8, team, 1.2);
     }
 
-    function addFunlandFloodlights(group, fun) {
-      [[-28, -18, 0xfff0c0], [28, 18, 0xc8e8ff]].forEach((l) => {
-        addCylinder(group, l[0], 2.8, l[1], 0.08, 5.6, fun.darkMetal, null, 0, false, 1);
+    function addFunlandFloodlights(group, colliders, fun) {
+      [[-28, -18, 0xfff0c0], [28, 18, 0xc8e8ff], [-28, 18, 0xffd6f0], [28, -18, 0xd6e0ff]].forEach((l) => {
+        addCylinder(group, l[0], 2.8, l[1], 0.16, 5.6, fun.darkMetal, colliders, 0, false, 1);
         addBox(group, l[0], 5.65, l[1], 1.05, 0.45, 0.24, fun.lamp, null, 0.35);
         const light = new THREE.PointLight(l[2], 1.25, 22);
         light.position.set(l[0], 5.3, l[1]);
@@ -3444,24 +3545,54 @@
       });
     }
 
-    function addFunlandFerrisWheel(group, fun) {
+    function addFunlandFerrisWheel(group, colliders, fun) {
       const ferris = new THREE.Group();
       ferris.position.set(8, 9.5, -ARENA_HALF_Z - 14);
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(8, 0.2, 6, 16), fun.metal);
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(8, 0.22, 8, 48), fun.metal);
       shadowMesh(ring, false, false);
       ferris.add(ring);
-      for (let i = 0; i < 6; i++) {
+      const innerRing = new THREE.Mesh(new THREE.TorusGeometry(7.6, 0.12, 6, 36), fun.gold);
+      ferris.add(innerRing);
+      const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.7, 16), fun.gold);
+      hub.rotation.x = Math.PI / 2;
+      shadowMesh(hub, true, true);
+      ferris.add(hub);
+      const gondolaColors = [fun.fadedRed, fun.fadedBlue, fun.fadedYellow, fun.fadedGreen, fun.fadedPink, fun.fadedPurple, fun.orange, fun.fadedRed, fun.fadedBlue, fun.fadedYellow, fun.fadedGreen, fun.fadedPink];
+      const spokeCount = 12;
+      for (let i = 0; i < spokeCount; i++) {
+        const angle = i * Math.PI * 2 / spokeCount;
         const spoke = new THREE.Mesh(geometries.box, fun.darkMetal);
-        spoke.scale.set(8, 0.055, 0.055);
-        spoke.rotation.z = i * Math.PI / 6;
-        spoke.position.x = 0;
+        spoke.scale.set(15.6, 0.07, 0.07);
+        spoke.rotation.z = angle;
         ferris.add(spoke);
+        const cx = Math.cos(angle) * 8;
+        const cy = Math.sin(angle) * 8;
+        const armPivot = new THREE.Group();
+        armPivot.position.set(cx, cy, 0);
+        ferris.add(armPivot);
+        const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.6, 8), fun.darkMetal);
+        arm.position.y = -0.3;
+        armPivot.add(arm);
+        const gondola = new THREE.Mesh(geometries.sphere, gondolaColors[i % gondolaColors.length]);
+        gondola.position.y = -0.85;
+        gondola.scale.set(0.6, 0.4, 0.55);
+        shadowMesh(gondola, true, true);
+        armPivot.add(gondola);
+        const gondolaCap = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), gondolaColors[(i + 3) % gondolaColors.length]);
+        gondolaCap.position.y = -0.55;
+        gondolaCap.scale.set(0.62, 0.35, 0.58);
+        armPivot.add(gondolaCap);
       }
-      const gondola = new THREE.Mesh(geometries.box, fun.fadedBlue);
-      gondola.position.set(0, -8.4, 0);
-      gondola.scale.set(1.2, 0.55, 0.7);
-      ferris.add(gondola);
       group.add(ferris);
+
+      const supportSpread = 4.4;
+      for (let sx = -1; sx <= 1; sx += 2) {
+        const leg = addCylinder(group, ferris.position.x + sx * supportSpread, 5.0, ferris.position.z, 0.32, 10.0, fun.metal, colliders, 0, false, 1);
+        leg.rotation.z = sx * 0.32;
+        const cross = addBox(group, ferris.position.x, 7.2, ferris.position.z, supportSpread * 1.6, 0.18, 0.24, fun.darkMetal, null, 0);
+        cross.userData = cross.userData || {};
+      }
+      addBox(group, ferris.position.x, 0.45, ferris.position.z, supportSpread * 2.6, 0.9, 1.4, fun.darkMetal, colliders, 0);
     }
 
     function createSpeedballMap() {
