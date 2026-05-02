@@ -5442,15 +5442,16 @@
       return { group: gunGroup, baseX: 0.34, baseY: -0.34, baseZ: -0.48, recoil: 0, barrelTip, paint, reloadLid, reloadBalls, speedFeedPetals, hopperBalls, leftHand, reloadPod };
     }
 
-    function createAiModel(team) {
+    function createAiModel(team, aiInst) {
+      if (!aiInst) aiInst = ai;
       const teamMats = getTeamMaterials(team || 'blue');
-      ai.group.visible = false;
-      ai.group.clear();
-      ai.limbs = {};
-      ai.markerBarrelTip = null;
+      aiInst.group.visible = false;
+      aiInst.group.clear();
+      aiInst.limbs = {};
+      aiInst.markerBarrelTip = null;
       const root = new THREE.Group();
       root.name = 'paintballPlayerRoot';
-      ai.limbs.root = root;
+      aiInst.limbs.root = root;
 
       const addMesh = (mesh, parent, name, teamSlot) => {
         if (name) mesh.name = name;
@@ -5502,11 +5503,11 @@
       const boot = materials.rubber;
 
       const hips = addBox('hips', pants, 0, 0.92, 0.01, 0.24, 0.11, 0.17, root);
-      ai.limbs.hips = hips;
-      ai.body = new THREE.Mesh(new THREE.CylinderGeometry(0.23, 0.17, 0.58, 12, 1), jersey);
-      ai.body.position.set(0, 1.22, 0);
-      ai.body.scale.set(1.0, 1, 0.68);
-      addMesh(ai.body, root, 'torso', 'primary');
+      aiInst.limbs.hips = hips;
+      aiInst.body = new THREE.Mesh(new THREE.CylinderGeometry(0.23, 0.17, 0.58, 12, 1), jersey);
+      aiInst.body.position.set(0, 1.22, 0);
+      aiInst.body.scale.set(1.0, 1, 0.68);
+      addMesh(aiInst.body, root, 'torso', 'primary');
       addBox('torsoBelt', pad, 0, 0.94, -0.002, 0.27, 0.026, 0.18, root);
       addBox('chestProtector', pad, 0, 1.24, -0.155, 0.19, 0.16, 0.026, root);
       addBox('frontJerseyStripeLeft', materials.white, -0.09, 1.25, -0.183, 0.022, 0.28, 0.012, root, 0, 0, -0.28);
@@ -5519,67 +5520,67 @@
       addBox('rimRightTorso', rim, 0.245, 1.22, 0, 0.018, 0.45, 0.13, root, 0, 0, 0, 'rim');
 
       addCylinder('neck', pad, 0, 1.47, 0, 0.045, 0.04, 0.1, root, 16);
-      ai.head = addSphere('helmetShell', helmet, 0, 1.62, -0.005, 0.17, 0.16, 0.15, root, 'helmet');
+      aiInst.head = addSphere('helmetShell', helmet, 0, 1.62, -0.005, 0.17, 0.16, 0.15, root, 'helmet');
       addSphere('maskShell', helmet, 0, 1.57, -0.095, 0.17, 0.135, 0.095, root, 'helmet');
-      ai.limbs.visor = addBox('visor', materials.hopperGlass, 0, 1.61, -0.18, 0.145, 0.038, 0.018, root);
+      aiInst.limbs.visor = addBox('visor', materials.hopperGlass, 0, 1.61, -0.18, 0.145, 0.038, 0.018, root);
       addBox('maskFrame', rim, 0, 1.61, -0.193, 0.17, 0.058, 0.012, root, 0, 0, 0, 'rim');
       addBox('chinGuard', pad, 0, 1.495, -0.17, 0.13, 0.055, 0.03, root);
       for (let i = -2; i <= 2; i++) addBox('ventSlot' + i, materials.darkGrey, i * 0.026, 1.495, -0.193, 0.014, 0.008, 0.01, root);
       addBox('goggleStrap', pad, 0, 1.61, 0.13, 0.22, 0.045, 0.024, root);
       addBox('helmetRim', rim, 0, 1.76, -0.02, 0.2, 0.018, 0.13, root, 0, 0, 0, 'rim');
 
-      ai.limbs.leftShoulderJoint = addSphere('leftShoulderPad', jersey, -0.24, 1.4, 0, 0.06, 0.07, 0.075, root, 'primary');
-      ai.limbs.rightShoulderJoint = addSphere('rightShoulderPad', jersey, 0.24, 1.4, 0, 0.06, 0.07, 0.075, root, 'primary');
+      aiInst.limbs.leftShoulderJoint = addSphere('leftShoulderPad', jersey, -0.24, 1.4, 0, 0.06, 0.07, 0.075, root, 'primary');
+      aiInst.limbs.rightShoulderJoint = addSphere('rightShoulderPad', jersey, 0.24, 1.4, 0, 0.06, 0.07, 0.075, root, 'primary');
 
       function buildArm(prefix, side) {
         const upper = addPivot(prefix + 'UpperArm', side * 0.245, 1.37, -0.01, root);
         upper.userData.side = side;
         addSegment(prefix + 'UpperArm', jersey, 0.36, 0.052, 0.046, upper, 'primary');
         addBox(prefix + 'ArmStripe', materials.white, side * 0.012, -0.18, -0.048, 0.018, 0.2, 0.012, upper, 0, 0, side * 0.12);
-        ai.limbs[prefix + 'UpperArm'] = upper;
-        ai.limbs[prefix + 'ElbowJoint'] = addSphere(prefix + 'ElbowPad', pad, 0, -0.36, 0, 0.058, 0.05, 0.058, upper);
+        aiInst.limbs[prefix + 'UpperArm'] = upper;
+        aiInst.limbs[prefix + 'ElbowJoint'] = addSphere(prefix + 'ElbowPad', pad, 0, -0.36, 0, 0.058, 0.05, 0.058, upper);
         const fore = addPivot(prefix + 'ForeArm', 0, -0.36, 0, upper);
         fore.userData.side = side;
         addSegment(prefix + 'ForeArm', jersey, 0.34, 0.046, 0.04, fore, 'primary');
         addBox(prefix + 'ForearmPad', pad, 0, -0.17, -0.045, 0.055, 0.15, 0.018, fore);
-        ai.limbs[prefix + 'ForeArm'] = fore;
-        ai.limbs[prefix + 'Hand'] = addBox(prefix + 'Glove', glove, 0, -0.36, -0.02, 0.06, 0.055, 0.08, fore);
+        aiInst.limbs[prefix + 'ForeArm'] = fore;
+        aiInst.limbs[prefix + 'Hand'] = addBox(prefix + 'Glove', glove, 0, -0.36, -0.02, 0.06, 0.055, 0.08, fore);
       }
       buildArm('left', -1);
       buildArm('right', 1);
 
-      ai.limbs.leftHipJoint = addSphere('leftHipJoint', pants, -0.13, 0.91, 0, 0.055, 0.055, 0.055, root);
-      ai.limbs.rightHipJoint = addSphere('rightHipJoint', pants, 0.13, 0.91, 0, 0.055, 0.055, 0.055, root);
+      aiInst.limbs.leftHipJoint = addSphere('leftHipJoint', pants, -0.13, 0.91, 0, 0.055, 0.055, 0.055, root);
+      aiInst.limbs.rightHipJoint = addSphere('rightHipJoint', pants, 0.13, 0.91, 0, 0.055, 0.055, 0.055, root);
 
       function buildLeg(prefix, side) {
         const thigh = addPivot(prefix + 'Thigh', side * 0.13, 0.88, 0, root);
         thigh.userData.side = side;
         addSegment(prefix + 'Thigh', pants, 0.44, 0.075, 0.063, thigh);
         addBox(prefix + 'PantCrease', materials.darkGrey, 0, -0.22, -0.045, 0.045, 0.3, 0.012, thigh);
-        ai.limbs[prefix + 'Thigh'] = thigh;
-        ai.limbs[prefix + 'KneeJoint'] = addSphere(prefix + 'KneePad', pad, 0, -0.44, -0.035, 0.072, 0.055, 0.045, thigh);
+        aiInst.limbs[prefix + 'Thigh'] = thigh;
+        aiInst.limbs[prefix + 'KneeJoint'] = addSphere(prefix + 'KneePad', pad, 0, -0.44, -0.035, 0.072, 0.055, 0.045, thigh);
         const shin = addPivot(prefix + 'Shin', 0, -0.44, 0, thigh);
         shin.userData.side = side;
         addSegment(prefix + 'Shin', pants, 0.44, 0.062, 0.05, shin);
         addBox(prefix + 'ShinGuard', materials.darkGrey, 0, -0.22, -0.052, 0.055, 0.26, 0.016, shin);
-        ai.limbs[prefix + 'Shin'] = shin;
-        ai.limbs[prefix + 'Foot'] = addBox(prefix + 'Cleat', boot, 0, -0.405, -0.07, 0.095, 0.055, 0.21, shin);
+        aiInst.limbs[prefix + 'Shin'] = shin;
+        aiInst.limbs[prefix + 'Foot'] = addBox(prefix + 'Cleat', boot, 0, -0.405, -0.07, 0.095, 0.055, 0.21, shin);
       }
       buildLeg('left', -1);
       buildLeg('right', 1);
 
-      ai.podTubes = [];
+      aiInst.podTubes = [];
       addBox('podPack', pad, 0, 0.93, 0.205, 0.24, 0.095, 0.06, root);
       for (let i = 0; i < STARTING_PODS; i++) {
         const pod = addCylinder('podTube' + i, i % 2 ? materials.darkGrey : materials.grey, (i - 1) * 0.078, 1.0, 0.255, 0.032, 0.032, 0.22, root, 14);
         pod.rotation.x = 0.18;
-        ai.podTubes.push(pod);
+        aiInst.podTubes.push(pod);
       }
 
-      ai.marker = new THREE.Group();
-      ai.marker.name = 'marker';
-      ai.marker.position.set(0.08, 1.12, -0.42);
-      root.add(ai.marker);
+      aiInst.marker = new THREE.Group();
+      aiInst.marker.name = 'marker';
+      aiInst.marker.position.set(0.08, 1.12, -0.42);
+      root.add(aiInst.marker);
       const markerBody = new THREE.Mesh(geometries.box, materials.gunAccent);
       markerBody.position.set(0.02, 0, -0.04);
       markerBody.scale.set(0.18, 0.075, 0.23);
@@ -5590,145 +5591,355 @@
       barrel.position.set(0.02, 0.015, -0.35);
       barrel.scale.set(0.024, 0.38, 0.024);
       barrel.rotation.x = Math.PI / 2;
-      ai.markerBarrelTip = new THREE.Object3D();
-      ai.markerBarrelTip.name = 'markerBarrelTip';
-      ai.markerBarrelTip.position.set(0.02, 0.015, -0.54);
+      aiInst.markerBarrelTip = new THREE.Object3D();
+      aiInst.markerBarrelTip.name = 'markerBarrelTip';
+      aiInst.markerBarrelTip.position.set(0.02, 0.015, -0.54);
       const hopper = new THREE.Mesh(geometries.sphere, materials.hopper);
       hopper.position.set(0.02, 0.15, -0.03);
       hopper.scale.set(0.13, 0.09, 0.12);
-      [markerBody, markerReg, barrel, hopper].forEach((part) => addMesh(part, ai.marker));
-      ai.marker.add(ai.markerBarrelTip);
+      [markerBody, markerReg, barrel, hopper].forEach((part) => addMesh(part, aiInst.marker));
+      aiInst.marker.add(aiInst.markerBarrelTip);
 
-      ai.splat = new THREE.Mesh(geometries.splat, getTeamMaterials(MY_TEAM).paint);
-      ai.splat.position.set(0, 1.22, -0.19);
-      ai.splat.scale.set(0.32, 0.26, 1);
-      ai.splat.visible = false;
+      aiInst.splat = new THREE.Mesh(geometries.splat, getTeamMaterials(MY_TEAM).paint);
+      aiInst.splat.position.set(0, 1.22, -0.19);
+      aiInst.splat.scale.set(0.32, 0.26, 1);
+      aiInst.splat.visible = false;
       const splat2 = new THREE.Mesh(geometries.splat, getTeamMaterials(MY_TEAM).paint);
       splat2.position.set(0.08, 1.6, -0.19);
       splat2.scale.set(0.16, 0.13, 1);
       splat2.visible = false;
-      ai.limbs.splat2 = splat2;
-      root.add(ai.splat, splat2);
-      ai.group.add(root);
-      ai.group.traverse((child) => {
+      aiInst.limbs.splat2 = splat2;
+      root.add(aiInst.splat, splat2);
+      aiInst.group.add(root);
+      aiInst.group.traverse((child) => {
         if (child.isMesh) {
-          child.userData.coverCull = child !== ai.splat && child !== splat2;
+          child.userData.coverCull = child !== aiInst.splat && child !== splat2;
           if (child.userData.coverCull) shadowMesh(child, !child.material.transparent, true);
         }
       });
-      ai.splat.castShadow = false;
-      ai.splat.receiveShadow = false;
+      aiInst.splat.castShadow = false;
+      aiInst.splat.receiveShadow = false;
       splat2.castShadow = false;
       splat2.receiveShadow = false;
-      ai.group.position.copy(ai.position);
+      aiInst.group.position.copy(aiInst.position);
     }
 
-    function buildExtraBotGroup(team, skin) {
-      const teamMats = getTeamMaterials(team || 'red');
+    function makeExtraBotAiInst(team, spawnPos) {
       const group = new THREE.Group();
-      const root = new THREE.Group();
-      root.name = 'extraBotRoot';
-      const addM = (geo, mat, x, y, z, sx, sy, sz, rx, ry, rz, parent) => {
-        const m = new THREE.Mesh(geo, mat);
-        m.position.set(x, y, z);
-        m.scale.set(sx, sy, sz);
-        if (rx || ry || rz) m.rotation.set(rx || 0, ry || 0, rz || 0);
-        m.userData.coverCull = true;
-        m.frustumCulled = false;
-        shadowMesh(m, !mat.transparent, true);
-        (parent || root).add(m);
-        return m;
-      };
-      // torso
-      addM(geometries.box, teamMats.primary, 0, 0.9, 0, 0.38, 0.58, 0.28, 0,0,0);
-      // head
-      const headGeo = geometries.sphere || new THREE.SphereGeometry(0.14, 8, 6);
-      addM(headGeo, teamMats.primary, 0, 1.54, 0, 0.22, 0.24, 0.22, 0,0,0);
-      // legs
-      addM(geometries.box, teamMats.dark, -0.09, 0.36, 0, 0.14, 0.44, 0.2, 0,0,0);
-      addM(geometries.box, teamMats.dark,  0.09, 0.36, 0, 0.14, 0.44, 0.2, 0,0,0);
-      // arms
-      addM(geometries.box, teamMats.dark, -0.27, 0.9, 0, 0.12, 0.46, 0.18, 0,0,0.18);
-      addM(geometries.box, teamMats.dark,  0.27, 0.9, 0, 0.12, 0.46, 0.18, 0,0,-0.18);
-      // visor
-      const visorMat = skin ? createSkinVisorMaterial(skin) : teamMats.rim;
-      addM(geometries.box, visorMat, 0, 1.56, -0.14, 0.17, 0.09, 0.04, 0,0,0);
-      group.add(root);
       group.visible = false;
       scene.add(group);
-      return group;
+      return {
+        group,
+        body: null,
+        head: null,
+        marker: null,
+        markerBarrelTip: null,
+        splat: null,
+        limbs: {},
+        position: spawnPos.clone(),
+        spawn: spawnPos.clone(),
+        target: spawnPos.clone(),
+        bodyCenter: new THREE.Vector3(),
+        radius: 0.3,
+        height: 1.8,
+        tacticalHeight: 1.8,
+        peekSide: 0,
+        reactClock: 0,
+        cover: null,
+        moving: false,
+        aiming: false,
+        shotStreak: 0,
+        shotStreakTimer: 0,
+        lastKnownPlayer: new THREE.Vector3(),
+        lastKnownTime: 0,
+        visual: { crouch: 0, prone: 0, aim: 0, run: 0, death: 0, deathActive: false },
+        // per-instance AI state (mirrors state.aiShotClock etc.)
+        shotClock: 1.4,
+        moveClock: 0,
+        coverIndex: 0,
+        eliminated: false,
+        difficulty: 'pro',
+        team,
+        // targetFn(): returns {position, bodyCenter, height} of the target — set after creation
+        targetFn: null,
+        visible: false,
+        role: null,
+        matchBot: null
+      };
     }
 
     function setupExtraBots() {
       // Remove previous extra bot groups from scene
-      extraBots.forEach(b => scene.remove(b.group));
+      extraBots.forEach(b => { if (b.group && b.group.parent) scene.remove(b.group); });
       extraBots = [];
       if (GAME_MODE !== '2v2') return;
-      // Build slots: ally (MY_TEAM) and 2nd enemy (OPPONENT_TEAM)
       const botDefs = [
-        { role: 'ally', team: MY_TEAM, spawnOffset: new THREE.Vector3(0, 0, 5) },
-        { role: 'enemy2', team: OPPONENT_TEAM, spawnOffset: new THREE.Vector3(0, 0, -5) },
+        { role: 'ally',   team: MY_TEAM,       spawnOffset: new THREE.Vector3(0, 0, 5) },
+        { role: 'enemy2', team: OPPONENT_TEAM,  spawnOffset: new THREE.Vector3(0, 0, -5) },
       ];
       botDefs.forEach(def => {
         const botData = matchBots.find(b => b.team === def.team && extraBots.every(e => e.matchBot !== b));
-        const group = buildExtraBotGroup(def.team, botData ? botData.skin : null);
         const spawnX = def.team === MY_TEAM
           ? (MY_TEAM === 'blue' ? 24 : -24)
           : (MY_TEAM === 'blue' ? -24 : 24);
         const spawnPos = new THREE.Vector3(spawnX, 0, def.spawnOffset.z);
-        group.position.copy(spawnPos);
-        extraBots.push({
-          group,
-          position: spawnPos.clone(),
-          target: spawnPos.clone(),
-          team: def.team,
-          role: def.role,
-          matchBot: botData || null,
-          visible: false,
-          patrolTimer: Math.random() * 3,
-        });
+        const inst = makeExtraBotAiInst(def.team, spawnPos);
+        inst.role = def.role;
+        inst.matchBot = botData || null;
+        inst.difficulty = botData ? normalizeBotDifficulty(botData.difficulty) : 'pro';
+        createAiModel(def.team, inst);
+        applyRemoteTeamMaterials(def.team, inst);
+        if (botData && botData.skin) applyRemoteSkinToAi(botData.skin, inst);
+        inst.group.position.copy(spawnPos);
+        extraBots.push(inst);
       });
+      // Set up targeting functions after both bots exist
+      // ally (MY_TEAM) targets the opponent ai
+      const ally   = extraBots.find(b => b.role === 'ally');
+      const enemy2 = extraBots.find(b => b.role === 'enemy2');
+      if (ally)   ally.targetFn   = () => ({ position: ai.position, bodyCenter: ai.bodyCenter, height: ai.tacticalHeight || ai.height });
+      if (enemy2) enemy2.targetFn = () => ({ position: player.root.position, bodyCenter: player.bodyCenter, height: player.height });
+    }
+
+    function _extraBotConfig(inst) {
+      return AI_DIFFICULTIES[inst.difficulty] || AI_DIFFICULTIES.pro;
+    }
+
+    function _chooseExtraBotCover(inst) {
+      const config = _extraBotConfig(inst);
+      if (activeCoverPoints.length === 0) {
+        inst.target.copy(inst.spawn);
+        return;
+      }
+      const tgt = inst.targetFn ? inst.targetFn() : null;
+      const focus = (inst.lastKnownTime > 0 ? inst.lastKnownPlayer : (tgt ? tgt.position : inst.spawn));
+      let best = activeCoverPoints[inst.coverIndex % activeCoverPoints.length];
+      let bestScore = -9999;
+      // ally should stay near its own side; enemy2 should push toward opponent side
+      const preferredSide = inst.team;
+      for (let i = 0; i < activeCoverPoints.length; i++) {
+        const p = activeCoverPoints[(inst.coverIndex + i * 7 + 3) % activeCoverPoints.length];
+        const dx = p.x - focus.x;
+        const dz = p.z - focus.z;
+        const distPlayer = Math.sqrt(dx * dx + dz * dz);
+        const daix = p.x - inst.position.x;
+        const daiz = p.z - inst.position.z;
+        const distAi = Math.sqrt(daix * daix + daiz * daiz);
+        const sideBonus = p.team === preferredSide ? 3 : p.team === 'any' ? 1 : -1;
+        const laneBonus = Math.abs(p.z - focus.z) > 8 ? 1.2 : -0.5;
+        const coverHeightBonus = p.height > 1.4 ? 0.8 : 0.2;
+        const reactBonus = inst.reactClock > 0 ? Math.min(distAi, 24) * 0.08 : -Math.max(0, distAi - 34) * 0.035;
+        const distanceBonus = Math.min(distPlayer, 55) * 0.025 / config.aggression;
+        const randomish = ((i * 17 + state.round * 11 + inst.coverIndex) % 9) * 0.08;
+        const score = sideBonus + laneBonus + coverHeightBonus + reactBonus + distanceBonus + randomish - Math.abs(p.z) * 0.004;
+        if (score > bestScore) { bestScore = score; best = p; }
+      }
+      inst.coverIndex = (inst.coverIndex + 5) % activeCoverPoints.length;
+      inst.cover = best;
+      inst.target.set(clamp(best.x, -ARENA_HALF_X + 4, ARENA_HALF_X - 4), 0, clamp(best.z, -ARENA_HALF_Z + 4, ARENA_HALF_Z - 4));
+      inst.moveClock = (1.6 + ((inst.coverIndex * 13) % 8) * 0.18) / config.aggression;
+    }
+
+    function _extraBotShoot(inst) {
+      if (state.readyClock > 0) return false;
+      const config = _extraBotConfig(inst);
+      const tgt = inst.targetFn ? inst.targetFn() : null;
+      if (!tgt) return false;
+      const bx = tgt.bodyCenter.x, bz = tgt.bodyCenter.z, bh = tgt.height;
+      const ebx = new THREE.Vector3(bx - inst.position.x, 0, bz - inst.position.z);
+      if (ebx.lengthSq() > 0.001) ebx.normalize();
+      const perp = new THREE.Vector3(-ebx.z, 0, ebx.x).multiplyScalar(inst.peekSide * 0.42);
+      let origin;
+      if (inst.markerBarrelTip) {
+        origin = new THREE.Vector3();
+        inst.markerBarrelTip.getWorldPosition(origin);
+      } else {
+        origin = new THREE.Vector3(inst.position.x + perp.x, Math.max(0.55, Math.min(inst.tacticalHeight, inst.height) * 0.82), inst.position.z + perp.z);
+      }
+      const dir = new THREE.Vector3(bx, bh * 0.78, bz).sub(origin);
+      const shotDist = Math.hypot(dir.x, dir.z);
+      dir.y += 0.5 * PAINTBALL_GRAVITY * Math.pow(shotDist / PAINTBALL_SPEED, 2) * (0.58 + config.accuracy * 0.28);
+      const shootY = Math.max(0.55, Math.min(inst.tacticalHeight, inst.height) * 0.82);
+      const hasSight = hasLineOfSight(inst.position.x, shootY, inst.position.z, bx, bh * 0.78, bz);
+      const spread = hasSight ? config.sightSpread : config.blindSpread;
+      if (!hasSight) {
+        dir.x += Math.sin(state.elapsed * 2.3) * spread;
+        dir.z += Math.cos(state.elapsed * 1.9) * spread;
+      } else {
+        dir.x += Math.sin(state.elapsed * 3.1) * spread;
+        dir.y += Math.cos(state.elapsed * 2.4) * spread * 0.42;
+        dir.z += Math.cos(state.elapsed * 2.7) * spread;
+      }
+      dir.normalize();
+      const shotData = recordShotData({
+        origin,
+        direction: dir,
+        shooterPosition: inst.position,
+        shooterRotation: { x: 0, y: inst.group.rotation.y, z: 0 },
+        team: inst.team,
+        shooterId: 'extrabot-' + inst.role,
+        shooterName: inst.matchBot ? (inst.matchBot.skinName || 'Bot') : inst.role
+      });
+      fireProjectile(inst.team, origin, dir, shotData);
+      audio.fire();
+      return true;
+    }
+
+    function _updateExtraBotAiVisual(dt, inst, moving, atCover) {
+      if (!inst.limbs || !inst.limbs.root) return;
+      const root = inst.limbs.root;
+      const visual = inst.visual;
+      const rate = Math.min(1, dt * 10);
+      const setRot = (part, x, y, z, speed) => {
+        if (!part) return;
+        const t = Math.min(1, dt * (speed || 12));
+        part.rotation.x += (x - part.rotation.x) * t;
+        part.rotation.y += (y - part.rotation.y) * t;
+        part.rotation.z += (z - part.rotation.z) * t;
+      };
+      if (visual.deathActive || inst.eliminated) {
+        visual.death = clamp(visual.death + dt / 0.5, 0, 1);
+        const fall = 1 - Math.pow(1 - visual.death, 3);
+        inst.group.rotation.x = fall * Math.PI * 0.5;
+        inst.group.rotation.z += (0 - inst.group.rotation.z) * rate;
+        inst.group.position.y = (inst.position.y || 0) + fall * 0.04;
+        root.position.set(0, 0, 0);
+        root.rotation.set(0, 0, 0);
+        setRot(inst.limbs.leftUpperArm, 0.45, 0, -0.25, 8);
+        setRot(inst.limbs.rightUpperArm, 0.28, 0, 0.3, 8);
+        setRot(inst.limbs.leftForeArm, -0.55, 0, 0, 8);
+        setRot(inst.limbs.rightForeArm, -0.38, 0, 0, 8);
+        setRot(inst.limbs.leftThigh, -0.22, 0, -0.04, 8);
+        setRot(inst.limbs.rightThigh, 0.18, 0, 0.04, 8);
+        setRot(inst.limbs.leftShin, 0.55, 0, 0, 8);
+        setRot(inst.limbs.rightShin, 0.4, 0, 0, 8);
+        if (inst.marker) inst.marker.position.set(0.1, 0.68, -0.12);
+        return;
+      }
+      inst.group.rotation.x += (0 - inst.group.rotation.x) * rate;
+      inst.group.position.y = inst.position.y || 0;
+      const crouchTarget = atCover ? 1 : 0;
+      const runTarget = moving && inst.reactClock > 0.05 ? 1 : 0;
+      const aimTarget = inst.aiming || crouchTarget > 0 ? 1 : 0;
+      visual.crouch += (crouchTarget - visual.crouch) * Math.min(1, dt * 8);
+      visual.run += (runTarget - visual.run) * Math.min(1, dt * 6);
+      visual.aim += (aimTarget - visual.aim) * Math.min(1, dt * 9);
+      const deg = Math.PI / 180;
+      const moveBlend = moving ? 1 : 0;
+      const run = visual.run;
+      const crouch = visual.crouch;
+      const aim = visual.aim;
+      const cycle = state.elapsed * (moving ? 7.4 + run * 5.2 : 2.1);
+      const stride = Math.sin(cycle);
+      const idle = Math.sin(state.elapsed * Math.PI * 2 / 3);
+      const legAmp = (25 + run * 15) * deg * moveBlend;
+      const armAmp = (20 + run * 15) * deg * moveBlend;
+      const bob = moving ? Math.abs(Math.cos(cycle)) * (0.025 + run * 0.03) : idle * 0.02;
+      root.position.y = bob - crouch * 0.22;
+      root.position.x = idle * 0.012 * (1 - moveBlend);
+      root.rotation.x = -run * 0.16 - crouch * 0.22;
+      root.rotation.z = idle * 0.025 * (1 - moveBlend);
+      const sideLean = atCover ? inst.peekSide * 0.1 : 0;
+      inst.group.rotation.z += (sideLean - inst.group.rotation.z) * Math.min(1, dt * 8);
+      if (inst.body) {
+        inst.body.position.y = 1.22 + idle * 0.008 * (1 - moving);
+        inst.body.rotation.x += ((-0.08 * crouch - 0.08 * run) - inst.body.rotation.x) * rate;
+      }
+      setRot(inst.limbs.leftThigh,  stride * legAmp - crouch * 0.55, 0, -0.035, 12);
+      setRot(inst.limbs.rightThigh, -stride * legAmp - crouch * 0.55, 0, 0.035, 12);
+      setRot(inst.limbs.leftShin,  Math.max(0, -stride) * 0.72 * moveBlend + crouch * 0.95, 0, 0, 12);
+      setRot(inst.limbs.rightShin, Math.max(0, stride) * 0.72 * moveBlend + crouch * 0.95, 0, 0, 12);
+      setRot(inst.limbs.leftFoot, -0.1 - crouch * 0.2, 0, 0, 12);
+      setRot(inst.limbs.rightFoot, -0.1 - crouch * 0.2, 0, 0, 12);
+      const leftWalkArm  = -stride * armAmp + idle * 0.04 * (1 - moveBlend);
+      const rightWalkArm =  stride * armAmp - idle * 0.04 * (1 - moveBlend);
+      setRot(inst.limbs.leftUpperArm,  leftWalkArm  * (1 - aim) + aim * 1.3,  0, -0.11 - aim * 0.08, 12);
+      setRot(inst.limbs.rightUpperArm, rightWalkArm * (1 - aim) + aim * 1.16, 0,  0.11 + aim * 0.1,  12);
+      setRot(inst.limbs.leftForeArm,  -0.08 - aim * 0.18, 0, 0, 12);
+      setRot(inst.limbs.rightForeArm, -0.12 - aim * 0.7,  0, 0, 12);
+      if (inst.marker) {
+        const aimBlend = aim;
+        const targetX = 0.28 * (1 - aimBlend) + 0.08 * aimBlend;
+        const targetY = 0.72 * (1 - aimBlend) + 1.16 * aimBlend - crouch * 0.16;
+        const targetZ = -0.08 * (1 - aimBlend) - 0.43 * aimBlend;
+        inst.marker.position.x += (targetX - inst.marker.position.x) * rate;
+        inst.marker.position.y += (targetY - inst.marker.position.y) * rate;
+        inst.marker.position.z += (targetZ - inst.marker.position.z) * rate;
+        setRot(inst.marker, -0.04 * aimBlend, 0, 0, 12);
+      }
+    }
+
+    function _updateSingleExtraBot(dt, inst) {
+      const config = _extraBotConfig(inst);
+      inst.reactClock = Math.max(0, inst.reactClock - dt);
+      inst.shotStreakTimer = Math.max(0, inst.shotStreakTimer - dt);
+      inst.lastKnownTime = Math.max(0, inst.lastKnownTime - dt);
+      if (inst.shotStreakTimer <= 0) inst.shotStreak = 0;
+      inst.moveClock -= dt;
+      if (inst.moveClock <= 0 || inst.position.distanceToSquared(inst.target) < 0.55 || inst.reactClock > 0.42) _chooseExtraBotCover(inst);
+      const toTarget = new THREE.Vector3().subVectors(inst.target, inst.position);
+      toTarget.y = 0;
+      const dist = toTarget.length();
+      const atCover = dist < 1.35;
+      if (atCover && inst.cover) {
+        inst.tacticalHeight = inst.cover.height < 1.45 ? 0.72 : inst.cover.height < 2.4 ? 1.05 : 1.45;
+        inst.peekSide = inst.cover.peekX || inst.cover.peekZ || 0;
+      } else {
+        inst.tacticalHeight = inst.height;
+        inst.peekSide = 0;
+      }
+      if (dist > 0.08) {
+        toTarget.multiplyScalar(1 / dist);
+        const speed = (inst.reactClock > 0 ? config.reactSpeed : config.speed);
+        moveWithCollisionFor(inst.position, toTarget.x * speed * dt, toTarget.z * speed * dt, inst.radius, null, inst.tacticalHeight || inst.height);
+        inst.group.position.copy(inst.position);
+      }
+      const tgt = inst.targetFn ? inst.targetFn() : null;
+      if (tgt) {
+        const toEnemy = new THREE.Vector3().subVectors(tgt.position, inst.position);
+        toEnemy.y = 0;
+        if (toEnemy.lengthSq() > 0.001) inst.group.rotation.y = Math.atan2(toEnemy.x, toEnemy.z);
+        if (tgt.position.distanceToSquared ? true : true) {
+          inst.lastKnownPlayer.copy(tgt.position);
+          inst.lastKnownTime = 1.5;
+        }
+      }
+      inst.bodyCenter.set(inst.position.x, (inst.tacticalHeight || inst.height) * 0.5, inst.position.z);
+      const shootY = Math.max(0.55, Math.min(inst.tacticalHeight, inst.height) * 0.82);
+      const tgtPos = tgt ? tgt.bodyCenter : null;
+      const hasSight = tgtPos ? hasLineOfSight(inst.position.x, shootY, inst.position.z, tgtPos.x, (tgt.height || 1.8) * 0.78, tgtPos.z) : false;
+      inst.aiming = hasSight || inst.reactClock > 0.12;
+      _updateExtraBotAiVisual(dt, inst, dist > 0.12, atCover);
+      inst.shotClock -= dt;
+      if (inst.shotClock <= 0) {
+        const fired = _extraBotShoot(inst);
+        const base = hasSight ? config.shotDelay : config.searchDelay;
+        const jitter = hasSight ? config.shotJitter : config.searchJitter;
+        inst.shotClock = Math.max(SHOT_COOLDOWN, base + Math.random() * jitter + (fired ? 0 : 0.14));
+      }
+      updateCoverCullVisibility(inst.group, 0.025);
     }
 
     function updateExtraBots(dt) {
       if (!GAME_MODE || GAME_MODE !== '2v2' || extraBots.length === 0) return;
       if (!state.running || state.phase !== 'active') return;
       for (let i = 0; i < extraBots.length; i++) {
-        const bot = extraBots[i];
-        if (!bot.visible) {
-          bot.group.visible = false;
+        const inst = extraBots[i];
+        if (!inst.visible) { inst.group.visible = false; continue; }
+        inst.group.visible = !inst.eliminated;
+        if (inst.eliminated) {
+          _updateExtraBotAiVisual(dt, inst, false, false);
           continue;
         }
-        bot.group.visible = true;
-        // Simple patrol: pick new target every few seconds
-        bot.patrolTimer -= dt;
-        if (bot.patrolTimer <= 0) {
-          bot.patrolTimer = 2.5 + Math.random() * 2;
-          const spawnX = bot.team === MY_TEAM
-            ? (MY_TEAM === 'blue' ? 24 : -24)
-            : (MY_TEAM === 'blue' ? -24 : 24);
-          bot.target.set(
-            spawnX + (Math.random() - 0.5) * 8,
-            0,
-            (Math.random() - 0.5) * 12
-          );
-        }
-        // Move toward target
-        const dx = bot.target.x - bot.position.x;
-        const dz = bot.target.z - bot.position.z;
-        const dist = Math.sqrt(dx * dx + dz * dz);
-        const speed = 2.2;
-        if (dist > 0.2) {
-          bot.position.x += (dx / dist) * speed * dt;
-          bot.position.z += (dz / dist) * speed * dt;
-          bot.group.rotation.y = Math.atan2(dx, dz);
-        }
-        bot.group.position.copy(bot.position);
+        _updateSingleExtraBot(dt, inst);
       }
     }
 
     function showExtraBots() {
-      extraBots.forEach(b => { b.visible = true; b.group.visible = true; });
+      extraBots.forEach(b => {
+        b.visible = true;
+        b.group.visible = !b.eliminated;
+      });
     }
 
     function hideExtraBots() {
@@ -6233,20 +6444,22 @@
       return true;
     }
 
-    function applyRemoteSkinToAi(skin) {
-      if (!ai.limbs || !ai.limbs.visor) return;
-      const previous = ai.limbs.visor.material;
-      ai.limbs.visor.material = createSkinVisorMaterial(skin || DEFAULT_SKIN);
+    function applyRemoteSkinToAi(skin, aiInst) {
+      if (!aiInst) aiInst = ai;
+      if (!aiInst.limbs || !aiInst.limbs.visor) return;
+      const previous = aiInst.limbs.visor.material;
+      aiInst.limbs.visor.material = createSkinVisorMaterial(skin || DEFAULT_SKIN);
       if (previous && previous.userData && previous.userData.skinMaterial) {
         if (previous.map) previous.map.dispose();
         previous.dispose();
       }
     }
 
-    function applyRemoteTeamMaterials(team) {
+    function applyRemoteTeamMaterials(team, aiInst) {
+      if (!aiInst) aiInst = ai;
       const teamMats = getTeamMaterials(team);
-      ai.group.traverse((child) => {
-        if (!child.isMesh || child === ai.splat || child === ai.limbs?.splat2) return;
+      aiInst.group.traverse((child) => {
+        if (!child.isMesh || child === aiInst.splat || child === aiInst.limbs?.splat2) return;
         if (child.userData && child.userData.teamSlot && teamMats[child.userData.teamSlot]) {
           child.material = teamMats[child.userData.teamSlot];
           return;
@@ -6706,6 +6919,47 @@
       clearProjectiles();
       clearSplats();
       if (!MULTIPLAYER) chooseAiCover(true);
+      // Reset extra bots for 2v2
+      if (GAME_MODE === '2v2') {
+        for (let i = 0; i < extraBots.length; i++) {
+          const inst = extraBots[i];
+          inst.position.copy(inst.spawn);
+          inst.target.copy(inst.spawn);
+          inst.group.position.copy(inst.spawn);
+          inst.group.rotation.set(0, 0, 0);
+          inst.group.scale.set(1, 1, 1);
+          restoreCoverCullVisibility(inst.group);
+          inst.group.visible = false;
+          if (inst.splat) inst.splat.visible = false;
+          if (inst.limbs && inst.limbs.splat2) inst.limbs.splat2.visible = false;
+          inst.tacticalHeight = inst.height;
+          inst.peekSide = 0;
+          inst.reactClock = 0;
+          inst.cover = null;
+          inst.aiming = false;
+          inst.shotStreak = 0;
+          inst.shotStreakTimer = 0;
+          inst.lastKnownPlayer.set(0, 0, 0);
+          inst.lastKnownTime = 0;
+          inst.visual.crouch = 0;
+          inst.visual.prone = 0;
+          inst.visual.aim = 0;
+          inst.visual.run = 0;
+          inst.visual.death = 0;
+          inst.visual.deathActive = false;
+          inst.eliminated = false;
+          const cfg = _extraBotConfig(inst);
+          inst.shotClock = cfg.reaction + Math.random() * cfg.shotJitter;
+          inst.moveClock = 0.2;
+          inst.coverIndex = 0;
+          inst.visible = false;
+        }
+        // Re-link targeting in case ai/player refs changed
+        const ally   = extraBots.find(b => b.role === 'ally');
+        const enemy2 = extraBots.find(b => b.role === 'enemy2');
+        if (ally)   ally.targetFn   = () => ({ position: ai.position, bodyCenter: ai.bodyCenter, height: ai.tacticalHeight || ai.height });
+        if (enemy2) enemy2.targetFn = () => ({ position: player.root.position, bodyCenter: player.bodyCenter, height: player.height });
+      }
       audio.beep();
       updateHud();
     }
