@@ -9001,29 +9001,64 @@
       }
       if (active && active.ambient === 'ghosttown') {
         scene.remove(ambientLight, keyLight, keyLight.target, hemiLight);
-        scene.background = new THREE.Color(0x62bdf7);
-        scene.fog = null;
-        skyStatus = 'ghosttown-clear-blue';
-        const ambient = new THREE.AmbientLight(0xffffff, 1.28);
-        scene.add(ambient);
-        const hemi = new THREE.HemisphereLight(
-          0x9fdcff, 0xd7b36e, 2.05
-        );
-        scene.add(hemi);
-        const sun = new THREE.DirectionalLight(0xfff4c8, 3.6);
-        sun.position.set(42, 86, 24);
+        scene.background = null;
+        scene.fog = new THREE.Fog(0x4a3010, 80, 380);
+        skyStatus = 'ghosttown-storm';
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.05;
+
+        // Stormy dust-storm sky dome
+        const gtSkyGeo = new THREE.SphereGeometry(800, 32, 16);
+        const gtSkyMat = new THREE.ShaderMaterial({
+          side: THREE.BackSide,
+          depthWrite: false,
+          uniforms: {},
+          vertexShader: `
+            varying vec3 vWorldPos;
+            void main() {
+              vWorldPos = position;
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+          `,
+          fragmentShader: `
+            varying vec3 vWorldPos;
+            void main() {
+              float t = clamp((normalize(vWorldPos).y + 0.15) / 1.15, 0.0, 1.0);
+              // horizon: dusty sickly orange-yellow
+              vec3 horizon = vec3(0.52, 0.28, 0.06);
+              // mid: bruised greenish-grey storm
+              vec3 mid     = vec3(0.22, 0.18, 0.12);
+              // top: near-black charcoal with hint of green
+              vec3 top     = vec3(0.07, 0.07, 0.05);
+              vec3 col = t < 0.35
+                ? mix(horizon, mid, t / 0.35)
+                : mix(mid, top, (t - 0.35) / 0.65);
+              // eerie pale glow just above horizon
+              float glow = pow(1.0 - clamp(t * 4.0, 0.0, 1.0), 3.0) * 0.4;
+              col += vec3(glow * 0.8, glow * 0.5, glow * 0.05);
+              gl_FragColor = vec4(col, 1.0);
+            }
+          `
+        });
+        const gtSkyDome = new THREE.Mesh(gtSkyGeo, gtSkyMat);
+
+        // Eerie low sun cutting through the dust
+        const sun = new THREE.DirectionalLight(0xdd8822, 2.8);
+        sun.position.set(60, 18, -30);
         sun.castShadow = false;
-        sun.shadow.mapSize.width = 2048;
-        sun.shadow.mapSize.height = 2048;
-        sun.shadow.camera.left = -60;
-        sun.shadow.camera.right = 60;
-        sun.shadow.camera.top = 60;
-        sun.shadow.camera.bottom = -60;
-        sun.shadow.camera.far = 200;
-        sun.shadow.bias = -0.0001;
-        scene.add(sun);
-        ghostTownLights = [ambient, hemi, sun];
-        renderer.toneMappingExposure = 1.15;
+
+        // Dim fill from opposite horizon
+        const fill = new THREE.DirectionalLight(0x664422, 1.0);
+        fill.position.set(-50, 8, 30);
+
+        // Hemisphere: sick sky above / warm dusty ground below
+        const hemi = new THREE.HemisphereLight(0x5a4020, 0x8a5a18, 1.8);
+
+        // Ambient — warm dusty light so structures stay visible
+        const ambient = new THREE.AmbientLight(0xc09050, 1.4);
+
+        ghostTownLights = [gtSkyDome, sun, fill, hemi, ambient];
+        ghostTownLights.forEach((obj) => scene.add(obj));
         return;
       }
       restoreBaseLighting();
