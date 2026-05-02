@@ -3941,23 +3941,67 @@
       };
     }
 
-    function createCityWindowTexture() {
+    function createCityWindowTexture(seed) {
       const canvas = document.createElement('canvas');
-      canvas.width = 128;
-      canvas.height = 128;
+      canvas.width = 256;
+      canvas.height = 256;
       const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#1a1a2a';
-      ctx.fillRect(0, 0, 128, 128);
-      for (let y = 6; y < 122; y += 12) {
-        for (let x = 6; x < 122; x += 10) {
-          const lit = ((x * 17 + y * 23) % 7) > 2;
-          ctx.fillStyle = lit ? (((x + y) % 4) ? '#ffb34a' : '#ffd47a') : '#232538';
-          ctx.fillRect(x, y, 6, 8);
+      ctx.fillStyle = '#0d0f18';
+      ctx.fillRect(0, 0, 256, 256);
+      let s = seed || 1;
+      const rand = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+      const cols = 16;
+      const rows = 24;
+      const colW = 256 / cols;
+      const rowH = 256 / rows;
+      const winW = colW * 0.55;
+      const winH = rowH * 0.62;
+      const palettes = [
+        ['#ffd07a', '#ffba4a', '#ffe6a8', '#fff0c0'],
+        ['#cfe6ff', '#a8c8ff', '#e0f0ff', '#88aadd'],
+        ['#ffc8a0', '#ffa870', '#ffe0c0', '#ff9050']
+      ];
+      const palette = palettes[(seed || 0) % palettes.length];
+      for (let r = 0; r < rows; r++) {
+        const floorLit = rand() > 0.18;
+        for (let c = 0; c < cols; c++) {
+          const x = c * colW + (colW - winW) * 0.5;
+          const y = r * rowH + (rowH - winH) * 0.5;
+          const winLit = floorLit && rand() > 0.32;
+          if (winLit) {
+            ctx.fillStyle = palette[Math.floor(rand() * palette.length)];
+          } else {
+            ctx.fillStyle = '#1a1f2e';
+          }
+          ctx.fillRect(x, y, winW, winH);
         }
       }
+      ctx.fillStyle = 'rgba(255,255,255,0.05)';
+      for (let r = 0; r < rows; r++) ctx.fillRect(0, r * rowH + rowH - 1, 256, 1);
       const texture = new THREE.CanvasTexture(canvas);
-      configureTexture(texture, 1, 1, 1, THREE.SRGBColorSpace);
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.minFilter = THREE.LinearMipmapLinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+      texture.anisotropy = renderer.capabilities.getMaxAnisotropy ? renderer.capabilities.getMaxAnisotropy() : 1;
       return texture;
+    }
+
+    function makeTowerMaterial(width, height, depth, seed) {
+      const tex = createCityWindowTexture(seed);
+      const repeatX = Math.max(1, Math.round(width / 2.4));
+      const repeatY = Math.max(1, Math.round(height / 2.8));
+      tex.repeat.set(repeatX, repeatY);
+      const baseColors = [0x1f2a38, 0x222633, 0x2a2238, 0x252a30, 0x1a2030, 0x303040];
+      return new THREE.MeshStandardMaterial({
+        color: baseColors[seed % baseColors.length],
+        roughness: 0.78,
+        metalness: 0.22,
+        emissiveMap: tex,
+        emissive: 0xffffff,
+        emissiveIntensity: 0.55
+      });
     }
 
     function markRooftopBackground(mesh) {
@@ -4019,53 +4063,101 @@
     }
 
     function addRooftopSurroundingTowers(group, roof) {
-      const mats = [roof.city, roof.cityWarm, roof.cityBlue, roof.cityDark, roof.cityFar, roof.cityFarWarm, roof.cityFarBlue];
-      const accentMats = [roof.signPink, roof.signBlue, roof.signGreen, roof.signOrange];
       const sides = [
-        { axis: 'z', sign: -1, base: -ARENA_HALF_Z - 38, span: ARENA_HALF_X * 2 + 80, perpJitter: 22, count: 14 },
-        { axis: 'z', sign: 1,  base:  ARENA_HALF_Z + 38, span: ARENA_HALF_X * 2 + 80, perpJitter: 22, count: 14 },
-        { axis: 'x', sign: -1, base: -ARENA_HALF_X - 38, span: ARENA_HALF_Z * 2 + 80, perpJitter: 22, count: 12 },
-        { axis: 'x', sign: 1,  base:  ARENA_HALF_X + 38, span: ARENA_HALF_Z * 2 + 80, perpJitter: 22, count: 12 }
+        { axis: 'z', sign: -1, base: -ARENA_HALF_Z - 42, span: ARENA_HALF_X * 2 + 90, perpJitter: 28, count: 18 },
+        { axis: 'z', sign: 1,  base:  ARENA_HALF_Z + 42, span: ARENA_HALF_X * 2 + 90, perpJitter: 28, count: 18 },
+        { axis: 'x', sign: -1, base: -ARENA_HALF_X - 42, span: ARENA_HALF_Z * 2 + 90, perpJitter: 28, count: 14 },
+        { axis: 'x', sign: 1,  base:  ARENA_HALF_X + 42, span: ARENA_HALF_Z * 2 + 90, perpJitter: 28, count: 14 }
       ];
-      let seed = 1;
+      let seed = 7;
       const rand = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+      const baseY = -24;
+
+      const buildTower = (cx, cz, w, d, h, yaw, idx) => {
+        const mat = makeTowerMaterial(w, h, d, idx);
+        const body = new THREE.Mesh(geometries.box, mat);
+        body.position.set(cx, baseY + h * 0.5, cz);
+        body.scale.set(w, h, d);
+        body.rotation.y = yaw;
+        markRooftopBackground(body);
+        group.add(body);
+
+        const setbacks = 1 + Math.floor(rand() * 3);
+        let curW = w;
+        let curD = d;
+        let curTop = baseY + h;
+        for (let s = 0; s < setbacks; s++) {
+          curW *= 0.78;
+          curD *= 0.78;
+          const stepH = 4 + rand() * 8;
+          const stepMat = makeTowerMaterial(curW, stepH, curD, idx + 100 + s);
+          const step = new THREE.Mesh(geometries.box, stepMat);
+          step.position.set(cx, curTop + stepH * 0.5, cz);
+          step.scale.set(curW, stepH, curD);
+          step.rotation.y = yaw;
+          markRooftopBackground(step);
+          group.add(step);
+          curTop += stepH;
+        }
+
+        const capH = 0.8 + rand() * 0.8;
+        const cap = new THREE.Mesh(geometries.box, roof.steel);
+        cap.position.set(cx, curTop + capH * 0.5, cz);
+        cap.scale.set(curW * 0.95, capH, curD * 0.95);
+        cap.rotation.y = yaw;
+        markRooftopBackground(cap);
+        group.add(cap);
+
+        if (rand() < 0.55) {
+          const antH = 3 + rand() * 8;
+          const ant = new THREE.Mesh(geometries.box, roof.steel);
+          ant.position.set(cx, curTop + capH + antH * 0.5, cz);
+          ant.scale.set(0.18, antH, 0.18);
+          ant.rotation.y = yaw;
+          markRooftopBackground(ant);
+          group.add(ant);
+        }
+
+        if (rand() < 0.4) {
+          const blockW = curW * (0.3 + rand() * 0.3);
+          const blockD = curD * (0.3 + rand() * 0.3);
+          const blockH = 1.2 + rand() * 2;
+          const block = new THREE.Mesh(geometries.box, roof.steel);
+          const ox = (rand() - 0.5) * curW * 0.3;
+          const oz = (rand() - 0.5) * curD * 0.3;
+          block.position.set(cx + ox, curTop + capH + blockH * 0.5, cz + oz);
+          block.scale.set(blockW, blockH, blockD);
+          block.rotation.y = yaw;
+          markRooftopBackground(block);
+          group.add(block);
+        }
+      };
+
+      let towerIdx = 0;
       sides.forEach((side) => {
         for (let i = 0; i < side.count; i++) {
           const t = (i + 0.5) / side.count;
-          const along = -side.span * 0.5 + t * side.span + (rand() - 0.5) * 6;
+          const along = -side.span * 0.5 + t * side.span + (rand() - 0.5) * 5;
           const perpExtra = side.sign * (rand() * side.perpJitter);
           const x = side.axis === 'x' ? side.base + perpExtra : along;
           const z = side.axis === 'z' ? side.base + perpExtra : along;
-          const w = 9 + rand() * 8;
-          const d = 9 + rand() * 8;
-          const h = 32 + rand() * 76;
-          const baseY = -22;
-          const yaw = (rand() - 0.5) * 0.18;
-          const mat = mats[(i + (side.axis === 'x' ? 3 : 0)) % mats.length];
-          addRooftopBackdropBox(group, x, baseY + h * 0.5, z, w, h, d, mat, yaw);
-          const capH = 1.2 + rand() * 1.4;
-          addRooftopBackdropBox(group, x, baseY + h + capH * 0.5, z, w * 0.78, capH, d * 0.78, roof.steel, yaw);
-          if (rand() < 0.45) {
-            const antH = 4 + rand() * 9;
-            addRooftopBackdropBox(group, x, baseY + h + capH + antH * 0.5, z, 0.35, antH, 0.35, roof.roadLight, yaw);
-            const tip = new THREE.Mesh(geometries.sphere, accentMats[i % accentMats.length]);
-            tip.position.set(x, baseY + h + capH + antH + 0.4, z);
-            tip.scale.setScalar(0.5);
-            markRooftopBackground(tip);
-            group.add(tip);
+          const archetype = rand();
+          let w, d, h;
+          if (archetype < 0.35) {
+            w = 7 + rand() * 4;
+            d = 7 + rand() * 4;
+            h = 60 + rand() * 50;
+          } else if (archetype < 0.7) {
+            w = 11 + rand() * 7;
+            d = 11 + rand() * 7;
+            h = 35 + rand() * 35;
+          } else {
+            w = 16 + rand() * 8;
+            d = 16 + rand() * 8;
+            h = 22 + rand() * 22;
           }
-          if (rand() < 0.35) {
-            const signH = 2.4 + rand() * 2.6;
-            const signW = w * (0.7 + rand() * 0.4);
-            const signY = baseY + h * (0.55 + rand() * 0.3);
-            const signMat = accentMats[(i + 2) % accentMats.length];
-            const sx = side.axis === 'z' ? signW : 0.4;
-            const sz = side.axis === 'z' ? 0.4 : signW;
-            const offset = (side.axis === 'z' ? d : w) * 0.5 + 0.3;
-            const sxPos = side.axis === 'x' ? x - side.sign * offset : x;
-            const szPos = side.axis === 'z' ? z - side.sign * offset : z;
-            addRooftopBackdropBox(group, sxPos, signY, szPos, sx, signH, sz, signMat, yaw);
-          }
+          const yaw = (rand() - 0.5) * 0.22;
+          buildTower(x, z, w, d, h, yaw, towerIdx++);
         }
       });
     }
