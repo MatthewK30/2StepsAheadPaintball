@@ -2197,6 +2197,7 @@
     const DEFAULT_SKIN = SKINS[0];
     const SELECTED_SKIN = readSelectedSkin();
     let matchBots = readMatchBots();
+    let extraBots = []; // ally + 2nd-enemy bots for 2v2
     const multiplayer = {
       socket: null,
       room: ROOM_CODE,
@@ -2545,6 +2546,7 @@
     const audio = createAudio();
     camera.add(gun.group);
     createAiModel(MULTIPLAYER ? OPPONENT_TEAM : 'blue');
+    setupExtraBots();
     createPlayerShadowModel();
     applyMatchSettings();
     if (PREVIEW_MODE) {
@@ -2668,6 +2670,7 @@
     function syncMatchBots(bots) {
       matchBots = normalizeMatchBots(bots);
       try { sessionStorage.setItem('paintballBots', JSON.stringify(matchBots)); } catch (_) {}
+      setupExtraBots();
     }
 
     function opposingBot() {
@@ -5620,6 +5623,118 @@
       ai.group.position.copy(ai.position);
     }
 
+    function buildExtraBotGroup(team, skin) {
+      const teamMats = getTeamMaterials(team || 'red');
+      const group = new THREE.Group();
+      const root = new THREE.Group();
+      root.name = 'extraBotRoot';
+      const addM = (geo, mat, x, y, z, sx, sy, sz, rx, ry, rz, parent) => {
+        const m = new THREE.Mesh(geo, mat);
+        m.position.set(x, y, z);
+        m.scale.set(sx, sy, sz);
+        if (rx || ry || rz) m.rotation.set(rx || 0, ry || 0, rz || 0);
+        m.userData.coverCull = true;
+        m.frustumCulled = false;
+        shadowMesh(m, !mat.transparent, true);
+        (parent || root).add(m);
+        return m;
+      };
+      // torso
+      addM(geometries.box, teamMats.primary, 0, 0.9, 0, 0.38, 0.58, 0.28, 0,0,0);
+      // head
+      const headGeo = geometries.sphere || new THREE.SphereGeometry(0.14, 8, 6);
+      addM(headGeo, teamMats.primary, 0, 1.54, 0, 0.22, 0.24, 0.22, 0,0,0);
+      // legs
+      addM(geometries.box, teamMats.dark, -0.09, 0.36, 0, 0.14, 0.44, 0.2, 0,0,0);
+      addM(geometries.box, teamMats.dark,  0.09, 0.36, 0, 0.14, 0.44, 0.2, 0,0,0);
+      // arms
+      addM(geometries.box, teamMats.dark, -0.27, 0.9, 0, 0.12, 0.46, 0.18, 0,0,0.18);
+      addM(geometries.box, teamMats.dark,  0.27, 0.9, 0, 0.12, 0.46, 0.18, 0,0,-0.18);
+      // visor
+      const visorMat = skin ? createSkinVisorMaterial(skin) : teamMats.rim;
+      addM(geometries.box, visorMat, 0, 1.56, -0.14, 0.17, 0.09, 0.04, 0,0,0);
+      group.add(root);
+      group.visible = false;
+      scene.add(group);
+      return group;
+    }
+
+    function setupExtraBots() {
+      // Remove previous extra bot groups from scene
+      extraBots.forEach(b => scene.remove(b.group));
+      extraBots = [];
+      if (GAME_MODE !== '2v2') return;
+      // Build slots: ally (MY_TEAM) and 2nd enemy (OPPONENT_TEAM)
+      const botDefs = [
+        { role: 'ally', team: MY_TEAM, spawnOffset: new THREE.Vector3(0, 0, 5) },
+        { role: 'enemy2', team: OPPONENT_TEAM, spawnOffset: new THREE.Vector3(0, 0, -5) },
+      ];
+      botDefs.forEach(def => {
+        const botData = matchBots.find(b => b.team === def.team && extraBots.every(e => e.matchBot !== b));
+        const group = buildExtraBotGroup(def.team, botData ? botData.skin : null);
+        const spawnX = def.team === MY_TEAM
+          ? (MY_TEAM === 'blue' ? 24 : -24)
+          : (MY_TEAM === 'blue' ? -24 : 24);
+        const spawnPos = new THREE.Vector3(spawnX, 0, def.spawnOffset.z);
+        group.position.copy(spawnPos);
+        extraBots.push({
+          group,
+          position: spawnPos.clone(),
+          target: spawnPos.clone(),
+          team: def.team,
+          role: def.role,
+          matchBot: botData || null,
+          visible: false,
+          patrolTimer: Math.random() * 3,
+        });
+      });
+    }
+
+    function updateExtraBots(dt) {
+      if (!GAME_MODE || GAME_MODE !== '2v2' || extraBots.length === 0) return;
+      if (!state.running || state.phase !== 'active') return;
+      for (let i = 0; i < extraBots.length; i++) {
+        const bot = extraBots[i];
+        if (!bot.visible) {
+          bot.group.visible = false;
+          continue;
+        }
+        bot.group.visible = true;
+        // Simple patrol: pick new target every few seconds
+        bot.patrolTimer -= dt;
+        if (bot.patrolTimer <= 0) {
+          bot.patrolTimer = 2.5 + Math.random() * 2;
+          const spawnX = bot.team === MY_TEAM
+            ? (MY_TEAM === 'blue' ? 24 : -24)
+            : (MY_TEAM === 'blue' ? -24 : 24);
+          bot.target.set(
+            spawnX + (Math.random() - 0.5) * 8,
+            0,
+            (Math.random() - 0.5) * 12
+          );
+        }
+        // Move toward target
+        const dx = bot.target.x - bot.position.x;
+        const dz = bot.target.z - bot.position.z;
+        const dist = Math.sqrt(dx * dx + dz * dz);
+        const speed = 2.2;
+        if (dist > 0.2) {
+          bot.position.x += (dx / dist) * speed * dt;
+          bot.position.z += (dz / dist) * speed * dt;
+          bot.group.rotation.y = Math.atan2(dx, dz);
+        }
+        bot.group.position.copy(bot.position);
+      }
+    }
+
+    function showExtraBots() {
+      extraBots.forEach(b => { b.visible = true; b.group.visible = true; });
+    }
+
+    function hideExtraBots() {
+      extraBots.forEach(b => { b.visible = false; b.group.visible = false; });
+    }
+
     function createPlayerShadowModel() {
       const invisible = new THREE.MeshStandardMaterial({ color: 0x000000, roughness: 1, metalness: 0 });
       invisible.colorWrite = false;
@@ -6516,6 +6631,7 @@
     }
 
     function startRound() {
+      hideExtraBots();
       resetCameraEffects();
       state.phase = 'countdown';
       state.countdownClock = COUNTDOWN_TIME;
@@ -6709,6 +6825,7 @@
       updateClouds(dt);
       updateSpectators();
       updateRemotePlayer(dt);
+      updateExtraBots(dt);
       if (state.aiEliminated) updateAiVisual(dt, false, false);
       if (state.phase === 'countdown') updateCountdown(dt);
       else if (state.phase === 'active') updateActiveRound(dt);
@@ -6745,6 +6862,7 @@
         state.readyClock = READY_DELAY;
         showCenter('READY');
         audio.roundStart();
+        showExtraBots();
       } else {
         showCenter(String(Math.ceil(state.countdownClock)));
       }
