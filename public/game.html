@@ -4659,21 +4659,46 @@
 
     function addGhostTownDesertSurround(group) {
       const sandMat = new THREE.MeshStandardMaterial({ color: 0xd9b377, roughness: 1, metalness: 0 });
-      const desert = new THREE.Mesh(new THREE.PlaneGeometry(900, 900, 32, 32), sandMat);
-      desert.rotation.x = -Math.PI / 2;
-      desert.position.y = -0.05;
-      const dpos = desert.geometry.attributes.position;
+      const desertGeo = new THREE.PlaneGeometry(900, 900, 64, 64);
+      const dpos = desertGeo.attributes.position;
       for (let i = 0; i < dpos.count; i++) {
         const x = dpos.getX(i);
         const y = dpos.getY(i);
-        const inArena = Math.abs(x) < ARENA_HALF_X + 8 && Math.abs(y) < ARENA_HALF_Z + 8;
+        const inArena = Math.abs(x) < ARENA_HALF_X + 12 && Math.abs(y) < ARENA_HALF_Z + 12;
         const dune = inArena ? 0 : Math.sin(x * 0.04) * 0.8 + Math.cos(y * 0.05) * 0.7 + Math.sin((x + y) * 0.018) * 1.2;
         dpos.setZ(i, dune);
       }
-      desert.geometry.computeVertexNormals();
+      desertGeo.computeVertexNormals();
+      const desert = new THREE.Mesh(desertGeo, sandMat);
+      desert.rotation.x = -Math.PI / 2;
+      desert.position.y = -0.4;
       desert.receiveShadow = false;
       desert.castShadow = false;
       group.add(desert);
+
+      const buildMountainGeo = (baseRadius, height, segments, seed) => {
+        const geo = new THREE.ConeGeometry(baseRadius, height, segments, 4);
+        const pos = geo.attributes.position;
+        let s = seed;
+        const rand = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+        for (let i = 0; i < pos.count; i++) {
+          const px = pos.getX(i);
+          const py = pos.getY(i);
+          const pz = pos.getZ(i);
+          const isApex = py > height * 0.45;
+          const isBase = py < -height * 0.45;
+          if (isBase) continue;
+          const ridge = Math.sin(Math.atan2(pz, px) * (3 + (seed % 4)) + py * 0.18) * 0.18;
+          const noise = (rand() - 0.5) * 0.22;
+          const tilt = (rand() - 0.5) * 0.14;
+          const factor = isApex ? 0.4 + tilt : 1 + ridge + noise;
+          pos.setX(i, px * factor);
+          pos.setZ(i, pz * factor);
+          if (isApex) pos.setY(i, py + (rand() - 0.5) * height * 0.12);
+        }
+        geo.computeVertexNormals();
+        return geo;
+      };
 
       const mountainNear = new THREE.MeshStandardMaterial({ color: 0xa8794a, roughness: 1, metalness: 0, flatShading: true });
       const mountainMid = new THREE.MeshStandardMaterial({ color: 0x8a6244, roughness: 1, metalness: 0, flatShading: true });
@@ -4681,15 +4706,17 @@
 
       const buildRange = (radius, count, baseY, minH, maxH, mat, jitter) => {
         for (let i = 0; i < count; i++) {
-          const ang = (i / count) * Math.PI * 2 + (i * 0.13) % 1.2;
+          const ang = (i / count) * Math.PI * 2 + ((i * 0.13) % 1.2);
           const r = radius + (((i * 17) % 11) - 5) * jitter;
           const x = Math.cos(ang) * r;
           const z = Math.sin(ang) * r;
           const h = minH + ((i * 23) % 100) / 100 * (maxH - minH);
-          const w = h * (0.9 + ((i * 7) % 7) / 14);
-          const peak = new THREE.Mesh(new THREE.ConeGeometry(w, h, 5 + (i % 3), 1), mat);
-          peak.position.set(x, baseY + h * 0.5, z);
+          const w = h * (0.85 + ((i * 7) % 9) / 12);
+          const segs = 10 + (i % 4) * 2;
+          const peak = new THREE.Mesh(buildMountainGeo(w, h, segs, 17 + i * 31), mat);
+          peak.position.set(x, baseY + h * 0.5 - 0.6, z);
           peak.rotation.y = (i * 0.41) % (Math.PI * 2);
+          peak.scale.set(1 + ((i * 5) % 7) * 0.04, 1, 0.85 + ((i * 11) % 9) * 0.045);
           peak.castShadow = false;
           peak.receiveShadow = false;
           group.add(peak);
