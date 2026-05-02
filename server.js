@@ -324,7 +324,14 @@ io.on('connection', (socket) => {
   socket.on('toggle_bot_slot', ({ code, slotIndex, difficulty, action } = {}) => {
     code = normalizeCode(code)
     const room = rooms[code]
-    if (!room || room.host !== socket.id || room.state !== 'lobby' || room.gameMode !== '2v2') return
+    if (!room || room.state !== 'lobby' || room.gameMode !== '2v2') return
+    // Resilient host check: accept by socket.id OR by matching username of the stored host
+    const hostPlayer = room.players.find(p => p.id === room.host)
+    const me = room.players.find(p => p.id === socket.id)
+    const isHost = socket.id === room.host || (me && hostPlayer && me.username === hostPlayer.username)
+    if (!isHost) { socket.emit('bot_slot_error', 'Only the host can add or remove bots'); return }
+    // Keep room.host in sync in case socket reconnected
+    if (socket.id !== room.host && me) room.host = socket.id
     slotIndex = normalizeSlotIndex(slotIndex)
     if (slotIndex < 0) return
     pruneBotConflicts(room)
@@ -341,6 +348,7 @@ io.on('connection', (socket) => {
         slotIndex,
         team: slotTeam(slotIndex),
         difficulty: normalizeBotDifficulty(difficulty),
+        skinId: skins[idx].id,
         skinFile: skins[idx].file,
         skinName: skins[idx].name
       })

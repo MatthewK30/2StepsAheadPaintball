@@ -5628,7 +5628,7 @@
     function makeExtraBotAiInst(team, spawnPos) {
       const group = new THREE.Group();
       group.visible = false;
-      scene.add(group);
+      if (!group.parent) scene.add(group);
       return {
         group,
         body: null,
@@ -5942,6 +5942,8 @@
       extraBots.forEach(b => {
         b.visible = true;
         b.group.visible = !b.eliminated;
+        // Restore any meshes that were hidden by cover-cull at spawn time
+        restoreCoverCullVisibility(b.group);
       });
     }
 
@@ -6867,13 +6869,15 @@
       state.aiEliminated = false;
       state.spectatingAlly = false;
       state.lastRoundMessage = '';
-      // Restore camera rotation order and clear any spectate drift
-      camera.rotation.order = 'YXZ';
-      camera.rotation.set(0, 0, 0);
+      // Re-attach camera to player.root if it was detached for ally spectate
+      if (camera.parent !== player.root) player.root.attach(camera);
       player.yaw = MULTIPLAYER && MY_TEAM === 'blue' ? Math.PI / 2 : -Math.PI / 2;
       player.pitch = 0;
       player.root.position.copy(player.spawn);
       player.root.position.y = 0;
+      player.root.rotation.y = player.yaw;
+      camera.rotation.order = 'YXZ';
+      camera.rotation.set(0, 0, 0);
       player.height = STAND_HEIGHT;
       player.targetHeight = STAND_HEIGHT;
       player.peek = 0;
@@ -6936,6 +6940,7 @@
           inst.group.rotation.set(0, 0, 0);
           inst.group.scale.set(1, 1, 1);
           restoreCoverCullVisibility(inst.group);
+          if (!inst.group.parent) scene.add(inst.group);
           inst.group.visible = false;
           if (inst.splat) inst.splat.visible = false;
           if (inst.limbs && inst.limbs.splat2) inst.limbs.splat2.visible = false;
@@ -7162,6 +7167,8 @@
     }
 
     function updatePlayer(dt) {
+      // Don't touch camera at all while ally spectate is running — it owns the camera
+      if (state.spectatingAlly) return;
       player.diveCooldown = Math.max(0, player.diveCooldown - dt);
       if (!player.sliding) player.slideCooldown = Math.max(0, player.slideCooldown - dt);
       const diveProgress = player.diving ? clamp(player.diveElapsed / DIVE_DURATION, 0, 1) : 0;
@@ -7194,11 +7201,8 @@
         player.sprinting = false;
         player.bobOffset = 0;
         player.sprintBlend = 0;
-        // Don't touch camera while ally spectate is running — it handles camera itself
-        if (!state.spectatingAlly) {
-          if (deathCam.active) updateDeathCamera(dt);
-          else camera.position.set(player.peek, player.height, 0);
-        }
+        if (deathCam.active) updateDeathCamera(dt);
+        else camera.position.set(player.peek, player.height, 0);
         audio.updateRattle(false, false);
         return;
       }
@@ -8999,15 +9003,16 @@
         }
         return;
       }
-      // Position camera behind and above the ally, facing the same direction
+      // Detach camera from player.root so we can place it at world coordinates directly
+      if (camera.parent !== scene) scene.attach(camera);
       const yaw = ally.group.rotation.y;
+      // Place camera behind and slightly above the ally bot (world space)
       const behindX = ally.position.x + Math.sin(yaw) * 2.4;
       const behindZ = ally.position.z + Math.cos(yaw) * 2.4;
       camera.position.set(behindX, ally.position.y + 1.55, behindZ);
-      // Use manual yaw/pitch instead of lookAt to keep Euler order intact
       camera.rotation.order = 'YXZ';
-      camera.rotation.x = 0.12; // slight downward tilt
-      camera.rotation.y = yaw + Math.PI; // face toward ally
+      camera.rotation.x = 0.12;
+      camera.rotation.y = yaw + Math.PI;
       camera.rotation.z = 0;
     }
 

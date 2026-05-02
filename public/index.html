@@ -1482,6 +1482,7 @@
         state.socket.on('switch_error', (message) => setError(ui.lobbyError, message))
         state.socket.on('settings_error', (message) => setError(ui.lobbyError, message))
         state.socket.on('start_error', (message) => setError(ui.lobbyError, message))
+        state.socket.on('bot_slot_error', (message) => setError(ui.lobbyError, message))
         state.socket.on('player_disconnected', () => setError(ui.lobbyError, 'Player disconnected'))
         state.socket.on('game_start', (payload) => startGame(payload))
       }
@@ -1759,7 +1760,7 @@
       }
 
       function toggleBotSlot(slotIndex, difficulty, action) {
-        if (!state.code || !isHost(state.room)) return
+        if (!state.code || !state.socket) return
         state.socket.emit('toggle_bot_slot', { code: state.code, slotIndex, difficulty, action })
       }
 
