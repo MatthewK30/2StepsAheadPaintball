@@ -4036,92 +4036,6 @@
       }
     }
 
-    let cyberTowerMatsCache = null;
-    function getCyberTowerMaterials() {
-      if (cyberTowerMatsCache) return cyberTowerMatsCache;
-      const buildTex = () => {
-        const c = document.createElement('canvas');
-        c.width = c.height = 128;
-        const ctx = c.getContext('2d');
-        ctx.fillStyle = '#0a0c1a';
-        ctx.fillRect(0, 0, 128, 128);
-        const cols = 6, rows = 10;
-        const cw = 128 / cols, rh = 128 / rows;
-        const lit = ['#ffd680', '#cfe6ff', '#ffb070', '#a890ff', '#ffe0a8'];
-        for (let r = 0; r < rows; r++) {
-          const flit = Math.random() > 0.34;
-          for (let cI = 0; cI < cols; cI++) {
-            const on = flit && Math.random() > 0.4;
-            ctx.fillStyle = on ? lit[Math.floor(Math.random() * lit.length)] : '#181a28';
-            ctx.fillRect(cI * cw + cw * 0.2, r * rh + rh * 0.18, cw * 0.6, rh * 0.64);
-          }
-        }
-        const t = new THREE.CanvasTexture(c);
-        t.wrapS = t.wrapT = THREE.RepeatWrapping;
-        t.colorSpace = THREE.SRGBColorSpace;
-        return t;
-      };
-      const baseColors = [0x1a1c2c, 0x231f33, 0x1c2238, 0x2a2238];
-      cyberTowerMatsCache = baseColors.map((color) => {
-        const tex = buildTex();
-        tex.repeat.set(2, 4);
-        return new THREE.MeshStandardMaterial({
-          color,
-          roughness: 0.7,
-          metalness: 0.25,
-          emissiveMap: tex,
-          emissive: 0xffffff,
-          emissiveIntensity: 0.7
-        });
-      });
-      return cyberTowerMatsCache;
-    }
-
-    function addRooftopBigTowers(group, roof) {
-      const mats = getCyberTowerMaterials();
-      const sides = [
-        { axis: 'z', sign: -1, base: -ARENA_HALF_Z - 46, count: 9 },
-        { axis: 'z', sign: 1,  base:  ARENA_HALF_Z + 46, count: 9 },
-        { axis: 'x', sign: -1, base: -ARENA_HALF_X - 46, count: 7 },
-        { axis: 'x', sign: 1,  base:  ARENA_HALF_X + 46, count: 7 }
-      ];
-      let s = 7;
-      const rand = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
-      const baseY = -22;
-      let idx = 0;
-      sides.forEach((side) => {
-        const span = side.axis === 'z' ? ARENA_HALF_X * 2 + 70 : ARENA_HALF_Z * 2 + 70;
-        for (let i = 0; i < side.count; i++) {
-          const t = (i + 0.5) / side.count;
-          const along = -span * 0.5 + t * span + (rand() - 0.5) * 6;
-          const perp = side.sign * (8 + rand() * 22);
-          const x = side.axis === 'x' ? side.base + perp : along;
-          const z = side.axis === 'z' ? side.base + perp : along;
-          const archetype = rand();
-          let w, d, h;
-          if (archetype < 0.4) { w = 9 + rand() * 3; d = 9 + rand() * 3; h = 55 + rand() * 35; }
-          else if (archetype < 0.78) { w = 13 + rand() * 5; d = 13 + rand() * 5; h = 32 + rand() * 22; }
-          else { w = 17 + rand() * 6; d = 17 + rand() * 6; h = 22 + rand() * 14; }
-          const yaw = (rand() - 0.5) * 0.16;
-          const body = new THREE.Mesh(geometries.box, mats[idx % mats.length]);
-          body.position.set(x, baseY + h * 0.5, z);
-          body.scale.set(w, h, d);
-          body.rotation.y = yaw;
-          markRooftopBackground(body);
-          group.add(body);
-          if (idx % 4 === 0) {
-            const cap = new THREE.Mesh(geometries.box, roof.steel);
-            cap.position.set(x, baseY + h + 0.4, z);
-            cap.scale.set(w * 0.92, 0.8, d * 0.92);
-            cap.rotation.y = yaw;
-            markRooftopBackground(cap);
-            group.add(cap);
-          }
-          idx++;
-        }
-      });
-    }
-
     function addRooftopOwnTowerDrop(group, roof) {
       const facadeY = -29;
       addRooftopBackdropBox(group, 0, facadeY, -ARENA_HALF_Z - 2.65, ARENA_HALF_X * 2 + 8, 58, 2.9, roof.cityBlue, 0);
@@ -4320,7 +4234,6 @@
       markRooftopBackground(freeway);
       group.add(freeway);
       addRooftopDistantSkyline(group, roof);
-      addRooftopBigTowers(group, roof);
       for (let i = 0; i < 18; i++) {
         const x = -62 + (i * 7.3);
         addRooftopPalm(group, roof, x, -47 - (i % 3) * 3, 4.2 + (i % 4) * 0.45);
