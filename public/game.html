@@ -3943,41 +3943,31 @@
 
     function createCityWindowTexture(seed) {
       const canvas = document.createElement('canvas');
-      canvas.width = 256;
-      canvas.height = 256;
+      const size = 64;
+      canvas.width = size;
+      canvas.height = size;
       const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#0d0f18';
-      ctx.fillRect(0, 0, 256, 256);
+      ctx.fillStyle = '#1a1828';
+      ctx.fillRect(0, 0, size, size);
       let s = seed || 1;
       const rand = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
-      const cols = 16;
-      const rows = 24;
-      const colW = 256 / cols;
-      const rowH = 256 / rows;
-      const winW = colW * 0.55;
-      const winH = rowH * 0.62;
       const palettes = [
-        ['#ffd07a', '#ffba4a', '#ffe6a8', '#fff0c0'],
-        ['#cfe6ff', '#a8c8ff', '#e0f0ff', '#88aadd'],
-        ['#ffc8a0', '#ffa870', '#ffe0c0', '#ff9050']
+        ['#ffe6a8', '#ffc870', '#fff0c0'],
+        ['#dceaff', '#a8c0ff', '#c8d4f0'],
+        ['#ffd0b0', '#ffae88', '#ffc8a0']
       ];
       const palette = palettes[(seed || 0) % palettes.length];
-      for (let r = 0; r < rows; r++) {
-        const floorLit = rand() > 0.18;
-        for (let c = 0; c < cols; c++) {
-          const x = c * colW + (colW - winW) * 0.5;
-          const y = r * rowH + (rowH - winH) * 0.5;
-          const winLit = floorLit && rand() > 0.32;
-          if (winLit) {
-            ctx.fillStyle = palette[Math.floor(rand() * palette.length)];
-          } else {
-            ctx.fillStyle = '#1a1f2e';
-          }
-          ctx.fillRect(x, y, winW, winH);
-        }
-      }
-      ctx.fillStyle = 'rgba(255,255,255,0.05)';
-      for (let r = 0; r < rows; r++) ctx.fillRect(0, r * rowH + rowH - 1, 256, 1);
+      const lit = rand() > 0.42;
+      const winColor = lit ? palette[Math.floor(rand() * palette.length)] : '#262238';
+      const padX = 14;
+      const padY = 8;
+      ctx.fillStyle = winColor;
+      ctx.fillRect(padX, padY, size - padX * 2, size - padY * 2);
+      ctx.fillStyle = 'rgba(0,0,0,0.32)';
+      ctx.fillRect(padX, padY, size - padX * 2, 2);
+      ctx.fillRect(padX, size - padY - 2, size - padX * 2, 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.18)';
+      ctx.fillRect(padX + 2, padY + 2, 4, size - padY * 2 - 4);
       const texture = new THREE.CanvasTexture(canvas);
       texture.wrapS = THREE.RepeatWrapping;
       texture.wrapT = THREE.RepeatWrapping;
@@ -3990,17 +3980,19 @@
 
     function makeTowerMaterial(width, height, depth, seed) {
       const tex = createCityWindowTexture(seed);
-      const repeatX = Math.max(1, Math.round(width / 2.4));
-      const repeatY = Math.max(1, Math.round(height / 2.8));
+      const repeatX = Math.max(2, Math.round(width / 3.2));
+      const repeatY = Math.max(3, Math.round(height / 3.6));
       tex.repeat.set(repeatX, repeatY);
-      const baseColors = [0x1f2a38, 0x222633, 0x2a2238, 0x252a30, 0x1a2030, 0x303040];
+      const baseColors = [0x2a2438, 0x322c40, 0x261f3a, 0x2c2438, 0x352a44, 0x251f30];
       return new THREE.MeshStandardMaterial({
         color: baseColors[seed % baseColors.length],
-        roughness: 0.78,
-        metalness: 0.22,
+        roughness: 0.32,
+        metalness: 0.78,
+        envMap: environmentMap,
+        envMapIntensity: 1.4,
         emissiveMap: tex,
-        emissive: 0xffffff,
-        emissiveIntensity: 0.55
+        emissive: 0xffd49a,
+        emissiveIntensity: 0.45
       });
     }
 
