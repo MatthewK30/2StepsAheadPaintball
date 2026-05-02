@@ -3772,6 +3772,7 @@
       addSponsorBanners(group);
       addSpeedballEnvironmentDetails(group);
       addRefMarkers(group);
+      addSpeedballSurround(group);
 
       const sideBunkers = [
         [-24, -13, 'small', 1.7, 2.5, 0], [-24, 13, 'pyramid', 2.5, 2.6, 0.15],
@@ -5676,6 +5677,183 @@
         for (let i = -60; i <= 60; i += 10) {
           addBox(group, i, 0.85, z, 0.2, 1.5, 1.4, materials.darkGrey, null, 0);
         }
+      }
+    }
+
+    function addSpeedballSurround(group) {
+      let s = 31;
+      const rand = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+
+      const lawnMat = new THREE.MeshStandardMaterial({ color: 0x7ac050, roughness: 1, metalness: 0 });
+      const lawnGeo = new THREE.PlaneGeometry(900, 900, 64, 64);
+      const lpos = lawnGeo.attributes.position;
+      for (let i = 0; i < lpos.count; i++) {
+        const x = lpos.getX(i);
+        const y = lpos.getY(i);
+        const inArena = Math.abs(x) < ARENA_HALF_X + 22 && Math.abs(y) < ARENA_HALF_Z + 22;
+        const roll = inArena ? 0 : Math.sin(x * 0.038) * 0.55 + Math.cos(y * 0.046) * 0.5 + Math.sin((x + y) * 0.02) * 0.7;
+        lpos.setZ(i, roll);
+      }
+      lawnGeo.computeVertexNormals();
+      const lawn = new THREE.Mesh(lawnGeo, lawnMat);
+      lawn.rotation.x = -Math.PI / 2;
+      lawn.position.y = -0.5;
+      group.add(lawn);
+
+      const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5a3a22, roughness: 1, metalness: 0 });
+      const foliageMats = [
+        new THREE.MeshStandardMaterial({ color: 0x2f7838, roughness: 1, metalness: 0, flatShading: true }),
+        new THREE.MeshStandardMaterial({ color: 0x3f8e48, roughness: 1, metalness: 0, flatShading: true }),
+        new THREE.MeshStandardMaterial({ color: 0x528a3a, roughness: 1, metalness: 0, flatShading: true }),
+        new THREE.MeshStandardMaterial({ color: 0x4a7d34, roughness: 1, metalness: 0, flatShading: true })
+      ];
+      const treeRings = [{ r: 65, count: 32 }, { r: 95, count: 38 }, { r: 135, count: 44 }];
+      treeRings.forEach((ring) => {
+        for (let i = 0; i < ring.count; i++) {
+          const ang = (i / ring.count) * Math.PI * 2 + rand() * 0.4;
+          const r = ring.r + (rand() - 0.5) * 16;
+          const tx = Math.cos(ang) * r;
+          const tz = Math.sin(ang) * r;
+          if (Math.abs(tx) < ARENA_HALF_X + 18 && Math.abs(tz) < ARENA_HALF_Z + 18) continue;
+          const h = 5 + rand() * 7;
+          const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.55, h, 8), trunkMat);
+          trunk.position.set(tx, h * 0.5, tz);
+          group.add(trunk);
+          const fmat = foliageMats[i % foliageMats.length];
+          const fs = 2.2 + rand() * 2;
+          const cone = new THREE.Mesh(new THREE.ConeGeometry(fs, fs * 1.8, 9), fmat);
+          cone.position.set(tx, h + fs * 0.7, tz);
+          group.add(cone);
+          if (rand() < 0.4) {
+            const top = new THREE.Mesh(new THREE.ConeGeometry(fs * 0.7, fs * 1.4, 9), fmat);
+            top.position.set(tx, h + fs * 1.5, tz);
+            group.add(top);
+          }
+        }
+      });
+
+      const hillMat = new THREE.MeshStandardMaterial({ color: 0x5b8a4a, roughness: 1, metalness: 0, flatShading: true });
+      const hillFarMat = new THREE.MeshStandardMaterial({ color: 0x7a98a4, roughness: 1, metalness: 0, flatShading: true, transparent: true, opacity: 0.78 });
+      const buildHillGeo = (radius, height, segs, seed) => {
+        const geo = new THREE.ConeGeometry(radius, height, segs, 3);
+        const pos = geo.attributes.position;
+        let ss = seed;
+        const r2 = () => { ss = (ss * 9301 + 49297) % 233280; return ss / 233280; };
+        for (let i = 0; i < pos.count; i++) {
+          const px = pos.getX(i);
+          const py = pos.getY(i);
+          const pz = pos.getZ(i);
+          if (py < -height * 0.45) continue;
+          const factor = 1 + (r2() - 0.5) * 0.18 + Math.sin(Math.atan2(pz, px) * 3 + py * 0.2) * 0.12;
+          pos.setX(i, px * factor);
+          pos.setZ(i, pz * factor);
+        }
+        geo.computeVertexNormals();
+        return geo;
+      };
+      const hillRanges = [
+        { r: 175, count: 18, baseY: -2, minH: 18, maxH: 32, mat: hillMat },
+        { r: 240, count: 22, baseY: -4, minH: 28, maxH: 50, mat: hillFarMat }
+      ];
+      hillRanges.forEach((range) => {
+        for (let i = 0; i < range.count; i++) {
+          const ang = (i / range.count) * Math.PI * 2 + rand() * 0.3;
+          const r = range.r + (rand() - 0.5) * 18;
+          const x = Math.cos(ang) * r;
+          const z = Math.sin(ang) * r;
+          const h = range.minH + rand() * (range.maxH - range.minH);
+          const w = h * (1.2 + rand() * 0.6);
+          const hill = new THREE.Mesh(buildHillGeo(w, h, 12, 7 + i * 23), range.mat);
+          hill.position.set(x, range.baseY + h * 0.5 - 0.6, z);
+          hill.scale.set(1 + rand() * 0.3, 1, 1 + rand() * 0.3);
+          group.add(hill);
+        }
+      });
+
+      const tentColors = [0xc83a3a, 0x2a6cd8, 0xe8c83a, 0xffffff, 0x35a85a, 0xd84a8a];
+      for (let i = 0; i < 16; i++) {
+        const ang = (i / 16) * Math.PI * 2 + 0.18;
+        const r = 50 + rand() * 8;
+        const tx = Math.cos(ang) * r;
+        const tz = Math.sin(ang) * r;
+        if (Math.abs(tx) < ARENA_HALF_X + 18 && Math.abs(tz) < ARENA_HALF_Z + 18) continue;
+        const tentMat = new THREE.MeshStandardMaterial({ color: tentColors[i % tentColors.length], roughness: 0.7, metalness: 0.05 });
+        const roof = new THREE.Mesh(new THREE.ConeGeometry(2.6, 1.6, 4), tentMat);
+        roof.position.set(tx, 2.6, tz);
+        roof.rotation.y = Math.PI / 4 + rand() * 0.3;
+        group.add(roof);
+        const walls = new THREE.Mesh(new THREE.BoxGeometry(3.4, 1.8, 3.4), tentMat);
+        walls.position.set(tx, 0.9, tz);
+        walls.rotation.y = roof.rotation.y;
+        group.add(walls);
+        for (let leg = 0; leg < 4; leg++) {
+          const la = leg * Math.PI / 2 + roof.rotation.y;
+          const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.8, 6), trunkMat);
+          pole.position.set(tx + Math.cos(la) * 1.7, 0.9, tz + Math.sin(la) * 1.7);
+          group.add(pole);
+        }
+      }
+
+      const carColors = [0x222a32, 0xb8b8c0, 0x8a3030, 0x2c5288, 0x3c7048, 0xd8c050, 0x484850];
+      const carBodyMat = (c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.55, metalness: 0.45, envMapIntensity: 0.4 });
+      const carWheel = new THREE.MeshStandardMaterial({ color: 0x18181c, roughness: 0.85, metalness: 0.1 });
+      const lotRows = 3;
+      for (let row = 0; row < lotRows; row++) {
+        const z0 = -ARENA_HALF_Z - 28 - row * 5.2;
+        for (let i = -7; i <= 7; i++) {
+          if (rand() < 0.18) continue;
+          const cx = i * 3.4 + (rand() - 0.5) * 0.4;
+          const body = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.0, 1.5), carBodyMat(carColors[Math.floor(rand() * carColors.length)]));
+          body.position.set(cx, 0.55, z0);
+          body.rotation.y = Math.PI / 2;
+          group.add(body);
+          const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.65, 1.35), carBodyMat(carColors[Math.floor(rand() * carColors.length)]));
+          cabin.position.set(cx, 1.32, z0);
+          cabin.rotation.y = Math.PI / 2;
+          group.add(cabin);
+          for (let wx = -1; wx <= 1; wx += 2) for (let wz = -1; wz <= 1; wz += 2) {
+            const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.28, 12), carWheel);
+            wheel.position.set(cx + wx * 0.95, 0.32, z0 + wz * 0.65);
+            wheel.rotation.z = Math.PI / 2;
+            group.add(wheel);
+          }
+        }
+      }
+      for (let row = 0; row < lotRows; row++) {
+        const z0 = ARENA_HALF_Z + 28 + row * 5.2;
+        for (let i = -7; i <= 7; i++) {
+          if (rand() < 0.22) continue;
+          const cx = i * 3.4 + (rand() - 0.5) * 0.4;
+          const body = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.0, 1.5), carBodyMat(carColors[Math.floor(rand() * carColors.length)]));
+          body.position.set(cx, 0.55, z0);
+          body.rotation.y = Math.PI / 2;
+          group.add(body);
+          const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.65, 1.35), carBodyMat(carColors[Math.floor(rand() * carColors.length)]));
+          cabin.position.set(cx, 1.32, z0);
+          cabin.rotation.y = Math.PI / 2;
+          group.add(cabin);
+          for (let wx = -1; wx <= 1; wx += 2) for (let wz = -1; wz <= 1; wz += 2) {
+            const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.28, 12), carWheel);
+            wheel.position.set(cx + wx * 0.95, 0.32, z0 + wz * 0.65);
+            wheel.rotation.z = Math.PI / 2;
+            group.add(wheel);
+          }
+        }
+      }
+
+      const flagColors = [0xff4444, 0x4477ff, 0xffdd44, 0x55cc66, 0xff7ad6, 0xff8a2e];
+      for (let i = 0; i < 14; i++) {
+        const ang = i * Math.PI * 2 / 14 + 0.05;
+        const r = 38 + rand() * 6;
+        const fx = Math.cos(ang) * r;
+        const fz = Math.sin(ang) * r;
+        if (Math.abs(fx) < ARENA_HALF_X + 14 && Math.abs(fz) < ARENA_HALF_Z + 14) continue;
+        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 7, 8), new THREE.MeshStandardMaterial({ color: 0xc8c8d0, roughness: 0.4, metalness: 0.7 }));
+        pole.position.set(fx, 3.5, fz);
+        group.add(pole);
+        const flag = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.9, 0.04), new THREE.MeshStandardMaterial({ color: flagColors[i % flagColors.length], roughness: 0.7, metalness: 0, side: THREE.DoubleSide }));
+        flag.position.set(fx + 0.78, 6.4, fz);
+        group.add(flag);
       }
     }
 
