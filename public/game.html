@@ -4234,11 +4234,47 @@
       markRooftopBackground(freeway);
       group.add(freeway);
       addRooftopDistantSkyline(group, roof);
+      addRooftopTallSkyline(group, roof);
       for (let i = 0; i < 18; i++) {
         const x = -62 + (i * 7.3);
         addRooftopPalm(group, roof, x, -47 - (i % 3) * 3, 4.2 + (i % 4) * 0.45);
         if (i % 2 === 0) addRooftopPalm(group, roof, -56 + i * 6.5, 48 + (i % 4) * 3, 3.8 + (i % 5) * 0.38);
       }
+    }
+
+    function addRooftopTallSkyline(group, roof) {
+      const mats = [roof.city, roof.cityWarm, roof.cityBlue, roof.cityDark];
+      const sides = [
+        { axis: 'z', sign: -1, base: -ARENA_HALF_Z - 46, count: 10 },
+        { axis: 'z', sign: 1,  base:  ARENA_HALF_Z + 46, count: 10 },
+        { axis: 'x', sign: -1, base: -ARENA_HALF_X - 46, count: 8 },
+        { axis: 'x', sign: 1,  base:  ARENA_HALF_X + 46, count: 8 }
+      ];
+      let s = 11;
+      const rand = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+      const baseY = -22;
+      let idx = 0;
+      sides.forEach((side) => {
+        const span = side.axis === 'z' ? ARENA_HALF_X * 2 + 70 : ARENA_HALF_Z * 2 + 70;
+        for (let i = 0; i < side.count; i++) {
+          const t = (i + 0.5) / side.count;
+          const along = -span * 0.5 + t * span + (rand() - 0.5) * 6;
+          const perp = side.sign * (8 + rand() * 22);
+          const x = side.axis === 'x' ? side.base + perp : along;
+          const z = side.axis === 'z' ? side.base + perp : along;
+          const slim = rand() < 0.55;
+          const w = slim ? 7 + rand() * 4 : 12 + rand() * 5;
+          const d = slim ? 7 + rand() * 4 : 12 + rand() * 5;
+          const h = slim ? 80 + rand() * 70 : 50 + rand() * 40;
+          const yaw = (rand() - 0.5) * 0.16;
+          const mat = mats[idx % mats.length];
+          addRooftopBackdropBox(group, x, baseY + h * 0.5, z, w, h, d, mat, yaw);
+          if (idx % 3 === 0) {
+            addRooftopBackdropBox(group, x, baseY + h + 0.45, z, w * 0.92, 0.8, d * 0.92, roof.steel, yaw);
+          }
+          idx++;
+        }
+      });
     }
 
     function addRooftopPalm(group, roof, x, z, height) {
