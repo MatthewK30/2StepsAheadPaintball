@@ -516,6 +516,14 @@
       transform: translate(-50%, -50%);
       z-index: 3;
     }
+    #miniExtraBot0, #miniExtraBot1 {
+      position: absolute;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 3;
+    }
 
     #killFeed {
       position: absolute;
@@ -2016,6 +2024,8 @@
         <svg id="miniLayout" viewBox="0 0 180 120" preserveAspectRatio="none" aria-hidden="true"></svg>
         <div id="miniPlayer"></div>
         <div id="miniOpponent"></div>
+        <div id="miniExtraBot0" style="display:none"></div>
+        <div id="miniExtraBot1" style="display:none"></div>
       </div>
     </div>
     <div id="killFeed" aria-label="Kill feed"></div>
@@ -2267,6 +2277,7 @@
       miniLayout: document.getElementById('miniLayout'),
       miniPlayer: document.getElementById('miniPlayer'),
       miniOpponent: document.getElementById('miniOpponent'),
+      miniExtraBots: [document.getElementById('miniExtraBot0'), document.getElementById('miniExtraBot1')],
       killFeed: document.getElementById('killFeed'),
       killCamOverlay: document.getElementById('killCamOverlay'),
       killCamTitle: document.getElementById('killCamTitle'),
@@ -9412,6 +9423,23 @@
       ui.miniOpponent.style.background = opponentColor;
       ui.miniOpponent.style.boxShadow = '0 0 12px ' + opponentColor;
       ui.miniOpponent.style.display = state.aiEliminated ? 'none' : '';
+      // Extra bots (2v2 ally + enemy2)
+      if (ui.miniExtraBots) {
+        for (let i = 0; i < ui.miniExtraBots.length; i++) {
+          const el = ui.miniExtraBots[i];
+          const bot = extraBots[i];
+          if (!el) continue;
+          if (!bot || !bot.visible || bot.eliminated || GAME_MODE !== '2v2') {
+            el.style.display = 'none';
+            continue;
+          }
+          const color = bot.team === 'red' ? '#ff2028' : '#2f7cff';
+          el.style.background = color;
+          el.style.boxShadow = '0 0 12px ' + color;
+          el.style.display = '';
+          setMarker(el, bot.position.x, bot.position.z);
+        }
+      }
     }
 
     function updateFps(dt) {
