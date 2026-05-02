@@ -2531,6 +2531,7 @@
     keyLight.target.position.set(0, 0, 0);
     scene.add(ambientLight, keyLight, keyLight.target, hemiLight);
     let ghostTownLights = [];
+    let funlandSkyDome = null;
 
     player.root.add(camera);
     scene.add(player.root);
@@ -2951,9 +2952,9 @@
         vinylDark: mat(0x303238, { roughness: 0.38, metalness: 0.05, envMapIntensity: 0.4 }),
         skyGrey: mat(0x9aa2a5, { roughness: 1 }),
         skyBlue: mat(0x62bdf7, { roughness: 1 }),
-        cloud: mat(0xd8aaee, { roughness: 0.7, transparent: true, opacity: 0.82, depthWrite: false, side: THREE.DoubleSide }),
-        cloudGrey: mat(0xb47fd4, { roughness: 1, transparent: true, opacity: 0.55, depthWrite: false, side: THREE.DoubleSide }),
-        cloudDark: mat(0x7b4fa8, { roughness: 1, transparent: true, opacity: 0.38, depthWrite: false, side: THREE.DoubleSide }),
+        cloud: mat(0xfaf0ff, { roughness: 0.7, transparent: true, opacity: 0.88, depthWrite: false, side: THREE.DoubleSide }),
+        cloudGrey: mat(0xe8d4f8, { roughness: 1, transparent: true, opacity: 0.62, depthWrite: false, side: THREE.DoubleSide }),
+        cloudDark: mat(0xd0b0ee, { roughness: 1, transparent: true, opacity: 0.45, depthWrite: false, side: THREE.DoubleSide }),
         godRay: mat(0xfff0c8, { emissive: 0xffe3a1, emissiveIntensity: 0.45, roughness: 1, transparent: true, opacity: 0.08, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }),
         lensFlare: mat(0xfff2ca, { emissive: 0xffe9b0, emissiveIntensity: 0.7, roughness: 0.8, transparent: true, opacity: 0.28, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }),
         flagRed: mat(0xc31424, { roughness: 0.72, metalness: 0, side: THREE.DoubleSide }),
@@ -3134,7 +3135,7 @@
       addFunlandFloodlights(group, fun);
       addFunlandFerrisWheel(group, fun);
       finalizeMapShadows(group);
-      return { group, colliders, shootables, coverPoints, sky: 0xf4b0d8, fog: 0xf4b0d8, ambient: 'funland', carousel };
+      return { group, colliders, shootables, coverPoints, sky: 0xeaaad8, fog: 0xeaaad8, ambient: 'funland', carousel };
     }
 
     function createFunlandMaterials() {
@@ -6605,8 +6606,8 @@
         return;
       }
       if (mapName === 'funland') {
-        previewScene.background = new THREE.Color(0xf4b0d8);
-        previewScene.fog = new THREE.Fog(0xf4b0d8, 64, 150);
+        previewScene.background = new THREE.Color(0xc87ab8);
+        previewScene.fog = new THREE.Fog(0xeaaad8, 64, 150);
         previewScene.add(new THREE.AmbientLight(0xc8d7ff, 0.92));
         const key = new THREE.DirectionalLight(0xfff0cf, 2.0);
         key.position.set(36, 62, 26);
@@ -9517,8 +9518,41 @@
       if (!hemiLight.parent) scene.add(hemiLight);
     }
 
+    function createFunlandSkyDome() {
+      const geo = new THREE.SphereGeometry(900, 32, 16);
+      const mat = new THREE.ShaderMaterial({
+        side: THREE.BackSide,
+        depthWrite: false,
+        uniforms: {},
+        vertexShader: `
+          varying vec3 vWorldPos;
+          void main() {
+            vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          varying vec3 vWorldPos;
+          void main() {
+            float t = clamp((normalize(vWorldPos).y + 0.12) / 1.12, 0.0, 1.0);
+            vec3 horizon = vec3(0.706, 0.863, 0.980);
+            vec3 mid    = vec3(0.957, 0.647, 0.835);
+            vec3 top    = vec3(0.455, 0.204, 0.631);
+            vec3 col = t < 0.45
+              ? mix(horizon, mid, t / 0.45)
+              : mix(mid, top, (t - 0.45) / 0.55);
+            gl_FragColor = vec4(col, 1.0);
+          }
+        `
+      });
+      const dome = new THREE.Mesh(geo, mat);
+      dome.renderOrder = -1;
+      return dome;
+    }
+
     function applyMapLighting(active) {
       clearGhostTownLighting();
+      if (funlandSkyDome && funlandSkyDome.parent) scene.remove(funlandSkyDome);
       renderer.shadowMap.enabled = false;
       if (active && active.ambient === 'rooftop') {
         scene.remove(ambientLight, keyLight, keyLight.target, hemiLight);
@@ -9682,8 +9716,10 @@
       renderer.toneMappingExposure = 0.55;
       if (active && active.ambient === 'funland') {
         renderer.shadowMap.enabled = true;
-        scene.background = new THREE.Color(0xf4b0d8);
-        scene.fog = new THREE.Fog(0xf4b0d8, 72, 170);
+        scene.background = null;
+        scene.fog = new THREE.Fog(0xeaaad8, 72, 170);
+        if (!funlandSkyDome) funlandSkyDome = createFunlandSkyDome();
+        if (!funlandSkyDome.parent) scene.add(funlandSkyDome);
         skyStatus = 'funland-color';
         renderer.toneMappingExposure = 0.88;
         ambientLight.color.setHex(0xc8d7ff);
