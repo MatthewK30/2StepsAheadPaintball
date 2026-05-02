@@ -382,6 +382,60 @@
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
+    .crosshairPicker {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .chStyleRow {
+      display: flex;
+      gap: 7px;
+    }
+
+    .chStyleBtn {
+      width: 42px;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border-bright);
+      background: rgba(255,255,255,0.035);
+      color: rgba(255,255,255,0.5);
+      cursor: pointer;
+      transition: border-color 160ms ease, color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+      flex-shrink: 0;
+    }
+
+    .chStyleBtn.selected,
+    .chStyleBtn:hover {
+      border-color: rgba(204,21,21,0.78);
+      background: rgba(204,21,21,0.16);
+      color: #fff;
+      box-shadow: 0 0 18px rgba(204,21,21,0.2);
+    }
+
+    .chColorRow {
+      display: flex;
+      gap: 7px;
+    }
+
+    .chColorBtn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.15);
+      cursor: pointer;
+      transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+    }
+
+    .chColorBtn.selected,
+    .chColorBtn:hover {
+      border-color: #fff;
+      transform: scale(1.18);
+      box-shadow: 0 0 10px rgba(255,255,255,0.4);
+    }
+
     .choice {
       min-height: 42px;
       padding: 11px 12px 9px;
@@ -974,6 +1028,40 @@
                 <button class="choice" data-value="2v2" type="button">2v2</button>
               </div>
             </div>
+            <div class="optionGroup" id="crosshairGroup">
+              <label>Crosshair</label>
+              <div class="crosshairPicker">
+                <div class="chStyleRow">
+                  <button class="chStyleBtn selected" data-ch-style="cross" type="button" title="Cross">
+                    <svg viewBox="0 0 24 24" width="22" height="22"><line x1="12" y1="2" x2="12" y2="8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="12" y1="16" x2="12" y2="22" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="2" y1="12" x2="8" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="16" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+                  </button>
+                  <button class="chStyleBtn" data-ch-style="dot" type="button" title="Dot">
+                    <svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="3.5" fill="currentColor"/></svg>
+                  </button>
+                  <button class="chStyleBtn" data-ch-style="circle" type="button" title="Circle">
+                    <svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>
+                  </button>
+                  <button class="chStyleBtn" data-ch-style="crossdot" type="button" title="Cross + Dot">
+                    <svg viewBox="0 0 24 24" width="22" height="22"><line x1="12" y1="2" x2="12" y2="8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="12" y1="16" x2="12" y2="22" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="2" y1="12" x2="8" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="16" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>
+                  </button>
+                  <button class="chStyleBtn" data-ch-style="x" type="button" title="X">
+                    <svg viewBox="0 0 24 24" width="22" height="22"><line x1="5" y1="5" x2="10" y2="10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="14" y1="14" x2="19" y2="19" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="19" y1="5" x2="14" y2="10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="10" y1="14" x2="5" y2="19" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+                  </button>
+                  <button class="chStyleBtn" data-ch-style="t" type="button" title="T-Shape">
+                    <svg viewBox="0 0 24 24" width="22" height="22"><line x1="12" y1="16" x2="12" y2="22" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="2" y1="12" x2="8" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="16" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+                  </button>
+                </div>
+                <div class="chColorRow">
+                  <button class="chColorBtn selected" data-ch-color="white"   style="background:#ffffff" type="button" title="White"></button>
+                  <button class="chColorBtn" data-ch-color="red"     style="background:#ff3333" type="button" title="Red"></button>
+                  <button class="chColorBtn" data-ch-color="green"   style="background:#00ff88" type="button" title="Green"></button>
+                  <button class="chColorBtn" data-ch-color="cyan"    style="background:#00e5ff" type="button" title="Cyan"></button>
+                  <button class="chColorBtn" data-ch-color="yellow"  style="background:#ffe600" type="button" title="Yellow"></button>
+                  <button class="chColorBtn" data-ch-color="orange"  style="background:#ff8800" type="button" title="Orange"></button>
+                  <button class="chColorBtn" data-ch-color="pink"    style="background:#ff44cc" type="button" title="Pink"></button>
+                </div>
+              </div>
+            </div>
             <div class="optionGroup" data-option-group="difficulty">
               <label>AI Difficulty</label>
               <div class="choiceSet threeChoices">
@@ -1220,6 +1308,28 @@
         document.querySelectorAll('[data-option-group]').forEach((group) => {
           group.querySelectorAll('.choice').forEach((choice) => {
             choice.addEventListener('click', () => selectOption(group.dataset.optionGroup, choice))
+          })
+        })
+
+        // Crosshair style buttons
+        const savedChStyle = localStorage.getItem('chStyle') || 'cross'
+        const savedChColor = localStorage.getItem('chColor') || 'white'
+        document.querySelectorAll('.chStyleBtn').forEach((btn) => {
+          if (btn.dataset.chStyle === savedChStyle) btn.classList.add('selected')
+          else btn.classList.remove('selected')
+          btn.addEventListener('click', () => {
+            document.querySelectorAll('.chStyleBtn').forEach(b => b.classList.remove('selected'))
+            btn.classList.add('selected')
+            localStorage.setItem('chStyle', btn.dataset.chStyle)
+          })
+        })
+        document.querySelectorAll('.chColorBtn').forEach((btn) => {
+          if (btn.dataset.chColor === savedChColor) btn.classList.add('selected')
+          else btn.classList.remove('selected')
+          btn.addEventListener('click', () => {
+            document.querySelectorAll('.chColorBtn').forEach(b => b.classList.remove('selected'))
+            btn.classList.add('selected')
+            localStorage.setItem('chColor', btn.dataset.chColor)
           })
         })
         document.querySelectorAll('[data-room-setting]').forEach((group) => {

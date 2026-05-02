@@ -235,10 +235,12 @@
     }
 
     .chLine,
-    .chDot {
+    .chDot,
+    .chRing,
+    .chXLine {
       position: absolute;
-      background: rgba(255,255,255,0.85);
-      box-shadow: 0 0 7px rgba(0,0,0,0.85);
+      background: var(--ch-color, rgba(255,255,255,0.9));
+      box-shadow: 0 0 6px rgba(0,0,0,0.9);
     }
 
     .chLine.top,
@@ -267,6 +269,25 @@
       width: 4px;
       height: 4px;
       border-radius: 50%;
+    }
+
+    .chRing {
+      left: 10px;
+      top: 10px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: transparent !important;
+      border: 2px solid var(--ch-color, rgba(255,255,255,0.9));
+      box-shadow: 0 0 6px rgba(0,0,0,0.9);
+    }
+
+    .chXLine {
+      width: 2px;
+      height: 14px;
+      left: 21px;
+      top: 15px;
+      transform-origin: center center;
     }
 
     #centerMessage {
@@ -2004,13 +2025,7 @@
       <div id="ammoText">50 / 50</div>
       <div id="podIcons"></div>
     </div>
-    <div id="crosshair">
-      <span class="chLine top"></span>
-      <span class="chLine right"></span>
-      <span class="chLine bottom"></span>
-      <span class="chLine left"></span>
-      <span class="chDot"></span>
-    </div>
+    <div id="crosshair"></div>
     <div id="centerMessage"></div>
     <div id="hint">Pointer lock may release on Esc. Click the field to re-lock. AI uses cover, line-of-sight checks, and a balanced firing cadence.</div>
     <div id="perf">FPS --</div>
@@ -9414,6 +9429,53 @@
       }
     };
   })();
+  </script>
+  <script>
+    (function applyCrosshair() {
+      const chEl = document.getElementById('crosshair');
+      if (!chEl) return;
+      const style = localStorage.getItem('chStyle') || 'cross';
+      const colorKey = localStorage.getItem('chColor') || 'white';
+      const colorMap = {
+        white:  'rgba(255,255,255,0.92)',
+        red:    'rgba(255,51,51,0.95)',
+        green:  'rgba(0,255,136,0.95)',
+        cyan:   'rgba(0,229,255,0.95)',
+        yellow: 'rgba(255,230,0,0.95)',
+        orange: 'rgba(255,136,0,0.95)',
+        pink:   'rgba(255,68,204,0.95)',
+      };
+      const color = colorMap[colorKey] || colorMap.white;
+      chEl.style.setProperty('--ch-color', color);
+
+      const s = (tag, cls) => { const el = document.createElement(tag); el.className = cls; return el; };
+
+      if (style === 'dot') {
+        chEl.appendChild(s('span', 'chDot'));
+      } else if (style === 'circle') {
+        chEl.appendChild(s('span', 'chRing'));
+        chEl.appendChild(s('span', 'chDot'));
+      } else if (style === 'crossdot') {
+        chEl.appendChild(s('span', 'chLine top'));
+        chEl.appendChild(s('span', 'chLine right'));
+        chEl.appendChild(s('span', 'chLine bottom'));
+        chEl.appendChild(s('span', 'chLine left'));
+        chEl.appendChild(s('span', 'chDot'));
+      } else if (style === 'x') {
+        const a = s('span', 'chXLine'); a.style.transform = 'rotate(45deg)'; chEl.appendChild(a);
+        const b = s('span', 'chXLine'); b.style.transform = 'rotate(-45deg)'; chEl.appendChild(b);
+      } else if (style === 't') {
+        chEl.appendChild(s('span', 'chLine right'));
+        chEl.appendChild(s('span', 'chLine bottom'));
+        chEl.appendChild(s('span', 'chLine left'));
+      } else {
+        // default: cross
+        chEl.appendChild(s('span', 'chLine top'));
+        chEl.appendChild(s('span', 'chLine right'));
+        chEl.appendChild(s('span', 'chLine bottom'));
+        chEl.appendChild(s('span', 'chLine left'));
+      }
+    })();
   </script>
 </body>
 </html>
