@@ -2298,6 +2298,7 @@
       winnerText: '',
       playerEliminated: false,
       aiEliminated: false,
+      spectatingAlly: false,
       aiDifficulty: PRACTICE_MODE ? SELECTED_DIFFICULTY : 'pro',
       selectedSkin: SELECTED_SKIN,
       lastRoundMessage: '',
@@ -5677,8 +5678,10 @@
         { role: 'ally',   team: MY_TEAM,       spawnOffset: new THREE.Vector3(0, 0, 5) },
         { role: 'enemy2', team: OPPONENT_TEAM,  spawnOffset: new THREE.Vector3(0, 0, -5) },
       ];
+      // The main ai already handles the first OPPONENT_TEAM bot — skip it here
+      const mainOpponentBot = opposingBot();
       botDefs.forEach(def => {
-        const botData = matchBots.find(b => b.team === def.team && extraBots.every(e => e.matchBot !== b));
+        const botData = matchBots.find(b => b.team === def.team && b !== mainOpponentBot && extraBots.every(e => e.matchBot !== b));
         const spawnX = def.team === MY_TEAM
           ? (MY_TEAM === 'blue' ? 24 : -24)
           : (MY_TEAM === 'blue' ? -24 : 24);
@@ -6862,6 +6865,7 @@
       stopReload(false);
       state.playerEliminated = false;
       state.aiEliminated = false;
+      state.spectatingAlly = false;
       state.lastRoundMessage = '';
       player.yaw = MULTIPLAYER && MY_TEAM === 'blue' ? Math.PI / 2 : -Math.PI / 2;
       player.pitch = 0;
@@ -7080,6 +7084,7 @@
       updateSpectators();
       updateRemotePlayer(dt);
       updateExtraBots(dt);
+      if (state.spectatingAlly) updateAllySpectate();
       if (state.aiEliminated) updateAiVisual(dt, false, false);
       if (state.phase === 'countdown') updateCountdown(dt);
       else if (state.phase === 'active') updateActiveRound(dt);
@@ -7611,6 +7616,7 @@
         let bodyHit = false;
         let bodyT = 2;
         let bodyTarget = 0;
+        let bodyTargetExtraBot = null;
         if (projectileCanHitOpponent(p) && projectileHitsAi(p)) {
           bodyHit = true;
           bodyT = segmentHitT;
@@ -7620,6 +7626,17 @@
           bodyHit = true;
           bodyT = segmentHitT;
           bodyTarget = 2;
+        }
+        // Check extra bots: enemy2 can be hit by MY_TEAM shots, ally by OPPONENT_TEAM shots
+        for (let bi = 0; bi < extraBots.length; bi++) {
+          const eb = extraBots[bi];
+          if (!eb.visible || eb.eliminated) continue;
+          const canHit = (eb.role === 'enemy2' && p.team === MY_TEAM) || (eb.role === 'ally' && p.team !== MY_TEAM);
+          if (!canHit) continue;
+          if (segmentHitsBody(p.prev, p.pos, eb.position.x, eb.position.z, 1.8, 0, eb.height + 0.3)) {
+            const t2 = segmentHitT;
+            if (t2 < bodyT) { bodyHit = true; bodyT = t2; bodyTarget = 3; bodyTargetExtraBot = eb; }
+          }
         }
         const coverHit = findCoverHit(p);
         const coverT = coverHit ? segmentHitT : 2;
@@ -7653,6 +7670,28 @@
           } else if (!MULTIPLAYER) {
             playerEliminated(shotWithImpact(p.shotData, p.pos));
             spawnSplat('blue', player.bodyCenter.x, player.height * 0.82, player.bodyCenter.z, 0, 0, 1, 0.72);
+          }
+          deactivateProjectile(p);
+          continue;
+        }
+        if (bodyTarget === 3 && bodyTargetExtraBot) {
+          const eb = bodyTargetExtraBot;
+          eb.eliminated = true;
+          eb.group.visible = false;
+          spawnSplat(eb.team, eb.position.x, eb.position.y + 1.2, eb.position.z, 0, 0, eb.role === 'enemy2' ? -1 : 1, 0.72);
+          addKillFeedEntry(selectedSkinName(), MY_TEAM, eb.matchBot?.skinName || 'Bot', eb.team);
+          playEliminationAudio('shooter');
+          // Check if this elimination ends the round
+          if (eb.role === 'enemy2' && GAME_MODE === '2v2' && allEnemiesEliminated()) {
+            const winner = MY_TEAM;
+            scoreTeam(winner);
+            endRound(winner, formatTeam(winner) + ' wins the round', false);
+          } else if (eb.role === 'ally' && GAME_MODE === '2v2' && allAlliesEliminated()) {
+            const winner = OPPONENT_TEAM;
+            scoreTeam(winner);
+            startDeathCamera();
+            showEliminatedOverlay(winner);
+            endRound(winner, formatTeam(winner) + ' wins the round', false);
           }
           deactivateProjectile(p);
           continue;
@@ -8452,6 +8491,8 @@
       remotePlayer.visible = false;
       addKillFeedEntry(selectedSkinName(), MY_TEAM, remoteSkinName(), remotePlayer.team || OPPONENT_TEAM);
       playEliminationAudio('shooter');
+      // In 2v2, only end round if the 2nd enemy is also eliminated
+      if (GAME_MODE === '2v2' && !allEnemiesEliminated()) return;
       scoreTeam(MY_TEAM);
       tmpVecA.set(ai.position.x, Math.max(0.7, (ai.tacticalHeight || ai.height) * 0.76), ai.position.z);
       if (!startKillCam({
@@ -8479,9 +8520,15 @@
       gun.paint.visible = true;
       addKillFeedEntry(remoteSkinName(), winner, selectedSkinName(), MY_TEAM);
       playEliminationAudio('victim');
-      scoreTeam(winner);
+      // In 2v2, only score/end round if ally is also dead
+      if (GAME_MODE !== '2v2' || allAlliesEliminated()) scoreTeam(winner);
       tmpVecA.copy(player.bodyCenter);
       tmpVecA.y = Math.max(0.55, player.height * 0.78);
+      // In 2v2 with a living ally, skip kill cam and spectate ally instead
+      if (GAME_MODE === '2v2' && allyBotInst()) {
+        startAllySpectate();
+        return;
+      }
       if (!startKillCam({
         shot: shotData,
         killerName: remoteSkinName(),
@@ -8908,6 +8955,52 @@
       camera.fov = victoryCam.startFov + ease * 7;
       camera.updateProjectionMatrix();
       if (t >= 1) victoryCam.active = false;
+    }
+
+    function allyBotInst() {
+      return extraBots.find(b => b.role === 'ally' && !b.eliminated) || null;
+    }
+
+    function allEnemiesEliminated() {
+      const mainDead = state.aiEliminated;
+      const extra2Dead = !extraBots.some(b => b.role === 'enemy2' && !b.eliminated);
+      return mainDead && extra2Dead;
+    }
+
+    function allAlliesEliminated() {
+      const playerDead = state.playerEliminated;
+      const allyDead = !extraBots.some(b => b.role === 'ally' && !b.eliminated);
+      return playerDead && allyDead;
+    }
+
+    function startAllySpectate() {
+      // Follow the ally bot's position from behind until it dies or round ends
+      state.spectatingAlly = true;
+    }
+
+    function updateAllySpectate() {
+      if (!state.spectatingAlly) return;
+      const ally = allyBotInst();
+      if (!ally) {
+        // Ally just died — now the whole team is gone, end the round
+        if (state.phase === 'active' && GAME_MODE === '2v2') {
+          state.spectatingAlly = false;
+          const winner = OPPONENT_TEAM;
+          const message = formatTeam(winner) + ' wins the round';
+          startDeathCamera();
+          showEliminatedOverlay(winner);
+          endRound(winner, message, false);
+        }
+        return;
+      }
+      // Position camera behind and above the ally bot
+      const ahead = new THREE.Vector3(Math.sin(ally.group.rotation.y), 0, Math.cos(ally.group.rotation.y));
+      camera.position.set(
+        ally.position.x - ahead.x * 2.2,
+        ally.position.y + 1.5,
+        ally.position.z - ahead.z * 2.2
+      );
+      camera.lookAt(ally.position.x, ally.position.y + 1.0, ally.position.z);
     }
 
     function startDeathCamera() {
