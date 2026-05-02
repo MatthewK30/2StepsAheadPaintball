@@ -3066,15 +3066,28 @@
     }
 
     function createOrganicBoxGeometry() {
-      const geo = new THREE.BoxGeometry(1, 1, 1, 2, 2, 2);
+      const segs = 6;
+      const geo = new THREE.BoxGeometry(1, 1, 1, segs, segs, segs);
       const pos = geo.attributes.position;
+      const radius = 0.085;
+      const inner = 0.5 - radius;
+      const clamp = (v) => v < -inner ? -inner : (v > inner ? inner : v);
       for (let i = 0; i < pos.count; i++) {
         const x = pos.getX(i);
         const y = pos.getY(i);
         const z = pos.getZ(i);
-        const soften = 1 - Math.max(Math.abs(x), Math.abs(y), Math.abs(z));
-        const ripple = Math.sin((x + 1.7) * 6.1 + (y - 0.4) * 4.3 + z * 5.2) * 0.012;
-        pos.setXYZ(i, x + x * soften * 0.035 + ripple, y + y * soften * 0.035 - ripple * 0.6, z + z * soften * 0.035 + ripple * 0.7);
+        const cx = clamp(x);
+        const cy = clamp(y);
+        const cz = clamp(z);
+        const dx = x - cx;
+        const dy = y - cy;
+        const dz = z - cz;
+        const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (d > 1e-5) {
+          const inv = radius / d;
+          const ripple = Math.sin((x + 1.7) * 5.3 + (y - 0.4) * 4.1 + z * 4.7) * 0.004;
+          pos.setXYZ(i, cx + dx * inv + ripple * 0.4, cy + dy * inv - ripple * 0.3, cz + dz * inv + ripple * 0.5);
+        }
       }
       geo.computeVertexNormals();
       return geo;
