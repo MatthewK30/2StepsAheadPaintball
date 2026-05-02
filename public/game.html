@@ -9005,7 +9005,7 @@
         scene.fog = new THREE.Fog(0x4a3010, 80, 380);
         skyStatus = 'ghosttown-storm';
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.05;
+        renderer.toneMappingExposure = 1.6;
 
         // Stormy dust-storm sky dome
         const gtSkyGeo = new THREE.SphereGeometry(800, 32, 16);
@@ -9043,19 +9043,19 @@
         const gtSkyDome = new THREE.Mesh(gtSkyGeo, gtSkyMat);
 
         // Eerie low sun cutting through the dust
-        const sun = new THREE.DirectionalLight(0xdd8822, 2.8);
+        const sun = new THREE.DirectionalLight(0xdd9933, 4.5);
         sun.position.set(60, 18, -30);
         sun.castShadow = false;
 
-        // Dim fill from opposite horizon
-        const fill = new THREE.DirectionalLight(0x664422, 1.0);
+        // Fill from opposite horizon — reduces pitch-black shadows
+        const fill = new THREE.DirectionalLight(0x886633, 2.2);
         fill.position.set(-50, 8, 30);
 
         // Hemisphere: sick sky above / warm dusty ground below
-        const hemi = new THREE.HemisphereLight(0x5a4020, 0x8a5a18, 1.8);
+        const hemi = new THREE.HemisphereLight(0x7a5828, 0xaa7a28, 2.8);
 
         // Ambient — warm dusty light so structures stay visible
-        const ambient = new THREE.AmbientLight(0xc09050, 1.4);
+        const ambient = new THREE.AmbientLight(0xd0a860, 2.4);
 
         ghostTownLights = [gtSkyDome, sun, fill, hemi, ambient];
         ghostTownLights.forEach((obj) => scene.add(obj));
