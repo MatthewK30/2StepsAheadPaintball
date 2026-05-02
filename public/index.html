@@ -703,7 +703,9 @@
     }
 
     .playerCard,
-    .emptySlot {
+    .emptySlot,
+    .botSlot {
+      position: relative;
       min-height: 138px;
       padding: 18px;
       display: grid;
@@ -739,6 +741,102 @@
       letter-spacing: 0.12em;
       text-align: center;
       grid-template-columns: 1fr;
+    }
+
+    .emptySlot.waitingSlot {
+      align-content: center;
+      justify-items: center;
+      gap: 8px;
+      font-size: 15px;
+    }
+
+    .waitingText {
+      color: var(--text-muted);
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .addBotButton {
+      padding: 0;
+      background: transparent;
+      color: #e8b84b;
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: 18px;
+      letter-spacing: 0.12em;
+    }
+
+    .addBotButton:hover {
+      color: #ffd76a;
+      text-shadow: 0 0 12px rgba(232,184,75,0.45);
+    }
+
+    .botSlot {
+      grid-template-columns: 1fr;
+      align-content: center;
+      gap: 3px;
+      padding-right: 72px;
+      border: 1px solid rgba(232,184,75,0.3);
+      background: rgba(232,184,75,0.08);
+      box-shadow: inset 0 1px 0 rgba(232,184,75,0.08);
+    }
+
+    .botLabel {
+      color: #e8b84b;
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: 20px;
+      line-height: 1;
+      letter-spacing: 0.16em;
+    }
+
+    .botDifficulty {
+      width: fit-content;
+      padding: 0;
+      background: transparent;
+      color: var(--text-dim);
+      font-family: 'Rajdhani', Arial, Helvetica, sans-serif;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-align: left;
+      cursor: default;
+    }
+
+    .botDifficulty.hostEditable {
+      cursor: pointer;
+    }
+
+    .botDifficulty.hostEditable:hover {
+      color: #ffffff;
+    }
+
+    .botDifficulty:disabled {
+      opacity: 1;
+    }
+
+    .botSkinName {
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .botRemoveButton {
+      position: absolute;
+      right: 12px;
+      bottom: 10px;
+      padding: 0;
+      background: transparent;
+      color: rgba(255,255,255,0.42);
+      font-family: 'Rajdhani', Arial, Helvetica, sans-serif;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+    }
+
+    .botRemoveButton:hover {
+      color: rgba(255,255,255,0.76);
     }
 
     .playerName {
@@ -1385,7 +1483,7 @@
         state.socket.on('settings_error', (message) => setError(ui.lobbyError, message))
         state.socket.on('start_error', (message) => setError(ui.lobbyError, message))
         state.socket.on('player_disconnected', () => setError(ui.lobbyError, 'Player disconnected'))
-        state.socket.on('game_start', (room) => startGame(room))
+        state.socket.on('game_start', (payload) => startGame(payload))
       }
 
       function showView(name) {
@@ -1538,10 +1636,22 @@
         const players = room.players.filter((player) => player.team === team)
         container.innerHTML = ''
         for (let i = 0; i < maxPerTeam; i++) {
+          const slotIndex = teamSlotIndex(team, i)
           const player = players[i]
           if (player) container.appendChild(createPlayerCard(player, room))
-          else container.appendChild(createEmptySlot())
+          else {
+            const bot = botForSlot(room, slotIndex)
+            container.appendChild(bot ? createBotSlot(bot, room) : createEmptySlot(room, slotIndex))
+          }
         }
+      }
+
+      function teamSlotIndex(team, index) {
+        return team === 'red' ? index : index + 2
+      }
+
+      function botForSlot(room, slotIndex) {
+        return Array.isArray(room.bots) ? room.bots.find((bot) => Number(bot.slotIndex) === slotIndex) : null
       }
 
       function createPlayerCard(player, room) {
@@ -1563,22 +1673,63 @@
         return card
       }
 
-      function createEmptySlot() {
+      function createEmptySlot(room, slotIndex) {
         const slot = document.createElement('div')
-        slot.className = 'emptySlot'
-        slot.innerHTML = '<span class="slotHint">Empty Slot</span>'
+        const host = isHost(room)
+        const botEnabled = room.gameMode === '2v2'
+        slot.className = 'emptySlot' + (botEnabled ? ' waitingSlot' : '')
+        slot.innerHTML = botEnabled
+          ? '<span class="waitingText">WAITING FOR PLAYER</span>'
+          : '<span class="slotHint">Empty Slot</span>'
+        if (botEnabled && host) {
+          const button = document.createElement('button')
+          button.className = 'addBotButton'
+          button.type = 'button'
+          button.textContent = '+ ADD BOT'
+          button.addEventListener('click', () => toggleBotSlot(slotIndex))
+          slot.appendChild(button)
+        }
+        return slot
+      }
+
+      function createBotSlot(bot, room) {
+        const host = isHost(room)
+        const slot = document.createElement('div')
+        slot.className = 'botSlot'
+        const difficulty = normalizeDifficulty(bot.difficulty)
+        slot.innerHTML = `
+          <div class="botLabel">BOT</div>
+          <button class="botDifficulty ${host ? 'hostEditable' : ''}" type="button">${difficulty.toUpperCase()}</button>
+          <div class="botSkinName">${escapeHtml(bot.skinName || 'Bot')}</div>
+        `
+        const difficultyButton = slot.querySelector('.botDifficulty')
+        difficultyButton.disabled = !host
+        if (host) {
+          difficultyButton.addEventListener('click', () => cycleBotDifficulty(bot))
+          const remove = document.createElement('button')
+          remove.className = 'botRemoveButton'
+          remove.type = 'button'
+          remove.textContent = 'REMOVE'
+          remove.addEventListener('click', () => toggleBotSlot(bot.slotIndex, '', 'remove'))
+          slot.appendChild(remove)
+        }
         return slot
       }
 
       function renderControls(room) {
         const me = currentPlayer(room)
-        const isHost = me && room.host === me.id
+        const isHostPlayer = isHost(room)
         const allReady = room.players.length > 0 && room.players.every((player) => player.ready)
         ui.readyBtn.textContent = me && me.ready ? 'Not Ready' : 'Ready'
-        ui.roomSettingsPanel.classList.toggle('hidden', !isHost)
-        ui.startMatchBtn.classList.toggle('hidden', !isHost)
+        ui.roomSettingsPanel.classList.toggle('hidden', !isHostPlayer)
+        ui.startMatchBtn.classList.toggle('hidden', !isHostPlayer)
         ui.startMatchBtn.disabled = !allReady
-        ui.startMatchBtn.classList.toggle('startReady', isHost && allReady)
+        ui.startMatchBtn.classList.toggle('startReady', isHostPlayer && allReady)
+      }
+
+      function isHost(room) {
+        const me = currentPlayer(room)
+        return !!(me && room && room.host === me.id)
       }
 
       function renderRoomSettingsControls(room) {
@@ -1607,10 +1758,34 @@
         state.socket.emit('set_ready', { code: state.code, ready: !me.ready })
       }
 
-      function startGame(room) {
+      function toggleBotSlot(slotIndex, difficulty, action) {
+        if (!state.code || !isHost(state.room)) return
+        state.socket.emit('toggle_bot_slot', { code: state.code, slotIndex, difficulty, action })
+      }
+
+      function cycleBotDifficulty(bot) {
+        toggleBotSlot(bot.slotIndex, nextDifficulty(bot.difficulty), 'difficulty')
+      }
+
+      function normalizeDifficulty(difficulty) {
+        return difficulty === 'basic' || difficulty === 'elite' ? difficulty : 'pro'
+      }
+
+      function nextDifficulty(difficulty) {
+        const current = normalizeDifficulty(difficulty)
+        if (current === 'basic') return 'pro'
+        if (current === 'pro') return 'elite'
+        return 'basic'
+      }
+
+      function startGame(payload) {
+        const room = payload && payload.room ? payload.room : payload
+        if (!room) return
+        const bots = payload && payload.room ? (payload.bots || room.bots || []) : (room.bots || [])
         const me = currentPlayer(room)
         const team = me ? me.team : 'red'
         const skin = normalizeSkin(me?.skinId, me?.skinFile, me?.skinName) || getSelectedSkin()
+        sessionStorage.setItem('paintballBots', JSON.stringify(Array.isArray(bots) ? bots : []))
         const params = new URLSearchParams({
           room: room.code,
           team,

@@ -57,6 +57,94 @@ function normalizeFirstTo(firstTo) {
   return Number(firstTo) === 10 ? 10 : 5
 }
 
+function normalizeBotDifficulty(difficulty) {
+  return difficulty === 'basic' || difficulty === 'elite' ? difficulty : 'pro'
+}
+
+function maxPlayersForRoom(room) {
+  return room?.gameMode === '2v2' ? 4 : 2
+}
+
+function maxPlayersPerTeam(room) {
+  return room?.gameMode === '2v2' ? 2 : 1
+}
+
+function ensureRoomBots(room) {
+  if (!room) return []
+  if (room.gameMode !== '2v2') {
+    room.bots = []
+    return room.bots
+  }
+  if (!Array.isArray(room.bots)) room.bots = []
+  return room.bots
+}
+
+function normalizeSlotIndex(slotIndex) {
+  const value = Number(slotIndex)
+  return Number.isInteger(value) && value >= 0 && value <= 3 ? value : -1
+}
+
+function slotTeam(slotIndex) {
+  return slotIndex < 2 ? 'red' : 'blue'
+}
+
+function teamSlotIndex(slotIndex) {
+  return slotIndex < 2 ? slotIndex : slotIndex - 2
+}
+
+function teamPlayerCount(room, team, ignorePlayerId) {
+  return room.players.filter(p => p.team === team && p.id !== ignorePlayerId).length
+}
+
+function teamBotCount(room, team) {
+  return ensureRoomBots(room).filter(bot => slotTeam(normalizeSlotIndex(bot.slotIndex)) === team).length
+}
+
+function teamOccupancy(room, team, ignorePlayerId) {
+  return teamPlayerCount(room, team, ignorePlayerId) + teamBotCount(room, team)
+}
+
+function occupiedRoomSlots(room) {
+  return room.players.length + ensureRoomBots(room).length
+}
+
+function chooseAvailableTeam(room, preferredTeam, ignorePlayerId) {
+  const maxPerTeam = maxPlayersPerTeam(room)
+  const preferred = normalizeTeam(preferredTeam)
+  if (preferredTeam && teamOccupancy(room, preferred, ignorePlayerId) < maxPerTeam) return preferred
+  const redCount = teamOccupancy(room, 'red', ignorePlayerId)
+  const blueCount = teamOccupancy(room, 'blue', ignorePlayerId)
+  if (redCount <= blueCount && redCount < maxPerTeam) return 'red'
+  if (blueCount < maxPerTeam) return 'blue'
+  if (redCount < maxPerTeam) return 'red'
+  return ''
+}
+
+function pruneBotConflicts(room) {
+  const bots = ensureRoomBots(room)
+  if (room.gameMode !== '2v2') return
+  const seen = new Set()
+  room.bots = bots.filter(bot => {
+    const slotIndex = normalizeSlotIndex(bot.slotIndex)
+    if (slotIndex < 0 || seen.has(slotIndex)) return false
+    const team = slotTeam(slotIndex)
+    const playerCount = teamPlayerCount(room, team)
+    if (teamSlotIndex(slotIndex) < playerCount) return false
+    seen.add(slotIndex)
+    bot.slotIndex = slotIndex
+    bot.team = team
+    bot.difficulty = normalizeBotDifficulty(bot.difficulty)
+    return true
+  })
+}
+
+function botSlotIsOpen(room, slotIndex) {
+  if (room.gameMode !== '2v2') return false
+  const team = slotTeam(slotIndex)
+  return teamSlotIndex(slotIndex) >= teamPlayerCount(room, team)
+    && !ensureRoomBots(room).some(bot => normalizeSlotIndex(bot.slotIndex) === slotIndex)
+}
+
 function normalizeSkin({ skinId, skinFile, skinName } = {}) {
   const id = String(skinId || '').trim()
   const file = String(skinFile || '').trim()
@@ -109,6 +197,7 @@ io.on('connection', (socket) => {
         id: socket.id, username: String(username || 'Player').slice(0, 16),
         team: 'red', ready: false, connected: true, returningToLobby: false, ...skin
       }],
+      bots: [],
       state: 'lobby'
     }
     socket.join(code)
@@ -120,13 +209,15 @@ io.on('connection', (socket) => {
     code = normalizeCode(code)
     const room = rooms[code]
     if (!room) { socket.emit('join_error', 'Room not found'); return }
-    if (room.players.length >= (room.gameMode === '2v2' ? 4 : 2)) {
+    pruneBotConflicts(room)
+    if (occupiedRoomSlots(room) >= maxPlayersForRoom(room)) {
       socket.emit('join_error', 'Room is full'); return
     }
-    const team = room.players.filter(p=>p.team==='red').length <=
-                 room.players.filter(p=>p.team==='blue').length ? 'red' : 'blue'
+    const team = chooseAvailableTeam(room)
+    if (!team) { socket.emit('join_error', 'Room is full'); return }
     const skin = normalizeSkin({ skinId, skinFile, skinName })
     room.players.push({ id: socket.id, username: String(username || 'Player').slice(0, 16), team, ready: false, connected: true, returningToLobby: false, ...skin })
+    pruneBotConflicts(room)
     socket.join(code)
     socket.emit('room_joined', { code, room })
     io.to(code).emit('lobby_update', room)
@@ -144,17 +235,20 @@ io.on('connection', (socket) => {
     let player = room.players.find(p => p.username === username) || room.players.find(p => p.id === socket.id)
     if (player) {
       if (room.host === player.id) room.host = socket.id
+      team = chooseAvailableTeam(room, team, player.id) || player.team
       player.id = socket.id
       player.team = team
       player.connected = true
       player.returningToLobby = false
       Object.assign(player, skin)
     } else {
-      const maxPlayers = room.gameMode === '2v2' ? 4 : 2
-      if (room.players.length >= maxPlayers) { socket.emit('join_error', 'Room is full'); return }
+      if (occupiedRoomSlots(room) >= maxPlayersForRoom(room)) { socket.emit('join_error', 'Room is full'); return }
+      team = chooseAvailableTeam(room, team)
+      if (!team) { socket.emit('join_error', 'Room is full'); return }
       player = { id: socket.id, username, team, ready: false, connected: true, returningToLobby: false, ...skin }
       room.players.push(player)
     }
+    pruneBotConflicts(room)
     socket.emit('room_joined', { code, room })
     io.to(code).emit('lobby_update', room)
   })
@@ -165,12 +259,11 @@ io.on('connection', (socket) => {
     const player = room.players.find(p => p.id === socket.id)
     if (!player) return
     const newTeam = player.team === 'red' ? 'blue' : 'red'
-    const teamCount = room.players.filter(p=>p.team===newTeam).length
-    const maxPerTeam = room.gameMode === '2v2' ? 2 : 1
-    if (teamCount >= maxPerTeam) {
+    if (teamOccupancy(room, newTeam, player.id) >= maxPlayersPerTeam(room)) {
       socket.emit('switch_error', 'Team is full'); return
     }
     player.team = newTeam
+    pruneBotConflicts(room)
     io.to(code).emit('lobby_update', room)
   })
 
@@ -210,6 +303,8 @@ io.on('connection', (socket) => {
     const changed = Object.keys(updates).some(key => room[key] !== updates[key])
     if (!changed) return
     Object.assign(room, updates)
+    if (room.gameMode !== '2v2') room.bots = []
+    else pruneBotConflicts(room)
     if (room.gameMode === '1v1' && room.players.length === 2) {
       room.players[0].team = 'red'
       room.players[1].team = 'blue'
@@ -226,13 +321,41 @@ io.on('connection', (socket) => {
     io.to(code).emit('lobby_update', room)
   })
 
+  socket.on('toggle_bot_slot', ({ code, slotIndex, difficulty, action } = {}) => {
+    code = normalizeCode(code)
+    const room = rooms[code]
+    if (!room || room.host !== socket.id || room.state !== 'lobby' || room.gameMode !== '2v2') return
+    slotIndex = normalizeSlotIndex(slotIndex)
+    if (slotIndex < 0) return
+    pruneBotConflicts(room)
+    const existingBot = room.bots.find(bot => normalizeSlotIndex(bot.slotIndex) === slotIndex)
+    if (existingBot) {
+      if (action === 'difficulty' && difficulty) {
+        existingBot.difficulty = normalizeBotDifficulty(difficulty)
+      } else {
+        room.bots = room.bots.filter(bot => normalizeSlotIndex(bot.slotIndex) !== slotIndex)
+      }
+    } else if (botSlotIsOpen(room, slotIndex)) {
+      const idx = Math.floor(Math.random() * skins.length)
+      room.bots.push({
+        slotIndex,
+        team: slotTeam(slotIndex),
+        difficulty: normalizeBotDifficulty(difficulty),
+        skinFile: skins[idx].file,
+        skinName: skins[idx].name
+      })
+    }
+    io.to(code).emit('lobby_update', room)
+  })
+
   socket.on('start_game', ({ code }) => {
     const room = rooms[code]
     if (!room || room.host !== socket.id) return
-    const allReady = room.players.every(p => p.ready)
+    pruneBotConflicts(room)
+    const allReady = room.players.length > 0 && room.players.every(p => p.ready)
     if (!allReady) { socket.emit('start_error', 'Not all players ready'); return }
     room.state = 'playing'
-    io.to(code).emit('game_start', room)
+    io.to(code).emit('game_start', { room, bots: room.bots || [] })
   })
 
   socket.on('rejoin_room', ({ code, username, team, skinId, skinFile, skinName }) => {
@@ -263,11 +386,11 @@ io.on('connection', (socket) => {
     io.to(code).emit('player_in_game', { id: socket.id, username, team, ...skin })
   })
 
-  socket.on('player_update', ({ code, position, rotation, state, crouching, prone }) => {
+  socket.on('player_update', ({ code, position, rotation, state, crouching, prone, team }) => {
     code = normalizeCode(code)
     if (!rooms[code]) return
     socket.to(code).emit('opponent_update', {
-      id: socket.id, position, rotation, state, crouching, prone
+      id: socket.id, position, rotation, state, crouching, prone, team
     })
   })
 

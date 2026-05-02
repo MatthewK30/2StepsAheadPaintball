@@ -2196,6 +2196,7 @@
     ]);
     const DEFAULT_SKIN = SKINS[0];
     const SELECTED_SKIN = readSelectedSkin();
+    let matchBots = readMatchBots();
     const multiplayer = {
       socket: null,
       room: ROOM_CODE,
@@ -2422,6 +2423,8 @@
       position: ai.position,
       lastPosition: new THREE.Vector3(24, 0, 0),
       visible: false,
+      isBot: false,
+      botDifficulty: 'pro',
       crouching: false,
       prone: false
     };
@@ -2623,6 +2626,53 @@
       const urlSkin = normalizeSkin(urlParams.get('skin') || urlParams.get('skinId'), urlParams.get('skinFile'), urlParams.get('skinName'));
       if (urlSkin) return urlSkin;
       return normalizeSkin(safeStorageGet(localStorage, 'selectedSkin'), safeStorageGet(localStorage, 'selectedSkinFile'), safeStorageGet(localStorage, 'selectedSkinName')) || DEFAULT_SKIN;
+    }
+
+    function readMatchBots() {
+      if (!MULTIPLAYER || GAME_MODE !== '2v2') return [];
+      try {
+        return normalizeMatchBots(JSON.parse(sessionStorage.getItem('paintballBots') || '[]'));
+      } catch (_) {
+        return [];
+      }
+    }
+
+    function normalizeMatchBots(bots) {
+      if (!Array.isArray(bots)) return [];
+      const seen = new Set();
+      const normalized = [];
+      for (let i = 0; i < bots.length; i++) {
+        const bot = bots[i] || {};
+        const slotIndex = Number(bot.slotIndex);
+        if (!Number.isInteger(slotIndex) || slotIndex < 0 || slotIndex > 3 || seen.has(slotIndex)) continue;
+        seen.add(slotIndex);
+        const team = bot.team === 'red' || bot.team === 'blue' ? bot.team : (slotIndex < 2 ? 'red' : 'blue');
+        const skin = normalizeSkin(bot.skinId, bot.skinFile, bot.skinName) || DEFAULT_SKIN;
+        normalized.push({
+          slotIndex,
+          team,
+          difficulty: normalizeBotDifficulty(bot.difficulty),
+          skin,
+          skinId: skin.id,
+          skinFile: skin.file,
+          skinName: skin.name
+        });
+      }
+      return normalized;
+    }
+
+    function normalizeBotDifficulty(difficulty) {
+      return difficulty === 'basic' || difficulty === 'elite' ? difficulty : 'pro';
+    }
+
+    function syncMatchBots(bots) {
+      matchBots = normalizeMatchBots(bots);
+      try { sessionStorage.setItem('paintballBots', JSON.stringify(matchBots)); } catch (_) {}
+    }
+
+    function opposingBot() {
+      if (!MULTIPLAYER || GAME_MODE !== '2v2') return null;
+      return matchBots.find((bot) => bot.team === OPPONENT_TEAM) || null;
     }
 
     function normalizeSkin(id, file, name) {
@@ -6013,6 +6063,7 @@
       });
       multiplayer.socket.on('opponent_update', updateRemotePlayerFromNetwork);
       multiplayer.socket.on('opponent_shoot', ({ origin, direction, team, id, shot }) => {
+        if (team === MY_TEAM) return;
         if (id && id !== remotePlayer.id) remotePlayer.id = id;
         spawnRemotePaintball(origin, direction, team || remotePlayer.team, id, shot);
       });
@@ -6027,22 +6078,44 @@
 
     function configureMultiplayerRoom(room) {
       if (!room || !Array.isArray(room.players)) return;
+      syncMatchBots(room.bots || []);
       const opponent = room.players.find((p) => p.id !== multiplayer.socket.id && p.team !== MY_TEAM)
         || room.players.find((p) => p.id !== multiplayer.socket.id && p.username !== MY_USERNAME);
-      if (opponent) setRemotePlayerInfo(opponent);
+      if (opponent && opponent.team !== MY_TEAM) setRemotePlayerInfo(opponent);
+      else applyOpponentBot();
     }
 
     function setRemotePlayerInfo(playerInfo) {
-      if (!MULTIPLAYER || !playerInfo || playerInfo.id === multiplayer.socket?.id) return;
+      if (!MULTIPLAYER || !playerInfo || playerInfo.id === multiplayer.socket?.id || playerInfo.team === MY_TEAM) return;
       remotePlayer.id = playerInfo.id || remotePlayer.id;
       remotePlayer.username = playerInfo.username || remotePlayer.username || 'Opponent';
       remotePlayer.team = playerInfo.team === 'red' || playerInfo.team === 'blue' ? playerInfo.team : remotePlayer.team;
       remotePlayer.skin = normalizeSkin(playerInfo.skinId, playerInfo.skinFile, playerInfo.skinName) || remotePlayer.skin || DEFAULT_SKIN;
       remotePlayer.skinName = remotePlayer.skin.name;
+      remotePlayer.isBot = false;
+      remotePlayer.botDifficulty = 'pro';
       applyRemoteTeamMaterials(remotePlayer.team);
       applyRemoteSkinToAi(remotePlayer.skin);
       remotePlayer.visible = true;
       if (!state.aiEliminated) ai.group.visible = true;
+    }
+
+    function applyOpponentBot() {
+      const bot = opposingBot();
+      if (!bot) return false;
+      remotePlayer.id = 'bot-' + bot.slotIndex;
+      remotePlayer.username = bot.skinName || 'Bot';
+      remotePlayer.team = bot.team;
+      remotePlayer.skin = bot.skin || normalizeSkin(bot.skinId, bot.skinFile, bot.skinName) || DEFAULT_SKIN;
+      remotePlayer.skinName = remotePlayer.skin.name;
+      remotePlayer.visible = true;
+      remotePlayer.isBot = true;
+      remotePlayer.botDifficulty = normalizeBotDifficulty(bot.difficulty);
+      state.aiDifficulty = remotePlayer.botDifficulty;
+      applyRemoteTeamMaterials(remotePlayer.team);
+      applyRemoteSkinToAi(remotePlayer.skin);
+      if (!state.aiEliminated) ai.group.visible = true;
+      return true;
     }
 
     function applyRemoteSkinToAi(skin) {
@@ -6069,9 +6142,11 @@
       });
     }
 
-    function updateRemotePlayerFromNetwork({ id, position, rotation, crouching, prone }) {
+    function updateRemotePlayerFromNetwork({ id, position, rotation, crouching, prone, team }) {
       if (!MULTIPLAYER || !position) return;
+      if (team === MY_TEAM) return;
       if (id) remotePlayer.id = id;
+      remotePlayer.isBot = false;
       if (killCam.active) return;
       remotePlayer.visible = true;
       remotePlayer.crouching = !!crouching;
@@ -6087,6 +6162,7 @@
 
     function updateRemotePlayer(dt) {
       if (!MULTIPLAYER || !remotePlayer.visible || state.aiEliminated) return;
+      if (remotePlayer.isBot) return;
       const moving = ai.position.distanceToSquared(remotePlayer.lastPosition) > 0.0004;
       updateAiVisual(dt, moving, false);
       remotePlayer.lastPosition.copy(ai.position);
@@ -6102,6 +6178,7 @@
           z: player.root.position.z
         },
         rotation: { y: player.yaw },
+        team: MY_TEAM,
         crouching: input.crouch,
         prone: input.crawl || player.diving
       });
@@ -6676,7 +6753,7 @@
     function updateActiveRound(dt) {
       state.roundClock -= dt;
       updateReadyDelay(dt);
-      if (!MULTIPLAYER) updateAi(dt);
+      if (!MULTIPLAYER || remotePlayer.isBot) updateAi(dt);
       if (input.shotRequests > 0 && state.shotClock <= 0 && state.readyClock <= 0) {
         if (tryShootPlayer()) input.shotRequests -= 1;
       }
@@ -7198,7 +7275,10 @@
         if (bodyTarget === 2) {
           tmpVecA.copy(p.pos);
           p.pos.copy(p.prev).lerp(tmpVecA, bodyT);
-          if (!MULTIPLAYER) {
+          if (MULTIPLAYER && remotePlayer.isBot) {
+            hitPlayer(shotWithImpact(p.shotData, p.pos), remotePlayer.id);
+            spawnSplat(remotePlayer.team || OPPONENT_TEAM, player.bodyCenter.x, player.height * 0.82, player.bodyCenter.z, 0, 0, 1, 0.72);
+          } else if (!MULTIPLAYER) {
             playerEliminated(shotWithImpact(p.shotData, p.pos));
             spawnSplat('blue', player.bodyCenter.x, player.height * 0.82, player.bodyCenter.z, 0, 0, 1, 0.72);
           }
@@ -7232,6 +7312,10 @@
     function confirmOpponentHit(hitPos, shotData) {
       if (!remotePlayer.id || !multiplayer.socket || !multiplayer.socket.connected) return;
       spawnSplat(MY_TEAM, hitPos.x, Math.max(0.6, ai.tacticalHeight * 0.82), hitPos.z, 0, 0, -1, 0.72);
+      if (remotePlayer.isBot) {
+        hitOpponent(shotWithImpact(shotData, hitPos), multiplayer.socket.id);
+        return;
+      }
       multiplayer.socket.emit('player_hit', {
         code: ROOM_CODE,
         victimId: remotePlayer.id,
@@ -7857,16 +7941,17 @@
         tmpVecB.z += Math.cos(state.elapsed * 2.7) * spread;
       }
       tmpVecB.normalize();
+      const aiTeam = MULTIPLAYER ? (remotePlayer.team || OPPONENT_TEAM) : 'blue';
       const shotData = recordShotData({
         origin: tmpVecA,
         direction: tmpVecB,
         shooterPosition: ai.position,
         shooterRotation: { x: 0, y: ai.group.rotation.y, z: 0 },
-        team: 'blue',
-        shooterId: 'ai',
-        shooterName: aiDifficultyName()
+        team: aiTeam,
+        shooterId: remotePlayer.isBot ? remotePlayer.id : 'ai',
+        shooterName: aiOpponentName()
       });
-      fireProjectile('blue', tmpVecA, tmpVecB, shotData);
+      fireProjectile(aiTeam, tmpVecA, tmpVecB, shotData);
       audio.fire();
       return true;
     }
@@ -7921,6 +8006,10 @@
     function aiDifficultyName() {
       const key = AI_DIFFICULTIES[state.aiDifficulty] ? state.aiDifficulty : SELECTED_DIFFICULTY;
       return key.charAt(0).toUpperCase() + key.slice(1);
+    }
+
+    function aiOpponentName() {
+      return MULTIPLAYER && remotePlayer.isBot ? remoteSkinName() : aiDifficultyName();
     }
 
     function aiEliminated(hitPos, shotData) {
