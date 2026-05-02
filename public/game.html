@@ -3147,6 +3147,7 @@
       addFunlandExtraCover(group, colliders, coverPoints, fun);
       addFunlandFloodlights(group, colliders, fun);
       addFunlandFerrisWheel(group, colliders, fun);
+      addFunlandSurround(group, fun);
       finalizeMapShadows(group);
       return { group, colliders, shootables, coverPoints, sky: 0xeaaad8, fog: 0xeaaad8, ambient: 'funland', carousel };
     }
@@ -3543,6 +3544,163 @@
         light.castShadow = false;
         group.add(light);
       });
+    }
+
+    function addFunlandSurround(group, fun) {
+      let s = 17;
+      const rand = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+
+      const fieldMat = new THREE.MeshStandardMaterial({ color: 0x6fb84a, roughness: 1, metalness: 0 });
+      const fieldGeo = new THREE.PlaneGeometry(900, 900, 64, 64);
+      const fpos = fieldGeo.attributes.position;
+      for (let i = 0; i < fpos.count; i++) {
+        const x = fpos.getX(i);
+        const y = fpos.getY(i);
+        const inArena = Math.abs(x) < ARENA_HALF_X + 12 && Math.abs(y) < ARENA_HALF_Z + 12;
+        const roll = inArena ? 0 : Math.sin(x * 0.045) * 0.7 + Math.cos(y * 0.052) * 0.6 + Math.sin((x - y) * 0.022) * 0.9;
+        fpos.setZ(i, roll);
+      }
+      fieldGeo.computeVertexNormals();
+      const field = new THREE.Mesh(fieldGeo, fieldMat);
+      field.rotation.x = -Math.PI / 2;
+      field.position.y = -0.4;
+      field.receiveShadow = false;
+      field.castShadow = false;
+      group.add(field);
+
+      const treeTrunkMat = new THREE.MeshStandardMaterial({ color: 0x6b4a2e, roughness: 1, metalness: 0 });
+      const foliageMats = [
+        new THREE.MeshStandardMaterial({ color: 0x3a8c4a, roughness: 1, metalness: 0, flatShading: true }),
+        new THREE.MeshStandardMaterial({ color: 0x4ea05c, roughness: 1, metalness: 0, flatShading: true }),
+        new THREE.MeshStandardMaterial({ color: 0x68b07a, roughness: 1, metalness: 0, flatShading: true }),
+        new THREE.MeshStandardMaterial({ color: 0x9d6fb8, roughness: 1, metalness: 0, flatShading: true })
+      ];
+      const treeRings = [{ r: 60, count: 28 }, { r: 90, count: 32 }, { r: 130, count: 36 }];
+      treeRings.forEach((ring) => {
+        for (let i = 0; i < ring.count; i++) {
+          const ang = (i / ring.count) * Math.PI * 2 + rand() * 0.4;
+          const r = ring.r + (rand() - 0.5) * 14;
+          const tx = Math.cos(ang) * r;
+          const tz = Math.sin(ang) * r;
+          if (Math.abs(tx) < ARENA_HALF_X + 8 && Math.abs(tz) < ARENA_HALF_Z + 8) continue;
+          const h = 4 + rand() * 6;
+          const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.5, h, 8), treeTrunkMat);
+          trunk.position.set(tx, h * 0.5, tz);
+          group.add(trunk);
+          const foliage = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 0), foliageMats[i % foliageMats.length]);
+          const fs = 2 + rand() * 1.8;
+          foliage.position.set(tx, h + fs * 0.5, tz);
+          foliage.scale.set(fs, fs * 0.85, fs);
+          foliage.rotation.y = rand() * Math.PI;
+          group.add(foliage);
+          if (rand() < 0.5) {
+            const top = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 0), foliageMats[(i + 2) % foliageMats.length]);
+            const ts = fs * (0.6 + rand() * 0.3);
+            top.position.set(tx + (rand() - 0.5) * 0.4, h + fs * 0.7 + ts * 0.4, tz + (rand() - 0.5) * 0.4);
+            top.scale.set(ts, ts, ts);
+            group.add(top);
+          }
+        }
+      });
+
+      const distantPalette = [fun.fadedRed, fun.fadedBlue, fun.fadedYellow, fun.fadedGreen, fun.fadedPink, fun.fadedPurple, fun.orange];
+      for (let i = 0; i < 4; i++) {
+        const ang = (i / 4) * Math.PI * 2 + Math.PI / 5;
+        const r = 165 + rand() * 30;
+        const fx = Math.cos(ang) * r;
+        const fz = Math.sin(ang) * r;
+        const ringMat = i % 2 === 0 ? fun.metal : fun.darkMetal;
+        const wheel = new THREE.Mesh(new THREE.TorusGeometry(11, 0.32, 8, 36), ringMat);
+        wheel.position.set(fx, 12, fz);
+        wheel.rotation.y = rand() * Math.PI;
+        group.add(wheel);
+        const inner = new THREE.Mesh(new THREE.TorusGeometry(10.4, 0.16, 6, 28), fun.gold);
+        inner.position.copy(wheel.position);
+        inner.rotation.copy(wheel.rotation);
+        group.add(inner);
+        const spokeCount = 10;
+        for (let k = 0; k < spokeCount; k++) {
+          const a = (k / spokeCount) * Math.PI * 2;
+          const spoke = new THREE.Mesh(geometries.box, fun.darkMetal);
+          spoke.position.set(fx, 12, fz);
+          spoke.scale.set(21, 0.1, 0.1);
+          spoke.rotation.y = wheel.rotation.y;
+          spoke.rotation.z = a;
+          group.add(spoke);
+          const gondola = new THREE.Mesh(geometries.sphere, distantPalette[(i * 3 + k) % distantPalette.length]);
+          gondola.position.set(fx + Math.cos(a) * 11, 12 + Math.sin(a) * 11 - 0.9, fz);
+          gondola.scale.set(0.7, 0.5, 0.7);
+          group.add(gondola);
+        }
+        for (let leg = -1; leg <= 1; leg += 2) {
+          const support = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.7, 14, 8), fun.metal);
+          support.position.set(fx + leg * 5, 7, fz);
+          support.rotation.z = leg * 0.32;
+          group.add(support);
+        }
+      }
+
+      for (let i = 0; i < 6; i++) {
+        const ang = i * Math.PI / 3 + 0.3;
+        const r = 130 + rand() * 40;
+        const cx = Math.cos(ang) * r;
+        const cz = Math.sin(ang) * r;
+        const segs = 14 + Math.floor(rand() * 6);
+        for (let k = 0; k < segs; k++) {
+          const phase = k / segs * Math.PI * 2;
+          const cw = 8 + Math.sin(phase * 2 + i) * 3;
+          const ch = 4 + Math.sin(phase * 1.5) * 2.5 + Math.cos(phase * 0.7) * 1.5;
+          const tx = cx + Math.cos(phase) * cw;
+          const tz = cz + Math.sin(phase) * cw;
+          const rail = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.3, 0.3), fun.darkMetal);
+          rail.position.set(tx, ch + 4, tz);
+          rail.rotation.y = phase + Math.PI / 2;
+          group.add(rail);
+          if (k % 2 === 0) {
+            const support = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, ch + 4, 6), fun.metal);
+            support.position.set(tx, (ch + 4) * 0.5, tz);
+            group.add(support);
+          }
+        }
+      }
+
+      const tentColors = [fun.fadedRed, fun.fadedYellow, fun.fadedBlue, fun.fadedPink];
+      for (let i = 0; i < 8; i++) {
+        const ang = i * Math.PI / 4 + 0.1;
+        const r = 80 + rand() * 25;
+        const tx = Math.cos(ang) * r;
+        const tz = Math.sin(ang) * r;
+        if (Math.abs(tx) < ARENA_HALF_X + 14 && Math.abs(tz) < ARENA_HALF_Z + 14) continue;
+        const tent = new THREE.Mesh(new THREE.ConeGeometry(4 + rand() * 2, 6 + rand() * 3, 8), tentColors[i % tentColors.length]);
+        tent.position.set(tx, 3 + rand() * 1, tz);
+        tent.rotation.y = rand() * Math.PI;
+        group.add(tent);
+        const flag = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.2, 0.06), fun.gold);
+        flag.position.set(tx, 7.5 + rand() * 1, tz);
+        group.add(flag);
+        const flagBall = new THREE.Mesh(geometries.sphere, fun.fadedYellow);
+        flagBall.position.set(tx, 8.4 + rand() * 1, tz);
+        flagBall.scale.setScalar(0.22);
+        group.add(flagBall);
+      }
+
+      const balloonColors = [0xff5566, 0xffd23f, 0x5fb8ff, 0xff7ad6, 0xa073f0, 0x6fe89a];
+      for (let i = 0; i < 18; i++) {
+        const ang = rand() * Math.PI * 2;
+        const r = 35 + rand() * 80;
+        const bx = Math.cos(ang) * r;
+        const bz = Math.sin(ang) * r;
+        if (Math.abs(bx) < ARENA_HALF_X + 6 && Math.abs(bz) < ARENA_HALF_Z + 6) continue;
+        const mat = new THREE.MeshStandardMaterial({ color: balloonColors[i % balloonColors.length], roughness: 0.45, metalness: 0.05, emissive: balloonColors[i % balloonColors.length], emissiveIntensity: 0.18 });
+        const balloon = new THREE.Mesh(geometries.sphere, mat);
+        const by = 18 + rand() * 22;
+        balloon.position.set(bx, by, bz);
+        balloon.scale.set(0.9, 1.1, 0.9);
+        group.add(balloon);
+        const string = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 3, 4), fun.darkMetal);
+        string.position.set(bx, by - 1.7, bz);
+        group.add(string);
+      }
     }
 
     function addFunlandFerrisWheel(group, colliders, fun) {
