@@ -5684,6 +5684,7 @@
       // Remove previous extra bot groups from scene
       extraBots.forEach(b => { if (b.group && b.group.parent) scene.remove(b.group); });
       extraBots = [];
+      console.log('[ExtraBots] setupExtraBots called. GAME_MODE=' + GAME_MODE + ' matchBots=' + JSON.stringify(matchBots));
       if (GAME_MODE !== '2v2') return;
       const botDefs = [
         { role: 'ally',   team: MY_TEAM,       spawnOffset: new THREE.Vector3(0, 0, 5) },
@@ -5949,11 +5950,13 @@
     }
 
     function showExtraBots() {
+      console.log('[ExtraBots] showExtraBots, count=' + extraBots.length);
       extraBots.forEach(b => {
         b.visible = true;
         b.group.visible = !b.eliminated;
-        // Restore any meshes that were hidden by cover-cull at spawn time
+        b.group.traverse(child => { if (child.isMesh) child.visible = true; });
         restoreCoverCullVisibility(b.group);
+        console.log('[ExtraBots] bot role=' + b.role + ' team=' + b.team + ' group.visible=' + b.group.visible + ' inScene=' + !!b.group.parent);
       });
     }
 
