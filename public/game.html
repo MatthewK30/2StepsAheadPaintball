@@ -3490,9 +3490,9 @@
       roofTex.repeat.set(20, 14);
       roofTex.anisotropy = maxAniso;
       roofTex.colorSpace = THREE.SRGBColorSpace;
-      const turf = new THREE.MeshStandardMaterial({ color: 0x2a2a35, roughness: 0.9, metalness: 0.1, envMapIntensity: 0.8 });
+      const turf = new THREE.MeshStandardMaterial({ color: 0x555566, roughness: 0.9, metalness: 0.1, envMapIntensity: 0.8 });
       turf.map = roofTex;
-      turf.color.set(0x333340);
+      turf.color.set(0x555566);
       const windowTexture = createCityWindowTexture();
       const buildingMaterial = () => new THREE.MeshStandardMaterial({ color: 0x334455, roughness: 0.8, metalness: 0.2, emissiveMap: windowTexture, emissive: 0xffffff, emissiveIntensity: 0.4 });
       const neon = (color, intensity = 0.9) => new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: intensity, roughness: 0.2, metalness: 0.1 });
@@ -3503,16 +3503,16 @@
         drain: standard(0x2a2a30, { roughness: 0.65, metalness: 0.75, envMapIntensity: 0.8 }),
         steel: new THREE.MeshStandardMaterial({ color: 0x999aaa, roughness: 0.3, metalness: 0.85, envMapIntensity: 1.2 }),
         glass: new THREE.MeshPhysicalMaterial({ color: 0xaabbff, roughness: 0.05, metalness: 0.0, transmission: 0.88, thickness: 0.15, ior: 1.5, clearcoat: 1.0, clearcoatRoughness: 0.05, envMapIntensity: 1.5 }),
-        hvac: new THREE.MeshStandardMaterial({ color: 0x666677, roughness: 0.7, metalness: 0.6, envMapIntensity: 1.0 }),
-        hvacDark: new THREE.MeshStandardMaterial({ color: 0x444455, roughness: 0.7, metalness: 0.6 }),
-        rust: standard(0x8a4a28, { roughness: 0.86, metalness: 0.2, envMapIntensity: 0.5 }),
-        duct: new THREE.MeshStandardMaterial({ color: 0x888899, roughness: 0.5, metalness: 0.7, envMapIntensity: 1.0 }),
-        waterWood: new THREE.MeshStandardMaterial({ color: 0x8b6914, roughness: 0.85, metalness: 0.1, envMapIntensity: 0.6 }),
-        waterLegs: new THREE.MeshStandardMaterial({ color: 0x333344, roughness: 0.6, metalness: 0.8 }),
-        satellite: new THREE.MeshStandardMaterial({ color: 0xccccdd, roughness: 0.4, metalness: 0.5, envMapIntensity: 1.2 }),
-        generator: new THREE.MeshStandardMaterial({ color: 0xddaa00, roughness: 0.6, metalness: 0.4, envMapIntensity: 0.8 }),
-        accessDoor: new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.85, metalness: 0.1, envMapIntensity: 0.5 }),
-        concrete: standard(0x686875, { roughness: 0.9, metalness: 0.08, envMapIntensity: 0.45 }),
+        hvac: new THREE.MeshStandardMaterial({ color: 0x9999bb, roughness: 0.7, metalness: 0.6, envMapIntensity: 1.0 }),
+        hvacDark: new THREE.MeshStandardMaterial({ color: 0x7777aa, roughness: 0.7, metalness: 0.6 }),
+        rust: standard(0xc46030, { roughness: 0.86, metalness: 0.2, envMapIntensity: 0.5 }),
+        duct: new THREE.MeshStandardMaterial({ color: 0xaaaacc, roughness: 0.5, metalness: 0.7, envMapIntensity: 1.0 }),
+        waterWood: new THREE.MeshStandardMaterial({ color: 0xc08a28, roughness: 0.85, metalness: 0.1, envMapIntensity: 0.6 }),
+        waterLegs: new THREE.MeshStandardMaterial({ color: 0x666688, roughness: 0.6, metalness: 0.8 }),
+        satellite: new THREE.MeshStandardMaterial({ color: 0xddddee, roughness: 0.4, metalness: 0.5, envMapIntensity: 1.2 }),
+        generator: new THREE.MeshStandardMaterial({ color: 0xffcc00, roughness: 0.6, metalness: 0.4, envMapIntensity: 0.8 }),
+        accessDoor: new THREE.MeshStandardMaterial({ color: 0xaaaaaa, roughness: 0.85, metalness: 0.1, envMapIntensity: 0.5 }),
+        concrete: standard(0x9090a0, { roughness: 0.9, metalness: 0.08, envMapIntensity: 0.45 }),
         planter: standard(0x6b5840, { roughness: 0.88, metalness: 0.05, envMapIntensity: 0.45 }),
         hedge: standard(0x2f7c34, { roughness: 0.96, metalness: 0.0, envMapIntensity: 0.25 }),
         yellow: new THREE.MeshStandardMaterial({ color: 0xddaa00, roughness: 0.6, metalness: 0.4, envMapIntensity: 0.8 }),
@@ -3936,25 +3936,46 @@
       addRooftopWaterTower(group, colliders, points, roof, -24, -16);
       addRooftopWaterTower(group, colliders, points, roof,  24,  16);
 
-      // HVAC units — mid-lane cover, mirrored
+      // HVAC units — mid-lane and flank cover, mirrored pairs
       addRooftopHvac(group, colliders, points, roof, -10,  0, 0);
       addRooftopHvac(group, colliders, points, roof,  10,  0, Math.PI);
+      addRooftopHvac(group, colliders, points, roof, -18,  10, 0.15);
+      addRooftopHvac(group, colliders, points, roof,  18, -10, Math.PI + 0.15);
 
       // Duct runs — flanking cover along long axis
-      addDuctRun(group, colliders, points, roof, -18,  8, false);
-      addDuctRun(group, colliders, points, roof,  18, -8, true);
+      addDuctRun(group, colliders, points, roof, -20,  6, false);
+      addDuctRun(group, colliders, points, roof,  20, -6, true);
+
+      // Satellite dishes — decorative + light cover near corners
+      addSatelliteDish(group, colliders, points, roof, -12, -14, 0.5);
+      addSatelliteDish(group, colliders, points, roof,  12,  14, Math.PI + 0.5);
 
       // Concrete risers — mid-field angled barriers
-      addConcreteRiserCover(group, colliders, points, roof, -5,  12, Math.PI / 2);
-      addConcreteRiserCover(group, colliders, points, roof,  5, -12, Math.PI / 2);
+      addConcreteRiserCover(group, colliders, points, roof, -5,  13, Math.PI / 2);
+      addConcreteRiserCover(group, colliders, points, roof,  5, -13, Math.PI / 2);
 
-      // Access doors — near-spawn context, one per side
-      addAccessDoor(group, colliders, points, roof, -20, -4, 0);
-      addAccessDoor(group, colliders, points, roof,  20,  4, Math.PI);
+      // Concrete risers — close-mid for aggressive pushing
+      addConcreteRiserCover(group, colliders, points, roof, -14,  2, 0.3);
+      addConcreteRiserCover(group, colliders, points, roof,  14, -2, Math.PI + 0.3);
 
-      // Neon signs — center lane atmosphere, one per side
-      addNeonSign(group, colliders, points, roof, -1,  16, 0,           roof.signPink);
-      addNeonSign(group, colliders, points, roof,  1, -16, Math.PI,     roof.signBlue);
+      // Access doors — near-spawn
+      addAccessDoor(group, colliders, points, roof, -22, -2, 0);
+      addAccessDoor(group, colliders, points, roof,  22,  2, Math.PI);
+
+      // Generator — center landmark, breaks up the open mid
+      addGeneratorCover(group, colliders, points, roof, 0, 0);
+
+      // Neon signs — atmosphere, facing mid-lane
+      addNeonSign(group, colliders, points, roof, -2,  17, 0,       roof.signPink);
+      addNeonSign(group, colliders, points, roof,  2, -17, Math.PI, roof.signBlue);
+      addNeonSign(group, colliders, points, roof, -17,  0, Math.PI / 2,  roof.signGreen);
+      addNeonSign(group, colliders, points, roof,  17,  0, -Math.PI / 2, roof.signOrange);
+
+      // Planters — soft cover near flanks
+      addPlanterCover(group, colliders, points, roof, -26, -14, 0);
+      addPlanterCover(group, colliders, points, roof,  26,  14, 0);
+      addPlanterCover(group, colliders, points, roof, -8,  17, 0.1);
+      addPlanterCover(group, colliders, points, roof,  8, -17, 0.1);
     }
 
     function addRooftopHvac(group, colliders, points, roof, x, z, yaw) {
@@ -8889,7 +8910,7 @@
         scene.fog = new THREE.Fog(0x0d0020, 140, 520);
         skyStatus = 'rooftop-night';
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.15;
+        renderer.toneMappingExposure = 2.2;
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -8947,7 +8968,7 @@
 
         // --- Lighting: bright enough to see the map clearly ---
         // Strong cool moonlight from above
-        const moonLight = new THREE.DirectionalLight(0xc8d0ff, 2.2);
+        const moonLight = new THREE.DirectionalLight(0xd0dcff, 5.0);
         moonLight.position.set(-60, 100, -20);
         moonLight.castShadow = true;
         moonLight.shadow.mapSize.width = 2048;
@@ -8957,21 +8978,24 @@
         moonLight.shadow.camera.top = 60;
         moonLight.shadow.camera.bottom = -60;
         moonLight.shadow.bias = -0.0001;
-        // Hemisphere: purple-blue sky / slightly warm ground bounce
-        const hemi = new THREE.HemisphereLight(0x4422aa, 0x1a0a2e, 1.6);
+        // Fill light from opposite side so shadows aren't pitch black
+        const fillLight = new THREE.DirectionalLight(0x8866cc, 2.5);
+        fillLight.position.set(60, 40, 20);
+        // Hemisphere: purple-blue sky / warm ground bounce
+        const hemi = new THREE.HemisphereLight(0x6644cc, 0x3a1a66, 3.0);
         // Bright ambient so nothing is pitch black
-        const ambient = new THREE.AmbientLight(0x9988cc, 1.2);
+        const ambient = new THREE.AmbientLight(0xbbaaee, 2.5);
         // Neon city glow from below — purple
-        const cityGlow = new THREE.PointLight(0x8833ff, 2.0, 160);
+        const cityGlow = new THREE.PointLight(0x8833ff, 3.5, 200);
         cityGlow.position.set(0, -8, 0);
         // Pink neon accent from one side
-        const pinkGlow = new THREE.PointLight(0xff44aa, 1.2, 100);
-        pinkGlow.position.set(35, 2, 15);
+        const pinkGlow = new THREE.PointLight(0xff44aa, 2.5, 120);
+        pinkGlow.position.set(35, 4, 15);
         // Blue neon from opposite side
-        const blueGlow = new THREE.PointLight(0x4488ff, 1.0, 100);
-        blueGlow.position.set(-35, 2, -15);
+        const blueGlow = new THREE.PointLight(0x4488ff, 2.5, 120);
+        blueGlow.position.set(-35, 4, -15);
 
-        ghostTownLights = [skyDome, stars, moonLight, hemi, ambient, cityGlow, pinkGlow, blueGlow];
+        ghostTownLights = [skyDome, stars, moonLight, fillLight, hemi, ambient, cityGlow, pinkGlow, blueGlow];
         ghostTownLights.forEach((obj) => scene.add(obj));
         return;
       }
