@@ -3478,7 +3478,7 @@
       colliders.shootables = shootables;
       addRooftopCover(group, colliders, coverPoints, roof);
       finalizeRooftopShadows(group);
-      return { group, colliders, shootables, coverPoints, sky: 0x79cfff, fog: 0x79cfff, ambient: 'rooftop' };
+      return { group, colliders, shootables, coverPoints, sky: 0x0a0014, fog: 0x0d0020, ambient: 'rooftop' };
     }
 
     function createRooftopMaterials() {
@@ -8876,28 +8876,48 @@
       renderer.shadowMap.enabled = false;
       if (active && active.ambient === 'rooftop') {
         scene.remove(ambientLight, keyLight, keyLight.target, hemiLight);
-        scene.background = new THREE.Color(0xffa36f);
-        scene.fog = new THREE.Fog(0xffa36f, 135, 540);
-        skyStatus = 'rooftop-sunset';
+        // Night sky: deep black-purple gradient base
+        scene.background = new THREE.Color(0x0a0014);
+        scene.fog = new THREE.Fog(0x0d0020, 120, 480);
+        skyStatus = 'rooftop-night';
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 0.85;
+        renderer.toneMappingExposure = 1.1;
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        const sunLight = new THREE.DirectionalLight(0xff7733, 2.5);
-        sunLight.position.set(-60, 40, -20);
-        sunLight.castShadow = true;
-        sunLight.shadow.mapSize.width = 2048;
-        sunLight.shadow.mapSize.height = 2048;
-        sunLight.shadow.camera.left = -50;
-        sunLight.shadow.camera.right = 50;
-        sunLight.shadow.camera.top = 50;
-        sunLight.shadow.camera.bottom = -50;
-        sunLight.shadow.bias = -0.0001;
-        const hemi = new THREE.HemisphereLight(0xff8844, 0x221133, 0.8);
-        const ambient = new THREE.AmbientLight(0xff6622, 0.3);
-        const cityGlow = new THREE.PointLight(0xff9944, 1.0, 100);
+        // Cool moonlight instead of warm sun
+        const moonLight = new THREE.DirectionalLight(0xb0aaff, 1.2);
+        moonLight.position.set(-60, 80, -20);
+        moonLight.castShadow = true;
+        moonLight.shadow.mapSize.width = 2048;
+        moonLight.shadow.mapSize.height = 2048;
+        moonLight.shadow.camera.left = -50;
+        moonLight.shadow.camera.right = 50;
+        moonLight.shadow.camera.top = 50;
+        moonLight.shadow.camera.bottom = -50;
+        moonLight.shadow.bias = -0.0001;
+        // Sky hemi: dark purple top, deep blue-black ground
+        const hemi = new THREE.HemisphereLight(0x2a0a4a, 0x050010, 1.0);
+        // Soft purple-pink ambient
+        const ambient = new THREE.AmbientLight(0x3d1060, 0.6);
+        // City glow from below — purple/pink neon
+        const cityGlow = new THREE.PointLight(0x7722cc, 1.4, 120);
         cityGlow.position.set(0, -10, 0);
-        ghostTownLights = [sunLight, hemi, ambient, cityGlow];
+        const pinkGlow = new THREE.PointLight(0xff44aa, 0.6, 80);
+        pinkGlow.position.set(30, -5, 20);
+        // Add stars as a points geometry
+        const starCount = 800;
+        const starGeo = new THREE.BufferGeometry();
+        const starPositions = new Float32Array(starCount * 3);
+        for (let i = 0; i < starCount; i++) {
+          starPositions[i * 3]     = (Math.random() - 0.5) * 1200;
+          starPositions[i * 3 + 1] = Math.random() * 400 + 30;
+          starPositions[i * 3 + 2] = (Math.random() - 0.5) * 1200;
+        }
+        starGeo.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+        const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.6, sizeAttenuation: true, transparent: true, opacity: 0.85 });
+        const stars = new THREE.Points(starGeo, starMat);
+        stars.userData.rooftopStar = true;
+        ghostTownLights = [moonLight, hemi, ambient, cityGlow, pinkGlow, stars];
         ghostTownLights.forEach((light) => scene.add(light));
         return;
       }
