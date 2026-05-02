@@ -1365,6 +1365,9 @@
         }
         state.socket.emit('create_room', {
           username: state.username,
+          map: state.createOptions.map,
+          gameMode: state.createOptions.gameMode,
+          firstTo: state.createOptions.firstTo,
           ...selectedSkinPayload()
         })
       }
