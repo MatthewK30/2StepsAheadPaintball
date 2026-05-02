@@ -2952,9 +2952,9 @@
         vinylDark: mat(0x303238, { roughness: 0.38, metalness: 0.05, envMapIntensity: 0.4 }),
         skyGrey: mat(0x9aa2a5, { roughness: 1 }),
         skyBlue: mat(0x62bdf7, { roughness: 1 }),
-        cloud: mat(0xfaf0ff, { roughness: 0.7, transparent: true, opacity: 0.88, depthWrite: false, side: THREE.DoubleSide }),
-        cloudGrey: mat(0xe8d4f8, { roughness: 1, transparent: true, opacity: 0.62, depthWrite: false, side: THREE.DoubleSide }),
-        cloudDark: mat(0xd0b0ee, { roughness: 1, transparent: true, opacity: 0.45, depthWrite: false, side: THREE.DoubleSide }),
+        cloud: mat(0xffffff, { roughness: 0.85, transparent: true, opacity: 0.97, depthWrite: false, emissive: 0xfff4ff, emissiveIntensity: 0.18 }),
+        cloudGrey: mat(0xfde6f4, { roughness: 0.9, transparent: true, opacity: 0.92, depthWrite: false, emissive: 0xffe6f0, emissiveIntensity: 0.12 }),
+        cloudDark: mat(0xe8c8e0, { roughness: 1, transparent: true, opacity: 0.78, depthWrite: false }),
         godRay: mat(0xfff0c8, { emissive: 0xffe3a1, emissiveIntensity: 0.45, roughness: 1, transparent: true, opacity: 0.08, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }),
         lensFlare: mat(0xfff2ca, { emissive: 0xffe9b0, emissiveIntensity: 0.7, roughness: 0.8, transparent: true, opacity: 0.28, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }),
         flagRed: mat(0xc31424, { roughness: 0.72, metalness: 0, side: THREE.DoubleSide }),
@@ -3151,22 +3151,22 @@
         metal: standard(0x6b7478, { roughness: 0.68, metalness: 0.38 }),
         darkMetal: standard(0x2e3438, { roughness: 0.72, metalness: 0.42 }),
         wood: standard(0x6d5541, { roughness: 0.88, metalness: 0.02 }),
-        redStand: standard(0x9c4545),
-        yellowStand: standard(0xa49243),
-        blueStand: standard(0x48698f),
-        greenStand: standard(0x4f7c57),
-        fadedRed: standard(0xb85050),
-        fadedBlue: standard(0x4d73aa),
-        fadedYellow: standard(0xbba24a),
-        fadedGreen: standard(0x5b9367),
-        fadedPink: standard(0xb06b90),
-        fadedPurple: standard(0x7762a0),
+        redStand: standard(0xe8324c, { roughness: 0.55, emissive: 0x4a0a14, emissiveIntensity: 0.18 }),
+        yellowStand: standard(0xffd23f, { roughness: 0.55, emissive: 0x5a4408, emissiveIntensity: 0.22 }),
+        blueStand: standard(0x2a8af0, { roughness: 0.55, emissive: 0x0a1f4a, emissiveIntensity: 0.2 }),
+        greenStand: standard(0x2fce6a, { roughness: 0.55, emissive: 0x0a3a1c, emissiveIntensity: 0.18 }),
+        fadedRed: standard(0xff5266, { roughness: 0.6, emissive: 0x4a0814, emissiveIntensity: 0.18 }),
+        fadedBlue: standard(0x4ea8ff, { roughness: 0.6, emissive: 0x0a1f4a, emissiveIntensity: 0.18 }),
+        fadedYellow: standard(0xffe066, { roughness: 0.6, emissive: 0x584008, emissiveIntensity: 0.2 }),
+        fadedGreen: standard(0x5fe089, { roughness: 0.6, emissive: 0x0c3a1c, emissiveIntensity: 0.18 }),
+        fadedPink: standard(0xff7ab8, { roughness: 0.6, emissive: 0x4a0a2c, emissiveIntensity: 0.2 }),
+        fadedPurple: standard(0xa073f0, { roughness: 0.6, emissive: 0x2a0e58, emissiveIntensity: 0.2 }),
         black: standard(0x1c1c1f, { roughness: 0.9, metalness: 0 }),
-        white: standard(0xd8d4c8, { roughness: 0.82, metalness: 0 }),
-        orange: standard(0xb8733c),
-        gold: standard(0x97845f, { roughness: 0.78, metalness: 0.18 }),
-        silver: standard(0x8f9698, { roughness: 0.66, metalness: 0.35 }),
-        lamp: standard(0xffefb0, { emissive: 0xffe08a, emissiveIntensity: 0.62, roughness: 0.52, metalness: 0.04 })
+        white: standard(0xfaf6ee, { roughness: 0.7, metalness: 0 }),
+        orange: standard(0xff8a2e, { roughness: 0.55, emissive: 0x5a2008, emissiveIntensity: 0.2 }),
+        gold: standard(0xf5c542, { roughness: 0.5, metalness: 0.4, emissive: 0x4a3408, emissiveIntensity: 0.15 }),
+        silver: standard(0xc8d0d4, { roughness: 0.4, metalness: 0.55 }),
+        lamp: standard(0xfff7c8, { emissive: 0xffd870, emissiveIntensity: 1.1, roughness: 0.4, metalness: 0.04 })
       };
     }
 
@@ -4658,25 +4658,41 @@
     }
 
     function addOvercastCloudDeck(group) {
-      const layers = [
-        [-28, 31, -24, 34, 12, 0.05, materials.cloudDark, 0.18],
-        [2, 33, -27, 42, 14, -0.08, materials.cloudGrey, 0.12],
-        [30, 30, -18, 32, 10, 0.14, materials.cloudDark, 0.16],
-        [-22, 28, 18, 38, 12, -0.18, materials.cloudGrey, 0.1],
-        [14, 32, 21, 46, 14, 0.08, materials.cloudDark, 0.13],
-        [0, 24, -38, 60, 11, 0.0, materials.cloud, 0.09]
+      const clusters = [
+        [-46, 38, -52, 8.5, 0.22],
+        [-14, 44, -64, 11, 0.16],
+        [22, 40, -58, 9.5, 0.2],
+        [52, 36, -42, 8, 0.24],
+        [-58, 34, -8, 7.5, 0.18],
+        [60, 42, 6, 10, 0.14],
+        [-40, 46, 48, 9, 0.2],
+        [-6, 38, 60, 8.5, 0.22],
+        [32, 44, 56, 11, 0.16],
+        [54, 40, 32, 9, 0.18],
+        [-22, 52, 14, 12, 0.12],
+        [18, 50, -22, 10.5, 0.14],
+        [0, 56, 0, 13, 0.1]
       ];
-      layers.forEach((c, i) => {
-        const cloud = new THREE.Mesh(geometries.plane, c[6]);
-        cloud.position.set(c[0], c[1], c[2]);
-        cloud.scale.set(c[3], 1, c[4]);
-        cloud.rotation.set(-Math.PI / 2 + 0.08, 0, c[5]);
-        cloud.userData.speed = c[7];
-        cloud.userData.range = ARENA_HALF_X + 42;
-        cloud.castShadow = false;
-        cloud.receiveShadow = false;
-        group.add(cloud);
-        cloudMeshes.push(cloud);
+      clusters.forEach((c) => {
+        const cluster = new THREE.Group();
+        cluster.position.set(c[0], c[1], c[2]);
+        cluster.userData.baseX = c[0];
+        cluster.userData.speed = c[4];
+        cluster.userData.range = ARENA_HALF_X + 80;
+        const puffCount = 5 + Math.floor((c[3] / 4));
+        for (let i = 0; i < puffCount; i++) {
+          const angle = (i / puffCount) * Math.PI * 2 + (i * 0.37);
+          const radius = (i === 0 ? 0 : c[3] * (0.55 + ((i * 31) % 7) * 0.06));
+          const puff = new THREE.Mesh(geometries.sphere, i % 4 === 0 ? materials.cloudGrey : materials.cloud);
+          const scale = c[3] * (0.6 + ((i * 13) % 5) * 0.09);
+          puff.scale.set(scale, scale * 0.62, scale * 0.78);
+          puff.position.set(Math.cos(angle) * radius, Math.sin(i * 1.7) * c[3] * 0.18, Math.sin(angle) * radius * 0.6);
+          puff.castShadow = false;
+          puff.receiveShadow = false;
+          cluster.add(puff);
+        }
+        group.add(cluster);
+        cloudMeshes.push(cluster);
       });
     }
 
@@ -9717,15 +9733,15 @@
       if (active && active.ambient === 'funland') {
         renderer.shadowMap.enabled = true;
         scene.background = null;
-        scene.fog = new THREE.Fog(0xeaaad8, 72, 170);
+        scene.fog = new THREE.Fog(0xf5c8e0, 110, 220);
         if (!funlandSkyDome) funlandSkyDome = createFunlandSkyDome();
         if (!funlandSkyDome.parent) scene.add(funlandSkyDome);
         skyStatus = 'funland-color';
-        renderer.toneMappingExposure = 0.88;
-        ambientLight.color.setHex(0xc8d7ff);
-        ambientLight.intensity = 0.92;
-        keyLight.color.setHex(0xfff0cf);
-        keyLight.intensity = 2.05;
+        renderer.toneMappingExposure = 1.15;
+        ambientLight.color.setHex(0xffd8ec);
+        ambientLight.intensity = 1.35;
+        keyLight.color.setHex(0xfff2d8);
+        keyLight.intensity = 2.6;
         keyLight.position.set(36, 78, 26);
         keyLight.castShadow = true;
         keyLight.shadow.mapSize.set(2048, 2048);
@@ -9737,9 +9753,9 @@
         keyLight.shadow.bias = -0.0001;
         keyLight.target.position.set(0, 0, 0);
         keyLight.target.updateMatrixWorld();
-        hemiLight.color.setHex(0xa8d8ff);
-        hemiLight.groundColor.setHex(0xc2ad86);
-        hemiLight.intensity = 1.35;
+        hemiLight.color.setHex(0xffc0e0);
+        hemiLight.groundColor.setHex(0xe0d0a8);
+        hemiLight.intensity = 1.85;
         return;
       }
       setVenueSky();
