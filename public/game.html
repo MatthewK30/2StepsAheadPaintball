@@ -2951,9 +2951,9 @@
         vinylDark: mat(0x303238, { roughness: 0.38, metalness: 0.05, envMapIntensity: 0.4 }),
         skyGrey: mat(0x9aa2a5, { roughness: 1 }),
         skyBlue: mat(0x62bdf7, { roughness: 1 }),
-        cloud: mat(0xf7fbff, { roughness: 0.7, transparent: true, opacity: 0.78, depthWrite: false, side: THREE.DoubleSide }),
-        cloudGrey: mat(0xc8ccd0, { roughness: 1, transparent: true, opacity: 0.5, depthWrite: false, side: THREE.DoubleSide }),
-        cloudDark: mat(0x727b82, { roughness: 1, transparent: true, opacity: 0.34, depthWrite: false, side: THREE.DoubleSide }),
+        cloud: mat(0xd8aaee, { roughness: 0.7, transparent: true, opacity: 0.82, depthWrite: false, side: THREE.DoubleSide }),
+        cloudGrey: mat(0xb47fd4, { roughness: 1, transparent: true, opacity: 0.55, depthWrite: false, side: THREE.DoubleSide }),
+        cloudDark: mat(0x7b4fa8, { roughness: 1, transparent: true, opacity: 0.38, depthWrite: false, side: THREE.DoubleSide }),
         godRay: mat(0xfff0c8, { emissive: 0xffe3a1, emissiveIntensity: 0.45, roughness: 1, transparent: true, opacity: 0.08, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }),
         lensFlare: mat(0xfff2ca, { emissive: 0xffe9b0, emissiveIntensity: 0.7, roughness: 0.8, transparent: true, opacity: 0.28, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }),
         flagRed: mat(0xc31424, { roughness: 0.72, metalness: 0, side: THREE.DoubleSide }),
@@ -3134,7 +3134,7 @@
       addFunlandFloodlights(group, fun);
       addFunlandFerrisWheel(group, fun);
       finalizeMapShadows(group);
-      return { group, colliders, shootables, coverPoints, sky: 0x8ec9ff, fog: 0x8ec9ff, ambient: 'funland', carousel };
+      return { group, colliders, shootables, coverPoints, sky: 0xf4b0d8, fog: 0xf4b0d8, ambient: 'funland', carousel };
     }
 
     function createFunlandMaterials() {
@@ -6605,8 +6605,8 @@
         return;
       }
       if (mapName === 'funland') {
-        previewScene.background = new THREE.Color(0x8ec9ff);
-        previewScene.fog = new THREE.Fog(0x8ec9ff, 64, 150);
+        previewScene.background = new THREE.Color(0xf4b0d8);
+        previewScene.fog = new THREE.Fog(0xf4b0d8, 64, 150);
         previewScene.add(new THREE.AmbientLight(0xc8d7ff, 0.92));
         const key = new THREE.DirectionalLight(0xfff0cf, 2.0);
         key.position.set(36, 62, 26);
@@ -9682,8 +9682,8 @@
       renderer.toneMappingExposure = 0.55;
       if (active && active.ambient === 'funland') {
         renderer.shadowMap.enabled = true;
-        scene.background = new THREE.Color(0x8ec9ff);
-        scene.fog = new THREE.Fog(0x8ec9ff, 72, 170);
+        scene.background = new THREE.Color(0xf4b0d8);
+        scene.fog = new THREE.Fog(0xf4b0d8, 72, 170);
         skyStatus = 'funland-color';
         renderer.toneMappingExposure = 0.88;
         ambientLight.color.setHex(0xc8d7ff);
