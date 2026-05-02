@@ -3879,7 +3879,18 @@
       turf.map = roofTex;
       turf.color.set(0x555566);
       const windowTexture = createCityWindowTexture();
-      const buildingMaterial = () => new THREE.MeshStandardMaterial({ color: 0x334455, roughness: 0.8, metalness: 0.2, emissiveMap: windowTexture, emissive: 0xffffff, emissiveIntensity: 0.4 });
+      windowTexture.wrapS = windowTexture.wrapT = THREE.RepeatWrapping;
+      windowTexture.repeat.set(1, 5);
+      const buildingMaterial = () => new THREE.MeshStandardMaterial({
+        color: 0x0f1220,
+        roughness: 0.22,
+        metalness: 0.85,
+        envMap: environmentMap,
+        envMapIntensity: 1.5,
+        emissiveMap: windowTexture,
+        emissive: 0xffffff,
+        emissiveIntensity: 0.55
+      });
       const neon = (color, intensity = 0.9) => new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: intensity, roughness: 0.2, metalness: 0.1 });
       return {
         turf,
@@ -3943,16 +3954,26 @@
 
     function createCityWindowTexture() {
       const canvas = document.createElement('canvas');
-      canvas.width = 128;
-      canvas.height = 128;
+      const size = 256;
+      canvas.width = size;
+      canvas.height = size;
       const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#1a1a2a';
-      ctx.fillRect(0, 0, 128, 128);
-      for (let y = 6; y < 122; y += 12) {
-        for (let x = 6; x < 122; x += 10) {
-          const lit = ((x * 17 + y * 23) % 7) > 2;
-          ctx.fillStyle = lit ? (((x + y) % 4) ? '#ffb34a' : '#ffd47a') : '#232538';
-          ctx.fillRect(x, y, 6, 8);
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, size, size);
+      const cols = 6;
+      const rows = 8;
+      const cellW = size / cols;
+      const cellH = size / rows;
+      const winW = cellW * 0.62;
+      const winH = cellH * 0.74;
+      const litColors = ['#ffd680', '#ffba50', '#ffe6a8', '#cfe6ff'];
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const lit = ((r * 13 + c * 7 + Math.floor(r / 2) * 3) % 11) < 3;
+          const x = c * cellW + (cellW - winW) * 0.5;
+          const y = r * cellH + (cellH - winH) * 0.5;
+          ctx.fillStyle = lit ? litColors[(r + c) % litColors.length] : '#000000';
+          ctx.fillRect(x, y, winW, winH);
         }
       }
       const texture = new THREE.CanvasTexture(canvas);
