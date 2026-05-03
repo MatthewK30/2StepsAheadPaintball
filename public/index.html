@@ -11,8 +11,9 @@
     :root {
       --red: #cc1515;
       --red-dark: #8b0000;
+      --red-bright: #ff2222;
       --blue: #1566cc;
-      --bg: #080a0c;
+      --bg: #060809;
       --bg-1: #0d1117;
       --border: rgba(255,255,255,0.08);
       --border-bright: rgba(255,255,255,0.18);
@@ -25,12 +26,9 @@
       --blue-soft: rgba(21, 102, 204, 0.22);
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
-    html,
-    body {
+    html, body {
       margin: 0;
       min-height: 100%;
       background: var(--bg);
@@ -38,132 +36,88 @@
       font-family: 'Rajdhani', Arial, Helvetica, sans-serif;
     }
 
-    body {
-      overflow-x: hidden;
-    }
+    body { overflow-x: hidden; }
 
-    h1,
-    h2,
-    h3,
-    .brandMini,
-    .titleLine,
-    .cardName,
-    .sectionTitle,
-    .teamHeader,
-    .bigCode,
-    .playerName,
-    button {
+    h1, h2, h3, .brandMini, .titleLine, .cardName, .sectionTitle,
+    .teamHeader, .bigCode, .playerName, button {
       font-family: 'Bebas Neue', Impact, sans-serif;
     }
 
-    button,
-    input,
-    select {
-      font: inherit;
+    button, input, select { font: inherit; }
+    button { border: 0; cursor: pointer; text-transform: uppercase; }
+
+    /* ─── CANVAS BG ─── */
+    #bgCanvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+      display: block;
     }
 
-    button {
-      border: 0;
-      cursor: pointer;
-      text-transform: uppercase;
-    }
-
+    /* ─── SCREEN OVERLAY ─── */
     .screen {
       position: relative;
       min-height: 100vh;
       overflow: hidden;
-      background: var(--bg);
     }
 
-    .screen::before,
-    .screen::after {
-      content: "";
+    /* Color atmosphere overlay — sits above canvas, below content */
+    #atmosphereOverlay {
       position: fixed;
       inset: 0;
       pointer-events: none;
-      z-index: 0;
-    }
-
-    .screen::before {
+      z-index: 1;
       background:
-        repeating-linear-gradient(0deg, rgba(255,255,255,0.032) 0 1px, transparent 1px 4px),
-        linear-gradient(90deg, rgba(204,21,21,0.05), transparent 18%, transparent 82%, rgba(21,102,204,0.04));
-      mix-blend-mode: screen;
-      opacity: 0.48;
-      animation: scan 8s linear infinite;
+        radial-gradient(ellipse at 50% 0%, rgba(204,21,21,0.18) 0%, transparent 55%),
+        radial-gradient(ellipse at 0% 60%, rgba(21,102,204,0.10) 0%, transparent 40%),
+        radial-gradient(ellipse at 100% 80%, rgba(204,21,21,0.10) 0%, transparent 38%),
+        linear-gradient(180deg, rgba(6,8,9,0.0) 0%, rgba(6,8,9,0.55) 100%);
     }
 
-    .screen::after {
-      background:
-        radial-gradient(circle at 50% -10%, rgba(204,21,21,0.22), transparent 34%),
-        radial-gradient(circle at 6% 20%, rgba(21,102,204,0.14), transparent 26%),
-        radial-gradient(circle at 94% 74%, rgba(204,21,21,0.14), transparent 28%),
-        linear-gradient(135deg, rgba(255,255,255,0.025), transparent 38%, rgba(255,255,255,0.018));
-      opacity: 1;
+    /* Scanline overlay */
+    #scanlineOverlay {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 3px,
+        rgba(0,0,0,0.055) 3px,
+        rgba(0,0,0,0.055) 4px
+      );
     }
 
-    @keyframes scan {
-      from { transform: translateY(-20px); }
-      to { transform: translateY(20px); }
-    }
-
-    .view {
-      position: relative;
-      z-index: 2;
-      min-height: 100vh;
-      padding: clamp(20px, 4vw, 56px);
-      display: none;
-      animation: viewIn 260ms ease both;
-    }
-
-    .view.active {
-      display: grid;
-    }
-
-    @keyframes viewIn {
-      from { opacity: 0; transform: translateY(12px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .heroView {
-      align-items: center;
-    }
-
-    .heroStack {
-      width: min(1240px, 100%);
-      margin: 0 auto;
-      display: grid;
-      gap: clamp(18px, 3vw, 30px);
-    }
-
+    /* ─── CORNER BRACKETS ─── */
     .cornerBracket {
       position: fixed;
       width: clamp(42px, 7vw, 86px);
       height: clamp(42px, 7vw, 86px);
       pointer-events: none;
-      z-index: 3;
+      z-index: 20;
     }
-
-    .cornerBracket::before,
-    .cornerBracket::after {
+    .cornerBracket::before, .cornerBracket::after {
       content: "";
       position: absolute;
       background: var(--red);
       box-shadow: 0 0 18px var(--red-glow);
     }
-
     .cornerBracket::before { width: 100%; height: 2px; }
-    .cornerBracket::after { width: 2px; height: 100%; }
+    .cornerBracket::after  { width: 2px; height: 100%; }
     .cornerBracket.tl { left: 22px; top: 22px; }
     .cornerBracket.tr { right: 22px; top: 22px; transform: scaleX(-1); }
     .cornerBracket.bl { left: 22px; bottom: 22px; transform: scaleY(-1); }
     .cornerBracket.br { right: 22px; bottom: 22px; transform: scale(-1); }
 
+    /* ─── NAV BACK BTN ─── */
     .navBackBtn {
       position: fixed;
-      left: 18px;
-      top: 18px;
-      z-index: 5;
+      left: 18px; top: 18px;
+      z-index: 20;
       min-width: auto;
       padding: 9px 14px 8px;
       border: 1px solid rgba(255,255,255,0.16);
@@ -173,18 +127,205 @@
       font-family: 'Bebas Neue', Impact, sans-serif;
       font-size: 18px;
       letter-spacing: 0.14em;
-      text-transform: uppercase;
       backdrop-filter: blur(10px);
       box-shadow: 0 12px 34px rgba(0,0,0,0.4);
     }
+    .navBackBtn:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
 
-    .navBackBtn:hover {
-      color: #ffffff;
-      border-color: rgba(255,255,255,0.3);
+    /* ─── VIEW SYSTEM ─── */
+    .view {
+      position: relative;
+      z-index: 5;
+      height: 100vh;
+      overflow: hidden;
+      padding: clamp(14px, 2vw, 28px);
+      display: none;
+    }
+    .view.active {
+      display: grid;
+      opacity: 1;
+      transform: translateY(0);
     }
 
-    .heroHeader {
+    .view.animateIn {
+      animation: viewIn 300ms ease forwards;
+    }
+
+    @keyframes viewIn {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ══════════════════════════════════════════
+       HERO VIEW
+    ══════════════════════════════════════════ */
+    .heroView {
+      align-items: stretch;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .heroStack {
+      width: min(1280px, 100%);
+      margin: 0 auto;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 10px;
+      height: 100%;
+      min-height: 0;
+    }
+
+    /* ─── HERO TOP BAR ─── */
+    .heroTopBar {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 20px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid rgba(204,21,21,0.25);
+    }
+
+    .heroTitleWrap { flex: 0 0 auto; }
+
+    .heroMeta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+      padding-bottom: 6px;
+    }
+
+    /* ─── HERO AVATAR (top bar) ─── */
+    .heroAvatarWrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      padding-bottom: 4px;
+      flex: 0 0 auto;
+    }
+
+    .heroAvatarRing {
+      position: relative;
+      width: clamp(72px, 9vw, 110px);
+      height: clamp(72px, 9vw, 110px);
+    }
+
+    .heroAvatarRingDecor {
+      position: absolute;
+      inset: -6px;
+      border-radius: 50%;
+      border: 1.5px dashed rgba(204,21,21,0.35);
+      animation: spinSlow 14s linear infinite;
+      pointer-events: none;
+    }
+
+    .heroAvatarImg.fading {
+      opacity: 0 !important;
+      transition: opacity 0.2s ease;
+    }
+    .heroAvatarImg {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      object-position: top center;
+      border: 2.5px solid var(--red);
+      box-shadow:
+        0 0 0 1px rgba(204,21,21,0.25),
+        0 0 22px rgba(204,21,21,0.55),
+        0 0 50px rgba(204,21,21,0.2);
+      animation: avatarGlow 2.5s ease-in-out infinite alternate;
+      display: block;
+    }
+
+    @keyframes avatarGlow {
+      from { box-shadow: 0 0 0 1px rgba(204,21,21,0.25), 0 0 22px rgba(204,21,21,0.55), 0 0 50px rgba(204,21,21,0.2); }
+      to   { box-shadow: 0 0 0 2px rgba(204,21,21,0.45), 0 0 36px rgba(204,21,21,0.75), 0 0 72px rgba(204,21,21,0.32); }
+    }
+
+    .heroAvatarName {
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: 13px;
+      letter-spacing: 0.14em;
+      color: var(--red);
+      text-shadow: 0 0 10px rgba(204,21,21,0.5);
       text-align: center;
+      transition: opacity 0.25s ease;
+    }
+
+    .skinDots {
+      display: flex;
+      gap: 4px;
+      justify-content: center;
+    }
+
+    .livePill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 12px 4px;
+      border: 1px solid rgba(32,192,80,0.4);
+      background: rgba(32,192,80,0.1);
+      color: var(--green);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+    }
+
+    .liveDot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px rgba(32,192,80,0.9);
+      animation: liveBlink 1.4s ease-in-out infinite;
+    }
+    @keyframes liveBlink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+
+    .statRow {
+      display: flex;
+      gap: 18px;
+    }
+
+    .statItem {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .statNum {
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: 28px;
+      line-height: 1;
+      letter-spacing: 0.06em;
+      color: #fff;
+    }
+
+    .statLabel {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.2em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    /* ─── TITLE CENTER ─── */
+    .titleCenter {
+      text-align: center;
+    }
+
+    .titleEyebrow {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.38em;
+      color: var(--red);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+      opacity: 0.9;
     }
 
     .title {
@@ -196,81 +337,206 @@
 
     .titleLine {
       display: block;
-      font-size: clamp(82px, 16vw, 188px);
+      font-size: clamp(48px, 7vw, 96px);
       text-shadow: 0 20px 60px rgba(0,0,0,0.92);
+      color: #fff;
     }
 
     .titleAhead {
       color: var(--red);
-      text-shadow: 0 0 18px rgba(204,21,21,0.75), 0 0 46px rgba(204,21,21,0.42), 0 20px 60px rgba(0,0,0,0.94);
+      text-shadow:
+        0 0 18px rgba(204,21,21,0.9),
+        0 0 46px rgba(204,21,21,0.55),
+        0 0 90px rgba(204,21,21,0.28),
+        0 20px 60px rgba(0,0,0,0.94);
+      animation: titlePulse 3s ease-in-out infinite;
+    }
+    @keyframes titlePulse {
+      0%, 100% { text-shadow: 0 0 18px rgba(204,21,21,0.9), 0 0 46px rgba(204,21,21,0.55), 0 0 90px rgba(204,21,21,0.28), 0 20px 60px rgba(0,0,0,0.94); }
+      50%       { text-shadow: 0 0 28px rgba(204,21,21,1),   0 0 70px rgba(204,21,21,0.72), 0 0 130px rgba(204,21,21,0.4), 0 20px 60px rgba(0,0,0,0.94); }
     }
 
     .redDivider {
       width: min(520px, 74vw);
-      height: 1px;
-      margin: 18px auto 0;
-      background: linear-gradient(90deg, transparent, var(--red), rgba(255,255,255,0.5), var(--red), transparent);
-      box-shadow: 0 0 18px rgba(204,21,21,0.45);
-    }
-
-    .subtitle,
-    .eyebrow,
-    label {
-      color: var(--text-dim);
-      font-weight: 700;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
+      height: 2px;
+      margin: 6px auto 0;
+      background: linear-gradient(90deg, transparent, var(--red), rgba(255,255,255,0.6), var(--red), transparent);
+      box-shadow: 0 0 22px rgba(204,21,21,0.55);
     }
 
     .subtitle {
-      margin-top: 12px;
-      font-size: clamp(14px, 2vw, 21px);
+      margin-top: 5px;
+      font-size: clamp(11px, 1.4vw, 15px);
       letter-spacing: 0.42em;
+      color: var(--text-dim);
+      font-weight: 700;
+      text-transform: uppercase;
     }
 
-    .menuGrid {
+    /* ─── HERO RIGHT: SKIN CAROUSEL ─── */
+    .heroHeaderRight {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+    }
+
+    .skinCarouselWrap {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+
+    .skinCarouselLabel {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.24em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .skinCarousel {
+      position: relative;
+      width: clamp(80px, 9vw, 120px);
+      height: clamp(80px, 9vw, 120px);
+    }
+
+    .skinCarouselMain {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      object-position: top center;
+      border: 3px solid var(--red);
+      box-shadow:
+        0 0 0 1px rgba(204,21,21,0.3),
+        0 0 32px rgba(204,21,21,0.5),
+        0 0 64px rgba(204,21,21,0.2),
+        inset 0 0 20px rgba(0,0,0,0.5);
+      animation: skinGlow 2.5s ease-in-out infinite alternate;
+      transition: opacity 0.3s ease;
+    }
+    @keyframes skinGlow {
+      from { box-shadow: 0 0 0 1px rgba(204,21,21,0.3), 0 0 32px rgba(204,21,21,0.5), 0 0 64px rgba(204,21,21,0.2), inset 0 0 20px rgba(0,0,0,0.5); }
+      to   { box-shadow: 0 0 0 2px rgba(204,21,21,0.5), 0 0 48px rgba(204,21,21,0.7), 0 0 90px rgba(204,21,21,0.32), inset 0 0 20px rgba(0,0,0,0.5); }
+    }
+
+    .skinRingDecor {
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      border: 1px dashed rgba(204,21,21,0.25);
+      animation: spinSlow 16s linear infinite;
+    }
+    @keyframes spinSlow { to { transform: rotate(360deg); } }
+
+    .skinRingDecor2 {
+      position: absolute;
+      inset: -18px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.04);
+      animation: spinSlow 28s linear infinite reverse;
+    }
+
+    .skinName {
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: 15px;
+      letter-spacing: 0.14em;
+      color: var(--red);
+      text-align: right;
+      text-shadow: 0 0 12px rgba(204,21,21,0.5);
+      min-height: 18px;
+      transition: opacity 0.3s ease;
+    }
+
+    /* Skin dots */
+    .skinDots {
+      display: flex;
+      gap: 5px;
+      justify-content: flex-end;
+    }
+    .skinDot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.18);
+      border: 0;
+      padding: 0;
+      cursor: pointer;
+      transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+    }
+    .skinDot.active {
+      background: var(--red);
+      box-shadow: 0 0 8px rgba(204,21,21,0.7);
+      transform: scale(1.3);
+    }
+
+    /* ─── MAIN GRID ─── */
+    .mainGrid {
       display: grid;
-      gap: 18px;
+      grid-template-columns: 1fr 280px;
+      gap: 12px;
+      align-items: stretch;
+      min-height: 0;
+      height: 100%;
     }
 
+    .leftCol {
+      display: grid;
+      grid-template-rows: 1fr auto;
+      gap: 10px;
+      min-height: 0;
+      height: 100%;
+    }
+
+    /* ─── MAP GRID ─── */
     .mapGrid {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: clamp(12px, 2vw, 18px);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-rows: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      height: 100%;
+      min-height: 0;
     }
 
-    .mapCard,
-    .optionGroup,
-    .panel,
-    .teamColumn,
-    .centerConsole {
+    /* ─── MAP CARDS ─── */
+    .mapCard {
+      position: relative;
+      min-height: 0;
+      height: 100%;
+      padding: 12px;
+      display: grid;
+      align-content: end;
+      gap: 6px;
+      overflow: hidden;
+      cursor: pointer;
       border: 1px solid var(--border);
       background: linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018));
       box-shadow: 0 22px 70px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04);
+      clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 22px 100%, 0 calc(100% - 22px));
+      transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
     }
 
-    .mapCard {
-      position: relative;
-      min-height: 168px;
-      padding: 18px;
-      display: grid;
-      align-content: end;
-      gap: 8px;
-      clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
-      overflow: hidden;
-      cursor: pointer;
-      transition: transform 170ms ease, border-color 170ms ease, box-shadow 170ms ease, background 170ms ease;
-    }
-
+    /* Animated noise texture overlay */
     .mapCard::before {
       content: "";
       position: absolute;
       inset: 0;
       z-index: 1;
       background:
-        linear-gradient(145deg, rgba(204,21,21,0.16), transparent 42%),
-        repeating-linear-gradient(90deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 16px);
-      opacity: 0.64;
+        linear-gradient(160deg, rgba(204,21,21,0.18) 0%, transparent 40%),
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.018) 0 1px, transparent 1px 18px),
+        repeating-linear-gradient(0deg, rgba(255,255,255,0.018) 0 1px, transparent 1px 18px);
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    .mapCard::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background: linear-gradient(0deg, rgba(6,8,9,0.88) 0%, rgba(6,8,9,0.35) 50%, transparent 100%);
       pointer-events: none;
     }
 
@@ -281,64 +547,61 @@
       width: 100%;
       height: 100%;
       border: 0;
-      opacity: 0.45;
-      filter: saturate(1.08) contrast(1.05);
-      transform: scale(1.04);
-      transition: opacity 170ms ease, filter 170ms ease, transform 170ms ease;
+      opacity: 0.42;
+      filter: saturate(1.1) contrast(1.08);
+      transform: scale(1.06);
+      transition: opacity 220ms ease, filter 220ms ease, transform 220ms ease;
       pointer-events: none;
     }
 
-    .mapCard.selected,
-    .mapCard:hover {
-      transform: translateY(-3px);
-      border-color: rgba(204,21,21,0.72);
-      background: linear-gradient(180deg, rgba(204,21,21,0.17), rgba(255,255,255,0.025));
-      box-shadow: 0 0 0 1px rgba(204,21,21,0.3), 0 0 34px rgba(204,21,21,0.32), 0 24px 70px rgba(0,0,0,0.58);
+    .mapCard.selected, .mapCard:hover {
+      transform: translateY(-4px);
+      border-color: rgba(204,21,21,0.75);
+      box-shadow: 0 0 0 1px rgba(204,21,21,0.25), 0 0 40px rgba(204,21,21,0.35), 0 28px 72px rgba(0,0,0,0.6);
     }
 
     .mapCard.selected .mapPreviewFrame,
-    .mapCard:hover .mapPreviewFrame,
-    .mapCard:focus-visible .mapPreviewFrame {
-      opacity: 0.82;
-      filter: saturate(1.25) contrast(1.1) brightness(1.08);
+    .mapCard:hover .mapPreviewFrame {
+      opacity: 0.88;
+      filter: saturate(1.3) contrast(1.12) brightness(1.1);
       transform: scale(1);
     }
 
-    .mapCard.selected::after {
-      content: "";
+    /* selected dot indicator */
+    .mapCard.selected::before {
+      background:
+        linear-gradient(160deg, rgba(204,21,21,0.28) 0%, transparent 40%),
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.018) 0 1px, transparent 1px 18px),
+        repeating-linear-gradient(0deg, rgba(255,255,255,0.018) 0 1px, transparent 1px 18px);
+    }
+
+    .mapSelBadge {
       position: absolute;
-      z-index: 3;
-      top: 16px;
-      right: 16px;
-      width: 9px;
-      height: 9px;
+      top: 14px; right: 14px;
+      z-index: 5;
+      width: 24px; height: 24px;
       border-radius: 50%;
       background: var(--red);
-      box-shadow: 0 0 16px rgba(204,21,21,0.9);
+      border: 2px solid rgba(255,255,255,0.5);
+      box-shadow: 0 0 18px rgba(204,21,21,0.9);
+      display: none;
+      align-items: center;
+      justify-content: center;
     }
+    .mapCard.selected .mapSelBadge { display: flex; }
 
-    .mapCard.disabled {
-      cursor: default;
-      opacity: 0.52;
-    }
+    .mapSelBadge svg { width: 12px; height: 12px; }
 
-    .mapCard > * {
-      position: relative;
-      z-index: 2;
-    }
-
-    .mapCard > .mapPreviewFrame {
-      position: absolute;
-      z-index: 0;
-    }
+    .mapCard > * { position: relative; z-index: 3; }
+    .mapCard > .mapPreviewFrame { position: absolute; z-index: 0; }
 
     .cardTag {
       width: fit-content;
-      padding: 4px 8px;
+      padding: 3px 8px;
       color: var(--red);
       border: 1px solid rgba(204,21,21,0.36);
-      background: rgba(204,21,21,0.09);
-      font-size: 12px;
+      background: rgba(204,21,21,0.12);
+      font-size: 11px;
       font-weight: 800;
       letter-spacing: 0.18em;
       text-transform: uppercase;
@@ -346,7 +609,7 @@
 
     .cardName {
       margin: 0;
-      font-size: clamp(32px, 4vw, 48px);
+      font-size: clamp(28px, 3.5vw, 44px);
       line-height: 0.9;
       letter-spacing: 0.08em;
     }
@@ -354,51 +617,79 @@
     .cardSub {
       margin: 0;
       color: var(--text-dim);
-      font-size: 15px;
+      font-size: 13px;
       font-weight: 600;
       letter-spacing: 0.08em;
       text-transform: uppercase;
     }
 
-    .optionGrid {
+    /* ─── RIGHT SIDEBAR PANEL ─── */
+    .sidePanel {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 16px;
+      gap: 7px;
+      align-content: start;
+      height: 100%;
+      min-height: 0;
+      overflow-y: auto;
+      scrollbar-width: none;
     }
+    .sidePanel::-webkit-scrollbar { display: none; }
 
     .optionGroup {
-      padding: 16px;
+      padding: 10px 12px;
       display: grid;
-      gap: 10px;
+      gap: 7px;
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018));
+      box-shadow: 0 22px 70px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+
+    label {
+      color: var(--text-dim);
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-size: 12px;
     }
 
     .choiceSet {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 8px;
+      gap: 7px;
     }
-
     .choiceSet.threeChoices {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
-    .crosshairPicker {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+    .choice {
+      min-height: 32px;
+      padding: 7px 10px 5px;
+      border: 1px solid var(--border-bright);
+      background: rgba(255,255,255,0.035);
+      color: var(--text-dim);
+      font-family: 'Rajdhani', Arial, sans-serif;
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-align: center;
+      text-transform: uppercase;
+      transition: border-color 160ms ease, color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+    }
+    .choice.selected, .choice:hover {
+      border-color: rgba(204,21,21,0.78);
+      background: rgba(204,21,21,0.16);
+      color: #fff;
+      box-shadow: 0 0 20px rgba(204,21,21,0.2);
     }
 
-    .chStyleRow {
-      display: flex;
-      gap: 7px;
-    }
+    /* ─── CROSSHAIR PICKER ─── */
+    .crosshairPicker { display: flex; flex-direction: column; gap: 8px; }
+    .chStyleRow { display: flex; gap: 6px; flex-wrap: wrap; }
+    .chColorRow { display: flex; gap: 6px; }
 
     .chStyleBtn {
-      width: 42px;
-      height: 42px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      width: 40px; height: 40px;
+      display: flex; align-items: center; justify-content: center;
       border: 1px solid var(--border-bright);
       background: rgba(255,255,255,0.035);
       color: rgba(255,255,255,0.5);
@@ -406,128 +697,149 @@
       transition: border-color 160ms ease, color 160ms ease, background 160ms ease, box-shadow 160ms ease;
       flex-shrink: 0;
     }
-
-    .chStyleBtn.selected,
-    .chStyleBtn:hover {
+    .chStyleBtn.selected, .chStyleBtn:hover {
       border-color: rgba(204,21,21,0.78);
       background: rgba(204,21,21,0.16);
       color: #fff;
       box-shadow: 0 0 18px rgba(204,21,21,0.2);
     }
-
-    .chColorRow {
-      display: flex;
-      gap: 7px;
-    }
-
     .chColorBtn {
-      width: 28px;
-      height: 28px;
+      width: 26px; height: 26px;
       border-radius: 50%;
       border: 2px solid rgba(255,255,255,0.15);
       cursor: pointer;
       transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
     }
-
-    .chColorBtn.selected,
-    .chColorBtn:hover {
+    .chColorBtn.selected, .chColorBtn:hover {
       border-color: #fff;
       transform: scale(1.18);
       box-shadow: 0 0 10px rgba(255,255,255,0.4);
     }
 
-    .choice {
-      min-height: 42px;
-      padding: 11px 12px 9px;
-      border: 1px solid var(--border-bright);
-      background: rgba(255,255,255,0.035);
-      color: var(--text-dim);
-      font-family: 'Rajdhani', Arial, sans-serif;
-      font-size: 16px;
-      font-weight: 800;
-      letter-spacing: 0.12em;
-      text-align: center;
-      text-transform: uppercase;
-      transition: border-color 160ms ease, color 160ms ease, background 160ms ease, box-shadow 160ms ease;
-    }
-
-    .choice.selected,
-    .choice:hover {
-      border-color: rgba(204,21,21,0.78);
-      background: rgba(204,21,21,0.16);
-      color: #fff;
-      box-shadow: 0 0 22px rgba(204,21,21,0.2);
-    }
-
-    .mapCard.choice {
-      min-height: 168px;
-      padding: 18px;
+    /* ─── SKIN PICKER ─── */
+    .skinPickerGroup {
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018));
+      box-shadow: 0 22px 70px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04);
       display: grid;
-      align-content: end;
-      text-align: left;
-      font-family: 'Rajdhani', Arial, sans-serif;
+      gap: 7px;
     }
 
-    .deployDock,
-    .buttonRow {
+    .skinGrid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+    }
+
+    .skinThumb {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      cursor: pointer;
+      transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+    }
+    .skinThumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+      display: block;
+    }
+    .skinThumb:hover {
+      transform: scale(1.08);
+      border-color: rgba(255,255,255,0.4);
+    }
+    .skinThumb.selected {
+      border-color: var(--red);
+      box-shadow: 0 0 14px rgba(204,21,21,0.65);
+      transform: scale(1.08);
+    }
+
+    /* ─── DEPLOY DOCK ─── */
+    .deployDock {
       display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 12px;
+      flex-wrap: nowrap;
+      gap: 10px;
+      width: 100%;
     }
 
-    .primaryBtn,
-    .secondaryBtn,
-    .teamBtn,
     .deployBtn {
-      min-width: 190px;
-      padding: 14px 22px 12px;
-      border: 1px solid var(--border-bright);
+      position: relative;
+      overflow: hidden;
+      min-width: 0;
+      flex: 1;
+      padding: 12px 24px 10px;
+      border: 1px solid rgba(255,255,255,0.18);
       color: #ffffff;
-      background: rgba(255,255,255,0.045);
       clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
       font-family: 'Bebas Neue', Impact, sans-serif;
-      font-size: 28px;
+      font-size: clamp(26px, 3vw, 40px);
       line-height: 0.95;
-      letter-spacing: 0.14em;
+      letter-spacing: 0.2em;
       transition: transform 160ms ease, filter 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
     }
 
-    .primaryBtn,
-    .deployBtn {
-      background: linear-gradient(135deg, var(--red-dark), var(--red) 52%, #f43a3a);
-      box-shadow: 0 0 28px rgba(204,21,21,0.32), 0 22px 60px rgba(0,0,0,0.58);
+    .deployBtn::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 50%, transparent 100%);
+      transform: translateX(-100%);
+      transition: transform 0.5s ease;
+    }
+    .deployBtn:hover::before { transform: translateX(100%); }
+
+    .deployBtn.primary {
+      background: linear-gradient(135deg, var(--red-dark) 0%, var(--red) 52%, #f43a3a 100%);
+      box-shadow: 0 0 28px rgba(204,21,21,0.38), 0 22px 60px rgba(0,0,0,0.58);
+    }
+    .deployBtn.primary:hover {
+      transform: translateY(-3px);
+      filter: brightness(1.1);
+      box-shadow: 0 0 42px rgba(204,21,21,0.55), 0 28px 70px rgba(0,0,0,0.65);
     }
 
-    .deployBtn {
-      min-width: min(430px, 100%);
-      padding: 18px 32px 16px;
-      font-size: clamp(38px, 5vw, 58px);
-      letter-spacing: 0.2em;
-    }
-
-    .practiceBtn {
-      background: linear-gradient(135deg, #12306f, var(--blue) 54%, #3f8cff);
+    .deployBtn.practice {
+      background: linear-gradient(135deg, #0d2a6a 0%, var(--blue) 52%, #3a88ff 100%);
       box-shadow: 0 0 28px rgba(21,102,204,0.32), 0 22px 60px rgba(0,0,0,0.58);
     }
-
-    .secondaryBtn,
-    .teamBtn {
-      background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.025));
+    .deployBtn.practice:hover {
+      transform: translateY(-3px);
+      filter: brightness(1.1);
+      box-shadow: 0 0 42px rgba(21,102,204,0.5), 0 28px 70px rgba(0,0,0,0.65);
     }
 
-    .primaryBtn:hover,
-    .secondaryBtn:hover,
-    .teamBtn:hover:not(:disabled),
-    .deployBtn:hover {
-      transform: translateY(-2px);
-      border-color: rgba(255,255,255,0.34);
-      filter: brightness(1.08);
+    .deployBtnSub {
+      display: block;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.22em;
+      opacity: 0.72;
+      margin-top: 2px;
     }
 
-    .lobbyView {
-      align-content: center;
+    /* ─── PAINTBALL SPLATTER PARTICLES ─── */
+    .splat {
+      position: fixed;
+      pointer-events: none;
+      z-index: 0;
+      border-radius: 50%;
+      filter: blur(0.5px);
+      opacity: 0;
+      animation: splatAppear 0.4s ease forwards;
     }
+    @keyframes splatAppear {
+      0%   { opacity: 0; transform: scale(0.2); }
+      60%  { opacity: 1; transform: scale(1.1); }
+      100% { opacity: var(--final-opacity, 0.4); transform: scale(1); }
+    }
+
+    /* ─── LOBBY VIEW ─── */
+    .lobbyView { align-content: center; }
 
     .topBar {
       width: min(1240px, 100%);
@@ -543,16 +855,19 @@
       padding: 9px 13px 8px;
       font-size: 20px;
       opacity: 0.74;
+      border: 1px solid var(--border-bright);
+      background: rgba(255,255,255,0.045);
+      color: #fff;
+      clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      letter-spacing: 0.14em;
     }
 
     .brandMini {
       font-size: clamp(32px, 5vw, 58px);
       letter-spacing: 0.08em;
     }
-
-    .brandMini span {
-      color: var(--red);
-    }
+    .brandMini span { color: var(--red); }
 
     .statusPill {
       padding: 8px 12px;
@@ -562,23 +877,22 @@
       font-weight: 700;
       letter-spacing: 0.08em;
       text-transform: uppercase;
+      font-size: 13px;
     }
 
+    /* ─── LOBBY PANEL ─── */
     .panel {
       width: min(1040px, 100%);
       margin: 0 auto;
       padding: clamp(20px, 3vw, 34px);
       clip-path: polygon(0 0, calc(100% - 28px) 0, 100% 28px, 100% 100%, 28px 100%, 0 calc(100% - 28px));
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018));
+      box-shadow: 0 22px 70px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04);
     }
 
-    .step {
-      display: none;
-      gap: 22px;
-    }
-
-    .step.active {
-      display: grid;
-    }
+    .step { display: none; gap: 22px; }
+    .step.active { display: grid; }
 
     .sectionTitle {
       margin: 0;
@@ -598,10 +912,7 @@
       letter-spacing: 0.04em;
     }
 
-    .fieldGrid {
-      display: grid;
-      gap: 14px;
-    }
+    .fieldGrid { display: grid; gap: 14px; }
 
     input {
       width: 100%;
@@ -615,10 +926,9 @@
       letter-spacing: 0.08em;
       text-transform: uppercase;
     }
-
     input:focus {
-      border-color: rgba(204, 21, 21, 0.8);
-      box-shadow: 0 0 24px rgba(204, 21, 21, 0.18);
+      border-color: rgba(204,21,21,0.8);
+      box-shadow: 0 0 24px rgba(204,21,21,0.18);
     }
 
     .errorText {
@@ -630,16 +940,50 @@
       text-transform: uppercase;
     }
 
+    .buttonRow {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .primaryBtn, .secondaryBtn {
+      min-width: 190px;
+      padding: 14px 22px 12px;
+      border: 1px solid var(--border-bright);
+      color: #ffffff;
+      clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: 28px;
+      line-height: 0.95;
+      letter-spacing: 0.14em;
+      transition: transform 160ms ease, filter 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    .primaryBtn {
+      background: linear-gradient(135deg, var(--red-dark), var(--red) 52%, #f43a3a);
+      box-shadow: 0 0 28px rgba(204,21,21,0.32), 0 22px 60px rgba(0,0,0,0.58);
+    }
+
+    .secondaryBtn {
+      background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.025));
+    }
+
+    .primaryBtn:hover, .secondaryBtn:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255,255,255,0.34);
+      filter: brightness(1.08);
+    }
+
     .roomCodePanel {
       justify-self: center;
       width: min(430px, 100%);
       padding: 18px;
-      border: 1px solid rgba(204, 21, 21, 0.58);
+      border: 1px solid rgba(204,21,21,0.58);
       background: rgba(204,21,21,0.12);
       text-align: center;
-      box-shadow: 0 0 28px rgba(204, 21, 21, 0.2);
+      box-shadow: 0 0 28px rgba(204,21,21,0.2);
     }
-
     .roomCodePanel span {
       display: block;
       color: var(--text-dim);
@@ -647,7 +991,6 @@
       letter-spacing: 0.16em;
       text-transform: uppercase;
     }
-
     .roomCodePanel strong {
       display: block;
       margin-top: 4px;
@@ -657,6 +1000,7 @@
       letter-spacing: 0.16em;
     }
 
+    /* ─── ARENA LOBBY ─── */
     .arenaLobby {
       width: min(1320px, 100%);
       margin: 0 auto;
@@ -666,10 +1010,12 @@
       align-items: stretch;
     }
 
-    .teamColumn,
-    .centerConsole {
+    .teamColumn, .centerConsole {
       min-height: 560px;
       padding: clamp(16px, 2vw, 26px);
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018));
+      box-shadow: 0 22px 70px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04);
     }
 
     .teamColumn {
@@ -678,13 +1024,8 @@
       gap: 16px;
     }
 
-    .redColumn {
-      border-top: 3px solid var(--red);
-    }
-
-    .blueColumn {
-      border-top: 3px solid var(--blue);
-    }
+    .redColumn { border-top: 3px solid var(--red); }
+    .blueColumn { border-top: 3px solid var(--blue); }
 
     .teamHeader {
       margin: 0;
@@ -693,18 +1034,12 @@
       letter-spacing: 0.1em;
       text-align: center;
     }
-
-    .redColumn .teamHeader { color: var(--red); }
+    .redColumn .teamHeader  { color: var(--red); }
     .blueColumn .teamHeader { color: var(--blue); }
 
-    .slots {
-      display: grid;
-      gap: 14px;
-    }
+    .slots { display: grid; gap: 14px; }
 
-    .playerCard,
-    .emptySlot,
-    .botSlot {
+    .playerCard, .emptySlot, .botSlot {
       position: relative;
       min-height: 138px;
       padding: 18px;
@@ -714,40 +1049,29 @@
       gap: 8px;
       animation: cardIn 260ms ease both;
     }
-
     @keyframes cardIn {
       from { opacity: 0; transform: translateY(10px) scale(0.98); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
     }
 
     .playerCard {
-      border: 1px solid rgba(255, 255, 255, 0.16);
-      background: rgba(255, 255, 255, 0.075);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.075);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
     }
-
-    .redColumn .playerCard {
-      background: linear-gradient(135deg, rgba(204, 21, 21, 0.2), rgba(255, 255, 255, 0.04));
-    }
-
-    .blueColumn .playerCard {
-      background: linear-gradient(135deg, rgba(21, 102, 204, 0.22), rgba(255, 255, 255, 0.04));
-    }
+    .redColumn .playerCard  { background: linear-gradient(135deg, rgba(204,21,21,0.2), rgba(255,255,255,0.04)); }
+    .blueColumn .playerCard { background: linear-gradient(135deg, rgba(21,102,204,0.22), rgba(255,255,255,0.04)); }
 
     .emptySlot {
-      border: 2px dashed rgba(255, 255, 255, 0.18);
-      color: rgba(255, 255, 255, 0.38);
+      border: 2px dashed rgba(255,255,255,0.18);
+      color: rgba(255,255,255,0.38);
       font-size: 34px;
       letter-spacing: 0.12em;
       text-align: center;
       grid-template-columns: 1fr;
     }
-
     .emptySlot.waitingSlot {
-      align-content: center;
-      justify-items: center;
-      gap: 8px;
-      font-size: 15px;
+      align-content: center; justify-items: center; gap: 8px; font-size: 15px;
     }
 
     .waitingText {
@@ -758,360 +1082,282 @@
     }
 
     .addBotButton {
-      padding: 0;
-      background: transparent;
-      color: #e8b84b;
+      padding: 0; background: transparent; color: #e8b84b;
       font-family: 'Bebas Neue', Impact, sans-serif;
-      font-size: 18px;
-      letter-spacing: 0.12em;
+      font-size: 18px; letter-spacing: 0.12em;
     }
-
-    .addBotButton:hover {
-      color: #ffd76a;
-      text-shadow: 0 0 12px rgba(232,184,75,0.45);
-    }
+    .addBotButton:hover { color: #ffd76a; text-shadow: 0 0 12px rgba(232,184,75,0.45); }
 
     .botSlot {
       grid-template-columns: 1fr;
-      align-content: center;
-      gap: 3px;
-      padding-right: 72px;
+      align-content: center; gap: 3px; padding-right: 72px;
       border: 1px solid rgba(232,184,75,0.3);
       background: rgba(232,184,75,0.08);
       box-shadow: inset 0 1px 0 rgba(232,184,75,0.08);
     }
 
-    .botLabel {
-      color: #e8b84b;
-      font-family: 'Bebas Neue', Impact, sans-serif;
-      font-size: 20px;
-      line-height: 1;
-      letter-spacing: 0.16em;
-    }
-
+    .botLabel   { color: #e8b84b; font-family: 'Bebas Neue', Impact, sans-serif; font-size: 20px; line-height: 1; letter-spacing: 0.16em; }
     .botDifficulty {
-      width: fit-content;
-      padding: 0;
-      background: transparent;
-      color: var(--text-dim);
-      font-family: 'Rajdhani', Arial, Helvetica, sans-serif;
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: 2px;
-      text-align: left;
-      cursor: default;
+      width: fit-content; padding: 0; background: transparent;
+      color: var(--text-dim); font-family: 'Rajdhani', Arial, Helvetica, sans-serif;
+      font-size: 12px; font-weight: 800; letter-spacing: 2px; text-align: left; cursor: default;
     }
-
-    .botDifficulty.hostEditable {
-      cursor: pointer;
-    }
-
-    .botDifficulty.hostEditable:hover {
-      color: #ffffff;
-    }
-
-    .botDifficulty:disabled {
-      opacity: 1;
-    }
-
-    .botSkinName {
-      color: #ffffff;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
+    .botDifficulty.hostEditable { cursor: pointer; }
+    .botDifficulty.hostEditable:hover { color: #fff; }
+    .botDifficulty:disabled { opacity: 1; }
+    .botSkinName { color: #fff; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
 
     .botRemoveButton {
-      position: absolute;
-      right: 12px;
-      bottom: 10px;
-      padding: 0;
-      background: transparent;
+      position: absolute; right: 12px; bottom: 10px;
+      padding: 0; background: transparent;
       color: rgba(255,255,255,0.42);
       font-family: 'Rajdhani', Arial, Helvetica, sans-serif;
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: 0.12em;
+      font-size: 10px; font-weight: 800; letter-spacing: 0.12em;
     }
+    .botRemoveButton:hover { color: rgba(255,255,255,0.76); }
 
-    .botRemoveButton:hover {
-      color: rgba(255,255,255,0.76);
-    }
-
-    .playerName {
-      font-size: clamp(34px, 4vw, 52px);
-      line-height: 0.9;
-      letter-spacing: 0.08em;
-    }
-
-    .playerMeta {
-      color: var(--text-dim);
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-    }
+    .playerName { font-size: clamp(34px, 4vw, 52px); line-height: 0.9; letter-spacing: 0.08em; }
+    .playerMeta { color: var(--text-dim); font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
 
     .avatar {
-      width: 52px;
-      height: 52px;
-      display: grid;
-      place-items: center;
+      width: 52px; height: 52px;
+      display: grid; place-items: center;
       border-radius: 50%;
       color: #fff;
       background: rgba(255,255,255,0.08);
       border: 1px solid var(--border-bright);
       font-family: 'Bebas Neue', Impact, sans-serif;
-      font-size: 28px;
-      letter-spacing: 0.05em;
+      font-size: 28px; letter-spacing: 0.05em;
     }
-
     .avatar.skinAvatar {
-      color: #ffffff;
-      background-size: cover;
-      background-position: center;
+      background-size: cover; background-position: center;
       text-shadow: 0 1px 5px #000;
       box-shadow: inset 0 0 0 999px rgba(0,0,0,0.08), 0 0 18px rgba(204,21,21,0.18);
     }
-
-    .redColumn .avatar { background: rgba(204,21,21,0.2); }
+    .redColumn .avatar  { background: rgba(204,21,21,0.2); }
     .blueColumn .avatar { background: rgba(21,102,204,0.24); }
 
     .readyStatus {
       position: relative;
-      width: 13px;
-      height: 13px;
+      width: 13px; height: 13px;
       border-radius: 50%;
       background: #46515c;
-      color: transparent;
-      overflow: hidden;
+      color: transparent; overflow: hidden;
       box-shadow: 0 0 0 4px rgba(255,255,255,0.035);
     }
-
     .readyStatus.ready {
       background: var(--green);
       box-shadow: 0 0 18px rgba(32,192,80,0.65);
     }
 
-    .readyStatus.ready::before {
-      content: "";
-    }
-
-    .playerInfo {
-      min-width: 0;
-    }
-
-    .slotHint {
-      color: var(--text-muted);
-      font-weight: 800;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-    }
+    .playerInfo { min-width: 0; }
+    .slotHint { color: var(--text-muted); font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
 
     .centerConsole {
-      display: grid;
-      align-content: center;
-      gap: 18px;
-      text-align: center;
+      display: grid; align-content: center; gap: 18px; text-align: center;
     }
 
-    .consoleLabel {
-      color: var(--text-dim);
-      font-weight: 700;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-    }
+    .consoleLabel { color: var(--text-dim); font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; font-size: 13px; }
 
     .bigCode {
       font-family: 'Bebas Neue', Impact, sans-serif;
       font-size: clamp(58px, 8vw, 104px);
-      line-height: 0.9;
-      letter-spacing: 0.16em;
-      color: #ffffff;
-      text-shadow: 0 0 24px rgba(204, 21, 21, 0.32);
+      line-height: 0.9; letter-spacing: 0.16em; color: #fff;
+      text-shadow: 0 0 24px rgba(204,21,21,0.32);
     }
 
     .matchInfo {
-      display: grid;
-      gap: 6px;
+      display: grid; gap: 6px;
       color: rgba(255,255,255,0.78);
-      font-size: 18px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
+      font-size: 18px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
     }
+
+    .teamBtn {
+      min-width: 190px;
+      padding: 14px 22px 12px;
+      border: 1px solid var(--border-bright);
+      color: #ffffff;
+      background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.025));
+      clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: 28px; line-height: 0.95; letter-spacing: 0.14em;
+      transition: transform 160ms ease, filter 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+    }
+    .teamBtn:hover:not(:disabled) { transform: translateY(-2px); border-color: rgba(255,255,255,0.34); filter: brightness(1.08); }
+    .teamBtn:disabled { cursor: not-allowed; opacity: 0.42; }
 
     .roomSettingsPanel {
       grid-column: 1 / -1;
       justify-self: center;
       width: min(1240px, 100%);
-      display: grid;
-      gap: clamp(16px, 2vw, 22px);
+      display: grid; gap: clamp(16px, 2vw, 22px);
       padding: clamp(18px, 2.5vw, 30px);
       border: 1px solid var(--border);
       background: linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018));
       box-shadow: 0 22px 70px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04);
     }
 
-    .roomSettingsHeader {
-      display: grid;
-      gap: 4px;
-      text-align: center;
-    }
-
+    .roomSettingsHeader { display: grid; gap: 4px; text-align: center; }
     .roomSettingsHeader strong {
-      color: #ffffff;
-      font-family: 'Bebas Neue', Impact, sans-serif;
-      font-size: clamp(36px, 5vw, 60px);
-      line-height: 0.9;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
+      color: #fff; font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: clamp(36px, 5vw, 60px); line-height: 0.9; letter-spacing: 0.14em; text-transform: uppercase;
     }
-
     .roomSettingsHeader span {
-      color: var(--text-dim);
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
+      color: var(--text-dim); font-size: 12px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
     }
 
-    .roomSettingsOptions {
-      width: min(720px, 100%);
-      justify-self: center;
-    }
-
-    .roomSettingGroup {
-      padding: 16px;
-      gap: 10px;
-    }
-
-    .roomSettingGroup .choice {
-      min-height: 42px;
-      padding: 11px 12px 9px;
-      font-size: 16px;
-      letter-spacing: 0.12em;
-    }
+    .roomSettingsOptions { width: min(720px, 100%); justify-self: center; }
+    .optionGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .roomSettingGroup { padding: 16px; gap: 10px; }
+    .roomSettingGroup .choice { min-height: 42px; padding: 11px 12px 9px; font-size: 16px; letter-spacing: 0.12em; }
 
     .startReady {
       background: linear-gradient(135deg, #116c32, var(--green));
       color: #06110b;
       animation: pulseStart 1s ease-in-out infinite alternate;
     }
-
     @keyframes pulseStart {
-      from { box-shadow: 0 0 16px rgba(56, 212, 107, 0.26); }
-      to { box-shadow: 0 0 34px rgba(56, 212, 107, 0.62); }
+      from { box-shadow: 0 0 16px rgba(56,212,107,0.26); }
+      to   { box-shadow: 0 0 34px rgba(56,212,107,0.62); }
     }
 
-    .teamBtn:disabled {
-      cursor: not-allowed;
-      opacity: 0.42;
-    }
+    .hidden { display: none !important; }
 
-    .hidden {
-      display: none !important;
-    }
+    /* ─── RESPONSIVE ─── */
 
     @media (max-width: 1000px) {
-      .arenaLobby {
-        grid-template-columns: 1fr;
-      }
-
-      .centerConsole {
-        min-height: auto;
-        order: -1;
-      }
-
-      .roomSettingsPanel {
-        order: -1;
-      }
-
-      .teamColumn {
-        min-height: auto;
-      }
-
-      .optionGrid {
-        grid-template-columns: 1fr;
-      }
-
-      .mapGrid {
-        grid-template-columns: 1fr;
-      }
+      .arenaLobby { grid-template-columns: 1fr; }
+      .centerConsole { min-height: auto; order: -1; }
+      .roomSettingsPanel { order: -1; }
+      .teamColumn { min-height: auto; }
+      .optionGrid { grid-template-columns: 1fr; }
     }
 
     @media (max-width: 640px) {
-      .view {
-        padding: 22px 16px;
-      }
-
-      .heroButtons,
-      .buttonRow {
-        display: grid;
-        width: 100%;
-      }
-
-      .primaryBtn,
-      .secondaryBtn,
-      .smallBtn,
-      .teamBtn {
-        width: 100%;
-      }
-
-      .choiceSet {
-        grid-template-columns: 1fr;
-      }
+      .view { padding: 22px 16px; }
+      .deployDock, .buttonRow { display: grid; width: 100%; }
+      .deployBtn, .primaryBtn, .secondaryBtn, .teamBtn { width: 100%; }
+      .choiceSet { grid-template-columns: 1fr; }
+      .mapGrid { grid-template-columns: 1fr; }
+      .skinGrid { grid-template-columns: repeat(5, 1fr); }
     }
+
+    /* ─── ANIMATED NUMBER COUNT-UP ─── */
+    .countup { display: inline-block; }
   </style>
 </head>
 <body>
+  <!-- Particle canvas -->
+  <canvas id="bgCanvas"></canvas>
+
+  <div id="atmosphereOverlay"></div>
+  <div id="scanlineOverlay"></div>
   <div class="screen">
     <div class="cornerBracket tl"></div>
     <div class="cornerBracket tr"></div>
     <div class="cornerBracket bl"></div>
     <div class="cornerBracket br"></div>
-    <button id="menuBackBtn" class="navBackBtn hidden" type="button">BACK</button>
+    <button id="menuBackBtn" class="navBackBtn hidden" type="button">◀ BACK</button>
 
+    <!-- ══════ HERO VIEW ══════ -->
     <section id="heroView" class="view heroView active">
       <div class="heroStack">
-        <div class="heroHeader">
-          <h1 class="title" aria-label="2 Steps Ahead">
-            <span class="titleLine">2 STEPS</span>
-            <span class="titleLine titleAhead">AHEAD</span>
-          </h1>
-          <div class="redDivider"></div>
-          <p class="subtitle">Competitive Paintball</p>
+
+        <!-- COMPACT TOP BAR: title left, avatar center, stats+pill right -->
+        <div class="heroTopBar">
+          <div class="heroTitleWrap">
+            <div class="titleEyebrow">// COMPETITIVE PAINTBALL //</div>
+            <h1 class="title" aria-label="2 Steps Ahead">
+              <span class="titleLine">2 STEPS</span>
+              <span class="titleLine titleAhead">AHEAD</span>
+            </h1>
+          </div>
+
+          <!-- Selected skin avatar -->
+          <div class="heroAvatarWrap">
+            <div class="heroAvatarRing">
+              <div class="heroAvatarRingDecor"></div>
+              <img id="carouselImg" class="heroAvatarImg" src="skins/IMG_3472.PNG" alt="Selected skin" draggable="false">
+            </div>
+            <div class="heroAvatarName" id="carouselName">D Ohmie</div>
+            <div class="skinDots" id="carouselDots"></div>
+          </div>
+
+          <div class="heroMeta">
+            <div class="livePill">
+              <div class="liveDot"></div>
+              ONLINE
+            </div>
+            <div class="statRow">
+              <div class="statItem">
+                <span class="statNum"><span class="countup" data-target="4">0</span></span>
+                <span class="statLabel">Maps</span>
+              </div>
+              <div class="statItem">
+                <span class="statNum"><span class="countup" data-target="10">0</span></span>
+                <span class="statLabel">Skins</span>
+              </div>
+              <div class="statItem">
+                <span class="statNum"><span class="countup" data-target="3">0</span></span>
+                <span class="statLabel">AI Levels</span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div class="menuGrid" aria-label="Match setup">
+        <!-- MAIN CONTENT GRID: maps+deploy left, options right -->
+        <div class="mainGrid">
+          <!-- Left col: maps + deploy -->
+          <div class="leftCol">
+          <!-- Map cards -->
           <div class="mapGrid" data-option-group="map" aria-label="Map selection">
             <button class="mapCard choice selected" data-value="speedball" type="button">
-              <iframe class="mapPreviewFrame" data-map-preview="speedball" title="Speedball drone preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+              <iframe class="mapPreviewFrame" data-map-preview="speedball" title="Speedball preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+              <div class="mapSelBadge"><svg viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
               <span class="cardTag">Tournament</span>
               <span class="cardName">Speedball</span>
               <span class="cardSub">Clean lanes / fast breakouts</span>
             </button>
             <button class="mapCard choice" data-value="funland" type="button">
-              <iframe class="mapPreviewFrame" data-map-preview="funland" title="Abandoned Funland drone preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+              <iframe class="mapPreviewFrame" data-map-preview="funland" title="Funland preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+              <div class="mapSelBadge"><svg viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
               <span class="cardTag">Scenario</span>
               <span class="cardName">Abandoned Funland</span>
               <span class="cardSub">Theme park / eerie lanes</span>
             </button>
             <button class="mapCard choice" data-value="ghosttown" type="button">
-              <iframe class="mapPreviewFrame" data-map-preview="ghosttown" title="Ghost Town drone preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+              <iframe class="mapPreviewFrame" data-map-preview="ghosttown" title="Ghost Town preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+              <div class="mapSelBadge"><svg viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
               <span class="cardTag">Scenario</span>
               <span class="cardName">Ghost Town</span>
               <span class="cardSub">Desert streets / western cover</span>
             </button>
             <button class="mapCard choice" data-value="rooftop" type="button">
-              <iframe class="mapPreviewFrame" data-map-preview="rooftop" title="Rooftop City drone preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+              <iframe class="mapPreviewFrame" data-map-preview="rooftop" title="Rooftop preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+              <div class="mapSelBadge"><svg viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
               <span class="cardTag">Skyline</span>
               <span class="cardName">Rooftop City</span>
               <span class="cardSub">Grass roof / huge city drop</span>
             </button>
           </div>
 
-          <div class="optionGrid">
+          <!-- Deploy buttons — inside left col, below maps -->
+          <div class="deployDock">
+            <button id="playMultiplayerBtn" class="deployBtn primary" type="button">
+              Deploy
+              <span class="deployBtnSub">Multiplayer Lobby</span>
+            </button>
+            <button id="playPracticeBtn" class="deployBtn practice" type="button">
+              Practice
+              <span class="deployBtnSub">Solo vs AI</span>
+            </button>
+          </div>
+          </div><!-- /leftCol -->
+
+          <!-- Right panel: options + skin picker -->
+          <div class="sidePanel">
+            <!-- Win Condition -->
             <div class="optionGroup" data-option-group="firstTo">
               <label>Win Condition</label>
               <div class="choiceSet">
@@ -1119,6 +1365,8 @@
                 <button class="choice" data-value="10" type="button">First to 10</button>
               </div>
             </div>
+
+            <!-- Squad Size -->
             <div class="optionGroup" data-option-group="gameMode">
               <label>Squad Size</label>
               <div class="choiceSet">
@@ -1126,40 +1374,8 @@
                 <button class="choice" data-value="2v2" type="button">2v2</button>
               </div>
             </div>
-            <div class="optionGroup" id="crosshairGroup">
-              <label>Crosshair</label>
-              <div class="crosshairPicker">
-                <div class="chStyleRow">
-                  <button class="chStyleBtn selected" data-ch-style="cross" type="button" title="Cross">
-                    <svg viewBox="0 0 24 24" width="22" height="22"><line x1="12" y1="2" x2="12" y2="8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="12" y1="16" x2="12" y2="22" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="2" y1="12" x2="8" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="16" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
-                  </button>
-                  <button class="chStyleBtn" data-ch-style="dot" type="button" title="Dot">
-                    <svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="3.5" fill="currentColor"/></svg>
-                  </button>
-                  <button class="chStyleBtn" data-ch-style="circle" type="button" title="Circle">
-                    <svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>
-                  </button>
-                  <button class="chStyleBtn" data-ch-style="crossdot" type="button" title="Cross + Dot">
-                    <svg viewBox="0 0 24 24" width="22" height="22"><line x1="12" y1="2" x2="12" y2="8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="12" y1="16" x2="12" y2="22" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="2" y1="12" x2="8" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="16" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>
-                  </button>
-                  <button class="chStyleBtn" data-ch-style="x" type="button" title="X">
-                    <svg viewBox="0 0 24 24" width="22" height="22"><line x1="5" y1="5" x2="10" y2="10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="14" y1="14" x2="19" y2="19" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="19" y1="5" x2="14" y2="10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="10" y1="14" x2="5" y2="19" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
-                  </button>
-                  <button class="chStyleBtn" data-ch-style="t" type="button" title="T-Shape">
-                    <svg viewBox="0 0 24 24" width="22" height="22"><line x1="12" y1="16" x2="12" y2="22" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="2" y1="12" x2="8" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="16" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
-                  </button>
-                </div>
-                <div class="chColorRow">
-                  <button class="chColorBtn selected" data-ch-color="white"   style="background:#ffffff" type="button" title="White"></button>
-                  <button class="chColorBtn" data-ch-color="red"     style="background:#ff3333" type="button" title="Red"></button>
-                  <button class="chColorBtn" data-ch-color="green"   style="background:#00ff88" type="button" title="Green"></button>
-                  <button class="chColorBtn" data-ch-color="cyan"    style="background:#00e5ff" type="button" title="Cyan"></button>
-                  <button class="chColorBtn" data-ch-color="yellow"  style="background:#ffe600" type="button" title="Yellow"></button>
-                  <button class="chColorBtn" data-ch-color="orange"  style="background:#ff8800" type="button" title="Orange"></button>
-                  <button class="chColorBtn" data-ch-color="pink"    style="background:#ff44cc" type="button" title="Pink"></button>
-                </div>
-              </div>
-            </div>
+
+            <!-- AI Difficulty -->
             <div class="optionGroup" data-option-group="difficulty">
               <label>AI Difficulty</label>
               <div class="choiceSet threeChoices">
@@ -1168,19 +1384,58 @@
                 <button class="choice" data-value="elite" type="button">Elite</button>
               </div>
             </div>
+
+            <!-- Crosshair -->
+            <div class="optionGroup" id="crosshairGroup">
+              <label>Crosshair</label>
+              <div class="crosshairPicker">
+                <div class="chStyleRow">
+                  <button class="chStyleBtn selected" data-ch-style="cross" type="button" title="Cross">
+                    <svg viewBox="0 0 24 24" width="20" height="20"><line x1="12" y1="2" x2="12" y2="8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="12" y1="16" x2="12" y2="22" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="2" y1="12" x2="8" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="16" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+                  </button>
+                  <button class="chStyleBtn" data-ch-style="dot" type="button" title="Dot">
+                    <svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="3.5" fill="currentColor"/></svg>
+                  </button>
+                  <button class="chStyleBtn" data-ch-style="circle" type="button" title="Circle">
+                    <svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>
+                  </button>
+                  <button class="chStyleBtn" data-ch-style="crossdot" type="button" title="Cross+Dot">
+                    <svg viewBox="0 0 24 24" width="20" height="20"><line x1="12" y1="2" x2="12" y2="8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="12" y1="16" x2="12" y2="22" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="2" y1="12" x2="8" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="16" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>
+                  </button>
+                  <button class="chStyleBtn" data-ch-style="x" type="button" title="X">
+                    <svg viewBox="0 0 24 24" width="20" height="20"><line x1="5" y1="5" x2="10" y2="10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="14" y1="14" x2="19" y2="19" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="19" y1="5" x2="14" y2="10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="10" y1="14" x2="5" y2="19" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+                  </button>
+                  <button class="chStyleBtn" data-ch-style="t" type="button" title="T-Shape">
+                    <svg viewBox="0 0 24 24" width="20" height="20"><line x1="12" y1="16" x2="12" y2="22" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="2" y1="12" x2="8" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="16" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+                  </button>
+                </div>
+                <div class="chColorRow">
+                  <button class="chColorBtn selected" data-ch-color="white"  style="background:#ffffff" type="button" title="White"></button>
+                  <button class="chColorBtn" data-ch-color="red"    style="background:#ff3333" type="button" title="Red"></button>
+                  <button class="chColorBtn" data-ch-color="green"  style="background:#00ff88" type="button" title="Green"></button>
+                  <button class="chColorBtn" data-ch-color="cyan"   style="background:#00e5ff" type="button" title="Cyan"></button>
+                  <button class="chColorBtn" data-ch-color="yellow" style="background:#ffe600" type="button" title="Yellow"></button>
+                  <button class="chColorBtn" data-ch-color="orange" style="background:#ff8800" type="button" title="Orange"></button>
+                  <button class="chColorBtn" data-ch-color="pink"   style="background:#ff44cc" type="button" title="Pink"></button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Skin Picker -->
+            <div class="skinPickerGroup">
+              <label>Select Skin</label>
+              <div class="skinGrid" id="skinPickerGrid"></div>
+            </div>
           </div>
         </div>
 
-        <div class="deployDock">
-          <button id="playMultiplayerBtn" class="deployBtn" type="button">Deploy</button>
-          <button id="playPracticeBtn" class="deployBtn practiceBtn" type="button">Practice</button>
-        </div>
       </div>
     </section>
 
+    <!-- ══════ LOBBY VIEW ══════ -->
     <section id="lobbyView" class="view lobbyView">
       <div class="topBar">
-        <button id="leaveLobbyBtn" class="secondaryBtn lobbyLeaveBtn hidden">Leave Lobby</button>
+        <button id="leaveLobbyBtn" class="lobbyLeaveBtn hidden" type="button">Leave Lobby</button>
         <div class="brandMini">2 STEPS <span>AHEAD</span></div>
         <div id="connectionStatus" class="statusPill">Connecting</div>
       </div>
@@ -1262,24 +1517,28 @@
           <div class="mapGrid" data-room-setting="map" aria-label="Lobby map selection">
             <button class="mapCard choice selected" data-value="speedball" type="button">
               <iframe class="mapPreviewFrame" data-map-preview="speedball" title="Speedball drone preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+              <div class="mapSelBadge"><svg viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
               <span class="cardTag">Tournament</span>
               <span class="cardName">Speedball</span>
               <span class="cardSub">Clean lanes / fast breakouts</span>
             </button>
             <button class="mapCard choice" data-value="funland" type="button">
               <iframe class="mapPreviewFrame" data-map-preview="funland" title="Abandoned Funland drone preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+              <div class="mapSelBadge"><svg viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
               <span class="cardTag">Scenario</span>
               <span class="cardName">Abandoned Funland</span>
               <span class="cardSub">Theme park / eerie lanes</span>
             </button>
             <button class="mapCard choice" data-value="ghosttown" type="button">
               <iframe class="mapPreviewFrame" data-map-preview="ghosttown" title="Ghost Town drone preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+              <div class="mapSelBadge"><svg viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
               <span class="cardTag">Scenario</span>
               <span class="cardName">Ghost Town</span>
               <span class="cardSub">Desert streets / western cover</span>
             </button>
             <button class="mapCard choice" data-value="rooftop" type="button">
               <iframe class="mapPreviewFrame" data-map-preview="rooftop" title="Rooftop City drone preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+              <div class="mapSelBadge"><svg viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
               <span class="cardTag">Skyline</span>
               <span class="cardName">Rooftop City</span>
               <span class="cardSub">Grass roof / huge city drop</span>
@@ -1306,602 +1565,833 @@
     </section>
   </div>
 
-  <script src="/socket.io/socket.io.js"></script>
   <script>
-    (() => {
-      'use strict'
+    // socket.io is only available when the game server is running
+    window.__socketIoMissing = false;
+  </script>
+  <script src="/socket.io/socket.io.js" onerror="window.__socketIoMissing=true"></script>
+  <script>
+  (() => {
+    'use strict';
 
-      const $ = (selector) => document.querySelector(selector)
-      const urlParams = new URLSearchParams(window.location.search)
-      const LOBBY_ROOM_CODE = (urlParams.get('room') || '').toUpperCase()
-      const SOCKET_URL = window.location.hostname === 'localhost'
-        ? 'http://localhost:3000'
-        : 'https://two-steps-ahead-paintball.onrender.com'
-      const SKINS = [
-        { id: 'skin1', file: 'IMG_3472.PNG', name: 'D Ohmie' },
-        { id: 'skin2', file: 'IMG_7865.PNG', name: 'Freaky Indian' },
-        { id: 'skin3', file: 'IMG_7866.PNG', name: 'Yam Guy' },
-        { id: 'skin4', file: 'IMG_7868.PNG', name: 'Sleepy Ogre' },
-        { id: 'skin5', file: 'IMG_7869.PNG', name: 'Sexy Ogre' },
-        { id: 'skin6', file: 'IMG_7870.PNG', name: 'Yam ahh' },
-        { id: 'skin7', file: 'IMG_7871.PNG', name: 'AD pizza man' },
-        { id: 'skin8', file: 'IMG_7872.PNG', name: 'Afro Mf' },
-        { id: 'skin9', file: 'IMG_7873.PNG', name: 'DubC' },
-        { id: 'skin10', file: 'IMG_7874.PNG', name: 'Cool Matt' }
-      ]
-      const DEFAULT_SKIN = SKINS[0]
-      const state = {
-        socket: null,
-        username: sessionStorage.getItem('paintballUsername') || '',
-        team: sessionStorage.getItem('paintballTeam') || 'red',
-        code: '',
-        room: null,
-        pendingRoom: LOBBY_ROOM_CODE,
-        createOptions: {
-          gameMode: '1v1',
-          map: 'speedball',
-          firstTo: 5,
-          difficulty: 'pro'
+    /* ══════════════════════════════════════
+       PAINTBALL PARTICLE CANVAS
+    ══════════════════════════════════════ */
+    const canvas = document.getElementById('bgCanvas');
+    const ctx = canvas.getContext('2d');
+    let W, H, particles = [], splats = [];
+
+    function resize() {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Floating particle specs
+    const PARTICLE_COUNT = 38;
+    const COLORS = [
+      'rgba(204,21,21,',
+      'rgba(255,40,40,',
+      'rgba(180,10,10,',
+      'rgba(21,102,204,',
+      'rgba(60,140,255,',
+    ];
+
+    function randomParticle() {
+      return {
+        x: Math.random() * W,
+        y: Math.random() * H,
+        r: 2 + Math.random() * 6,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: -0.15 - Math.random() * 0.35,
+        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        alpha: 0.08 + Math.random() * 0.18,
+        pulse: Math.random() * Math.PI * 2,
+        pulseSpeed: 0.008 + Math.random() * 0.018,
+        // drip trail
+        trail: [],
+        trailMax: 8 + Math.floor(Math.random() * 12),
+      };
+    }
+
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const p = randomParticle();
+      p.y = Math.random() * H; // start spread
+      particles.push(p);
+    }
+
+    // Static background splats (decorative)
+    function createBgSplat(x, y, r, colorIdx, alpha) {
+      splats.push({ x, y, r, color: COLORS[colorIdx], alpha });
+    }
+    // seed some splats
+    for (let i = 0; i < 12; i++) {
+      createBgSplat(
+        Math.random() * W,
+        Math.random() * H,
+        18 + Math.random() * 60,
+        Math.floor(Math.random() * COLORS.length),
+        0.025 + Math.random() * 0.04
+      );
+    }
+
+    function drawSplat(ctx, x, y, r, color, alpha) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.beginPath();
+      const spikes = 6 + Math.floor(Math.random() * 4);
+      for (let i = 0; i < spikes * 2; i++) {
+        const angle = (i * Math.PI) / spikes;
+        const rad = i % 2 === 0 ? r : r * (0.4 + Math.random() * 0.3);
+        const px = Math.cos(angle) * rad;
+        const py = Math.sin(angle) * rad;
+        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fillStyle = color + alpha + ')';
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function animateCanvas() {
+      ctx.clearRect(0, 0, W, H);
+
+      // Draw static splats
+      splats.forEach(s => drawSplat(ctx, s.x, s.y, s.r, s.color, s.alpha));
+
+      // Draw + move particles
+      particles.forEach(p => {
+        p.pulse += p.pulseSpeed;
+        const pAlpha = p.alpha * (0.7 + 0.3 * Math.sin(p.pulse));
+
+        // trail
+        p.trail.push({ x: p.x, y: p.y });
+        if (p.trail.length > p.trailMax) p.trail.shift();
+
+        // draw trail
+        p.trail.forEach((pt, i) => {
+          const t = i / p.trail.length;
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, p.r * t * 0.6, 0, Math.PI * 2);
+          ctx.fillStyle = p.color + (pAlpha * t * 0.5) + ')';
+          ctx.fill();
+        });
+
+        // draw ball
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = p.color + pAlpha + ')';
+        ctx.fill();
+
+        // highlight
+        ctx.beginPath();
+        ctx.arc(p.x - p.r * 0.25, p.y - p.r * 0.25, p.r * 0.35, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,' + (pAlpha * 0.6) + ')';
+        ctx.fill();
+
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (p.y < -20) {
+          const np = randomParticle();
+          np.y = H + 10;
+          Object.assign(p, np);
+        }
+        if (p.x < -20 || p.x > W + 20) {
+          p.x = p.x < 0 ? W + 10 : -10;
+        }
+      });
+
+      requestAnimationFrame(animateCanvas);
+    }
+    animateCanvas();
+
+    /* ══════════════════════════════════════
+       SKIN CAROUSEL + PICKER
+    ══════════════════════════════════════ */
+    const SKINS = [
+      { id: 'skin1',  file: 'IMG_3472.PNG', name: 'D Ohmie' },
+      { id: 'skin2',  file: 'IMG_7865.PNG', name: 'Freaky Indian' },
+      { id: 'skin3',  file: 'IMG_7866.PNG', name: 'Yam Guy' },
+      { id: 'skin4',  file: 'IMG_7868.PNG', name: 'Sleepy Ogre' },
+      { id: 'skin5',  file: 'IMG_7869.PNG', name: 'Sexy Ogre' },
+      { id: 'skin6',  file: 'IMG_7870.PNG', name: 'Yam ahh' },
+      { id: 'skin7',  file: 'IMG_7871.PNG', name: 'AD pizza man' },
+      { id: 'skin8',  file: 'IMG_7872.PNG', name: 'Afro Mf' },
+      { id: 'skin9',  file: 'IMG_7873.PNG', name: 'DubC' },
+      { id: 'skin10', file: 'IMG_7874.PNG', name: 'Cool Matt' }
+    ];
+    const DEFAULT_SKIN = SKINS[0];
+
+    function skinImageUrl(skin) {
+      return '/skins/' + encodeURIComponent((skin || DEFAULT_SKIN).file);
+    }
+
+    // Load selected skin from storage
+    function getSavedSkin() {
+      try {
+        const id = localStorage.getItem('selectedSkin');
+        const file = localStorage.getItem('selectedSkinFile');
+        const name = localStorage.getItem('selectedSkinName');
+        return SKINS.find(s => s.id === id) || SKINS.find(s => s.file === file) || DEFAULT_SKIN;
+      } catch(_) { return DEFAULT_SKIN; }
+    }
+
+    let selectedSkinIndex = Math.max(0, SKINS.findIndex(s => s.id === getSavedSkin().id));
+    let carouselAutoTimer = null;
+
+    const carouselImg  = document.getElementById('carouselImg');
+    const carouselName = document.getElementById('carouselName');
+    const dotsWrap     = document.getElementById('carouselDots');
+    const skinGrid     = document.getElementById('skinPickerGrid');
+
+    // Build dots (only if carousel exists in DOM)
+    if (dotsWrap) {
+      SKINS.forEach((_, i) => {
+        const dot = document.createElement('button');
+        dot.className = 'skinDot' + (i === selectedSkinIndex ? ' active' : '');
+        dot.type = 'button';
+        dot.addEventListener('click', () => selectSkin(i));
+        dotsWrap.appendChild(dot);
+      });
+    }
+
+    // Build skin picker grid
+    SKINS.forEach((skin, i) => {
+      const thumb = document.createElement('button');
+      thumb.className = 'skinThumb' + (i === selectedSkinIndex ? ' selected' : '');
+      thumb.type = 'button';
+      thumb.title = skin.name;
+      const img = document.createElement('img');
+      img.src = 'skins/' + skin.file;
+      img.alt = skin.name;
+      img.draggable = false;
+      thumb.appendChild(img);
+      thumb.addEventListener('click', () => selectSkin(i));
+      skinGrid.appendChild(thumb);
+    });
+
+    function selectSkin(i) {
+      selectedSkinIndex = i;
+      const skin = SKINS[i];
+
+      // Update carousel with fade (only if carousel exists)
+      if (carouselImg && carouselName) {
+        carouselImg.classList.add('fading');
+        setTimeout(() => {
+          carouselImg.src = 'skins/' + skin.file;
+          carouselName.textContent = skin.name;
+          carouselImg.classList.remove('fading');
+        }, 200);
+      }
+
+      // Update dots
+      if (dotsWrap) {
+        dotsWrap.querySelectorAll('.skinDot').forEach((d, j) =>
+          d.classList.toggle('active', j === i)
+        );
+      }
+
+      // Update grid
+      if (skinGrid) {
+        skinGrid.querySelectorAll('.skinThumb').forEach((t, j) =>
+          t.classList.toggle('selected', j === i)
+        );
+      }
+
+      // Save
+      try {
+        localStorage.setItem('selectedSkin', skin.id);
+        localStorage.setItem('selectedSkinFile', skin.file);
+        localStorage.setItem('selectedSkinName', skin.name);
+      } catch(_) {}
+    }
+
+    // Auto-cycle carousel every 3s (pauses on user interaction)
+    function startCarouselAuto() {
+      carouselAutoTimer = setInterval(() => {
+        selectSkin((selectedSkinIndex + 1) % SKINS.length);
+      }, 3000);
+    }
+
+    function resetCarouselAuto() {
+      clearInterval(carouselAutoTimer);
+      setTimeout(startCarouselAuto, 5000);
+    }
+
+    if (dotsWrap) dotsWrap.addEventListener('click', resetCarouselAuto);
+    if (skinGrid) skinGrid.addEventListener('click', resetCarouselAuto);
+    if (carouselImg) startCarouselAuto();
+    selectSkin(selectedSkinIndex); // sync UI on load
+
+    /* ══════════════════════════════════════
+       COUNT-UP ANIMATION
+    ══════════════════════════════════════ */
+    function animateCountUp(el, target, duration) {
+      const start = performance.now();
+      function tick(now) {
+        const t = Math.min((now - start) / duration, 1);
+        el.textContent = Math.round(t * target);
+        if (t < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    }
+
+    document.querySelectorAll('.countup').forEach(el => {
+      const target = parseInt(el.dataset.target, 10);
+      setTimeout(() => animateCountUp(el, target, 1200), 400);
+    });
+
+    /* ══════════════════════════════════════
+       SPLASH SPLAT ON DEPLOY BTN CLICK
+    ══════════════════════════════════════ */
+    function spawnSplat(x, y, color) {
+      const el = document.createElement('div');
+      const size = 20 + Math.random() * 30;
+      el.className = 'splat';
+      el.style.cssText = `
+        left: ${x - size / 2}px;
+        top: ${y - size / 2}px;
+        width: ${size}px;
+        height: ${size}px;
+        background: ${color};
+        --final-opacity: ${0.25 + Math.random() * 0.3};
+      `;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 2000);
+    }
+
+    document.querySelectorAll('.deployBtn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const rect = btn.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const isRed = btn.classList.contains('primary');
+        const color = isRed ? 'rgba(204,21,21,0.7)' : 'rgba(21,102,204,0.7)';
+        for (let i = 0; i < 8; i++) {
+          setTimeout(() => {
+            spawnSplat(
+              cx + (Math.random() - 0.5) * 160,
+              cy + (Math.random() - 0.5) * 80,
+              color
+            );
+          }, i * 40);
+        }
+      });
+    });
+
+    /* ══════════════════════════════════════
+       SOCKET + GAME LOGIC (unchanged)
+    ══════════════════════════════════════ */
+    const $ = (selector) => document.querySelector(selector);
+    const urlParams = new URLSearchParams(window.location.search);
+    const LOBBY_ROOM_CODE = (urlParams.get('room') || '').toUpperCase();
+    const SOCKET_URL = window.location.hostname === 'localhost'
+      ? 'http://localhost:3000'
+      : 'https://two-steps-ahead-paintball.onrender.com';
+
+    const state = {
+      socket: null,
+      username: sessionStorage.getItem('paintballUsername') || '',
+      team: sessionStorage.getItem('paintballTeam') || 'red',
+      code: '',
+      room: null,
+      pendingRoom: LOBBY_ROOM_CODE,
+      createOptions: { gameMode: '1v1', map: 'speedball', firstTo: 5, difficulty: 'pro' }
+    };
+
+    const views = { hero: $('#heroView'), lobby: $('#lobbyView') };
+    const panels = {
+      entry:  $('#entryPanel'),
+      create: $('#createPanel'),
+      join:   $('#joinPanel'),
+      arena:  $('#arenaLobby')
+    };
+
+    const ui = {
+      connectionStatus: $('#connectionStatus'),
+      usernameInput:    $('#usernameInput'),
+      roomCodeInput:    $('#roomCodeInput'),
+      entryError:       $('#entryError'),
+      createError:      $('#createError'),
+      joinError:        $('#joinError'),
+      lobbyError:       $('#lobbyError'),
+      roomCodeDisplay:  $('#roomCodeDisplay'),
+      roomCodeShare:    $('#roomCodeShare'),
+      modeDisplay:      $('#modeDisplay'),
+      mapDisplay:       $('#mapDisplay'),
+      firstToDisplay:   $('#firstToDisplay'),
+      roomSettingsPanel:$('#roomSettingsPanel'),
+      redSlots:         $('#redSlots'),
+      blueSlots:        $('#blueSlots'),
+      switchTeamBtn:    $('#switchTeamBtn'),
+      readyBtn:         $('#readyBtn'),
+      startMatchBtn:    $('#startMatchBtn'),
+      leaveLobbyBtn:    $('#leaveLobbyBtn'),
+      menuBackBtn:      $('#menuBackBtn')
+    };
+
+    function init() {
+      if (state.username) ui.usernameInput.value = state.username;
+      if (state.pendingRoom) showView('lobby');
+      bindUi();
+      setupLiveMapPreviews();
+      connectSocket();
+    }
+
+    function bindUi() {
+      $('#playMultiplayerBtn').addEventListener('click', () => showView('lobby'));
+      $('#playPracticeBtn').addEventListener('click', startPractice);
+      ui.menuBackBtn.addEventListener('click', navigateBack);
+      $('#showCreateBtn').addEventListener('click', () => {
+        if (!captureUsername(ui.entryError)) return;
+        showPanel('create');
+      });
+      $('#showJoinBtn').addEventListener('click', () => {
+        if (!captureUsername(ui.entryError)) return;
+        showPanel('join');
+      });
+      document.querySelectorAll('.backToEntryBtn').forEach(btn =>
+        btn.addEventListener('click', () => showPanel('entry'))
+      );
+      document.querySelectorAll('[data-option-group]').forEach(group => {
+        group.querySelectorAll('.choice').forEach(choice =>
+          choice.addEventListener('click', () => selectOption(group.dataset.optionGroup, choice))
+        );
+      });
+
+      const savedChStyle = localStorage.getItem('chStyle') || 'cross';
+      const savedChColor = localStorage.getItem('chColor') || 'white';
+      document.querySelectorAll('.chStyleBtn').forEach(btn => {
+        if (btn.dataset.chStyle === savedChStyle) btn.classList.add('selected');
+        else btn.classList.remove('selected');
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.chStyleBtn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          localStorage.setItem('chStyle', btn.dataset.chStyle);
+        });
+      });
+      document.querySelectorAll('.chColorBtn').forEach(btn => {
+        if (btn.dataset.chColor === savedChColor) btn.classList.add('selected');
+        else btn.classList.remove('selected');
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.chColorBtn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          localStorage.setItem('chColor', btn.dataset.chColor);
+        });
+      });
+      document.querySelectorAll('[data-room-setting]').forEach(group => {
+        group.querySelectorAll('.choice').forEach(choice =>
+          choice.addEventListener('click', () => updateRoomSetting(group.dataset.roomSetting, choice.dataset.value))
+        );
+      });
+      $('#createRoomBtn').addEventListener('click', createRoom);
+      $('#joinRoomBtn').addEventListener('click', joinRoom);
+      ui.switchTeamBtn.addEventListener('click', () => {
+        if (state.code) state.socket.emit('switch_team', { code: state.code });
+      });
+      ui.readyBtn.addEventListener('click', toggleReady);
+      ui.startMatchBtn.addEventListener('click', () => {
+        if (state.code) state.socket.emit('start_game', { code: state.code });
+      });
+      ui.leaveLobbyBtn.addEventListener('click', leaveLobby);
+      ui.roomCodeInput.addEventListener('input', () => {
+        ui.roomCodeInput.value = ui.roomCodeInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
+      });
+      ui.usernameInput.addEventListener('input', () => {
+        ui.usernameInput.value = ui.usernameInput.value.toUpperCase().slice(0, 16);
+      });
+      document.addEventListener('keydown', e => {
+        if (e.code !== 'Backspace' || isTextEntryTarget(e.target)) return;
+        if (navigateBack()) e.preventDefault();
+      });
+    }
+
+    function connectSocket() {
+      if (typeof io !== 'function') { setStatus('Offline Preview'); return; }
+      state.socket = io(SOCKET_URL, { transports: ['websocket', 'polling'] });
+      state.socket.on('connect', () => {
+        setStatus('Connected');
+        if (state.pendingRoom && state.username) {
+          state.socket.emit('rejoin_lobby', { code: state.pendingRoom, username: state.username, team: state.team, ...selectedSkinPayload() });
+        } else if (state.pendingRoom) {
+          ui.roomCodeInput.value = state.pendingRoom;
+          showPanel('join');
+        }
+      });
+      state.socket.on('disconnect', () => setStatus('Disconnected'));
+      state.socket.on('room_created',       ({ code, room }) => enterRoom(code, room));
+      state.socket.on('room_joined',        ({ code, room }) => enterRoom(code, room));
+      state.socket.on('lobby_update',       room => renderRoom(room));
+      state.socket.on('join_error',         msg => setError(ui.joinError, msg));
+      state.socket.on('switch_error',       msg => setError(ui.lobbyError, msg));
+      state.socket.on('settings_error',     msg => setError(ui.lobbyError, msg));
+      state.socket.on('start_error',        msg => setError(ui.lobbyError, msg));
+      state.socket.on('bot_slot_error',     msg => setError(ui.lobbyError, msg));
+      state.socket.on('player_disconnected',() => setError(ui.lobbyError, 'Player disconnected'));
+      state.socket.on('game_start',         payload => startGame(payload));
+    }
+
+    function showView(name) {
+      Object.keys(views).forEach(k => {
+        const el = views[k];
+        el.classList.toggle('active', k === name);
+        el.classList.remove('animateIn');
+        if (k === name) requestAnimationFrame(() => el.classList.add('animateIn'));
+      });
+      if (name === 'lobby') showPanel('entry');
+      updateBackButton();
+    }
+
+    function showPanel(name) {
+      Object.keys(panels).forEach(k => panels[k].classList.toggle('active', k === name));
+      ui.leaveLobbyBtn.classList.toggle('hidden', name !== 'arena');
+      updateBackButton();
+      clearErrors();
+    }
+
+    function activePanelName() {
+      return Object.keys(panels).find(k => panels[k].classList.contains('active')) || 'entry';
+    }
+
+    function navigateBack() {
+      if (!views.lobby.classList.contains('active')) return false;
+      const panel = activePanelName();
+      if (panel === 'arena') { leaveLobby(); return true; }
+      if (panel !== 'entry') { showPanel('entry'); return true; }
+      showView('hero');
+      return true;
+    }
+
+    function updateBackButton() {
+      ui.menuBackBtn.classList.toggle('hidden', !views.lobby.classList.contains('active'));
+    }
+
+    function isTextEntryTarget(target) {
+      if (!target) return false;
+      const tag = target.tagName;
+      return target.isContentEditable || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+    }
+
+    function captureUsername(errorEl) {
+      const username = ui.usernameInput.value.trim().toUpperCase();
+      if (!username) { setError(errorEl, 'Enter your callsign'); ui.usernameInput.focus(); return false; }
+      state.username = username;
+      sessionStorage.setItem('paintballUsername', username);
+      return true;
+    }
+
+    function selectOption(groupName, choice) {
+      const value = choice.dataset.value;
+      state.createOptions[groupName] = groupName === 'firstTo' ? Number(value) : value;
+      document.querySelectorAll('[data-option-group="' + groupName + '"]').forEach(group => {
+        group.querySelectorAll('.choice').forEach(item => item.classList.toggle('selected', item.dataset.value === value));
+      });
+    }
+
+    function setupLiveMapPreviews() {
+      document.querySelectorAll('.mapCard').forEach(card => {
+        card.addEventListener('mouseenter', () => loadMapPreview(card));
+        card.addEventListener('focus',      () => loadMapPreview(card));
+        card.addEventListener('click',      () => loadMapPreview(card));
+        if (card.classList.contains('selected')) loadMapPreview(card);
+      });
+    }
+
+    function loadMapPreview(card) {
+      const frame = card.querySelector('[data-map-preview]');
+      if (!frame || frame.dataset.loaded === '1') return;
+      const map = frame.dataset.mapPreview || card.dataset.value || 'speedball';
+      frame.src = '/game.html?preview=1&map=' + encodeURIComponent(map);
+      frame.dataset.loaded = '1';
+    }
+
+    function createRoom() {
+      clearErrors();
+      if (!state.socket || !state.socket.connected) { setError(ui.createError, 'Connecting to server'); return; }
+      state.socket.emit('create_room', {
+        username: state.username,
+        map: state.createOptions.map,
+        gameMode: state.createOptions.gameMode,
+        firstTo: state.createOptions.firstTo,
+        ...selectedSkinPayload()
+      });
+    }
+
+    function joinRoom() {
+      clearErrors();
+      if (!state.socket || !state.socket.connected) { setError(ui.joinError, 'Connecting to server'); return; }
+      const code = ui.roomCodeInput.value.trim().toUpperCase();
+      if (code.length !== 4) { setError(ui.joinError, 'Enter a 4 character code'); return; }
+      state.socket.emit('join_room', { code, username: state.username, ...selectedSkinPayload() });
+    }
+
+    function startPractice() {
+      const skin = getSelectedSkin();
+      const params = new URLSearchParams({
+        practice: '1',
+        map: state.createOptions.map,
+        difficulty: state.createOptions.difficulty,
+        firstto: String(state.createOptions.firstTo),
+        skin: skin.id, skinFile: skin.file, skinName: skin.name
+      });
+      window.location.href = '/game.html?' + params.toString();
+    }
+
+    function enterRoom(code, room) {
+      state.code = code;
+      state.pendingRoom = '';
+      showPanel('arena');
+      renderRoom(room);
+    }
+
+    function renderRoom(room) {
+      state.room = room;
+      state.code = room.code;
+      rememberCurrentPlayer(room);
+      clearErrors();
+      ui.roomCodeDisplay.textContent = room.code;
+      ui.roomCodeShare.textContent = room.code;
+      ui.modeDisplay.textContent = 'Mode: ' + room.gameMode;
+      ui.mapDisplay.textContent = 'Map: ' + formatMap(room.map);
+      ui.firstToDisplay.textContent = 'FIRST TO ' + (room.firstTo || 5);
+      renderRoomSettingsControls(room);
+      renderTeam('red',  ui.redSlots,  room);
+      renderTeam('blue', ui.blueSlots, room);
+      renderControls(room);
+    }
+
+    function renderTeam(team, container, room) {
+      const maxPerTeam = room.gameMode === '2v2' ? 2 : 1;
+      const players = room.players.filter(p => p.team === team);
+      container.innerHTML = '';
+      for (let i = 0; i < maxPerTeam; i++) {
+        const slotIndex = teamSlotIndex(team, i);
+        const player = players[i];
+        if (player) container.appendChild(createPlayerCard(player, room));
+        else {
+          const bot = botForSlot(room, slotIndex);
+          container.appendChild(bot ? createBotSlot(bot, room) : createEmptySlot(room, slotIndex));
         }
       }
+    }
 
-      const views = {
-        hero: $('#heroView'),
-        lobby: $('#lobbyView')
+    function teamSlotIndex(team, index) { return team === 'red' ? index : index + 2; }
+    function botForSlot(room, slotIndex) {
+      return Array.isArray(room.bots) ? room.bots.find(b => Number(b.slotIndex) === slotIndex) : null;
+    }
+
+    function createPlayerCard(player, room) {
+      const card = document.createElement('div');
+      card.className = 'playerCard';
+      const isHost = player.id === room.host;
+      const skin = normalizeSkin(player.skinId, player.skinFile, player.skinName) || DEFAULT_SKIN;
+      card.innerHTML = `
+        <div class="avatar"></div>
+        <div class="playerInfo">
+          <div class="playerName">${escapeHtml(player.username || 'PLAYER')}</div>
+          <div class="playerMeta">${isHost ? 'HOST' : 'PLAYER'} / ${escapeHtml(skin.name)}</div>
+        </div>
+        <div class="readyStatus ${player.ready ? 'ready' : ''}" title="${player.ready ? 'Ready' : 'Not Ready'}"></div>
+      `;
+      const avatar = card.querySelector('.avatar');
+      avatar.classList.add('skinAvatar');
+      avatar.style.backgroundImage = 'linear-gradient(180deg, rgba(0,0,0,0.04), rgba(0,0,0,0.34)), url("' + skinImageUrl(skin) + '")';
+      return card;
+    }
+
+    function createEmptySlot(room, slotIndex) {
+      const slot = document.createElement('div');
+      const host = isHost(room);
+      const botEnabled = room.gameMode === '2v2';
+      slot.className = 'emptySlot' + (botEnabled ? ' waitingSlot' : '');
+      slot.innerHTML = botEnabled
+        ? '<span class="waitingText">WAITING FOR PLAYER</span>'
+        : '<span class="slotHint">Empty Slot</span>';
+      if (botEnabled && host) {
+        const btn = document.createElement('button');
+        btn.className = 'addBotButton'; btn.type = 'button'; btn.textContent = '+ ADD BOT';
+        btn.addEventListener('click', () => toggleBotSlot(slotIndex));
+        slot.appendChild(btn);
       }
+      return slot;
+    }
 
-      const panels = {
-        entry: $('#entryPanel'),
-        create: $('#createPanel'),
-        join: $('#joinPanel'),
-        arena: $('#arenaLobby')
+    function createBotSlot(bot, room) {
+      const host = isHost(room);
+      const slot = document.createElement('div');
+      slot.className = 'botSlot';
+      const difficulty = normalizeDifficulty(bot.difficulty);
+      slot.innerHTML = `
+        <div class="botLabel">BOT</div>
+        <button class="botDifficulty ${host ? 'hostEditable' : ''}" type="button">${difficulty.toUpperCase()}</button>
+        <div class="botSkinName">${escapeHtml(bot.skinName || 'Bot')}</div>
+      `;
+      const diffBtn = slot.querySelector('.botDifficulty');
+      diffBtn.disabled = !host;
+      if (host) {
+        diffBtn.addEventListener('click', () => cycleBotDifficulty(bot));
+        const remove = document.createElement('button');
+        remove.className = 'botRemoveButton'; remove.type = 'button'; remove.textContent = 'REMOVE';
+        remove.addEventListener('click', () => toggleBotSlot(bot.slotIndex, '', 'remove'));
+        slot.appendChild(remove);
       }
+      return slot;
+    }
 
-      const ui = {
-        connectionStatus: $('#connectionStatus'),
-        usernameInput: $('#usernameInput'),
-        roomCodeInput: $('#roomCodeInput'),
-        entryError: $('#entryError'),
-        createError: $('#createError'),
-        joinError: $('#joinError'),
-        lobbyError: $('#lobbyError'),
-        roomCodeDisplay: $('#roomCodeDisplay'),
-        roomCodeShare: $('#roomCodeShare'),
-        modeDisplay: $('#modeDisplay'),
-        mapDisplay: $('#mapDisplay'),
-        firstToDisplay: $('#firstToDisplay'),
-        roomSettingsPanel: $('#roomSettingsPanel'),
-        redSlots: $('#redSlots'),
-        blueSlots: $('#blueSlots'),
-        switchTeamBtn: $('#switchTeamBtn'),
-        readyBtn: $('#readyBtn'),
-        startMatchBtn: $('#startMatchBtn'),
-        leaveLobbyBtn: $('#leaveLobbyBtn'),
-        menuBackBtn: $('#menuBackBtn')
+    function renderControls(room) {
+      const me = currentPlayer(room);
+      const isHostPlayer = isHost(room);
+      const allReady = room.players.length > 0 && room.players.every(p => p.ready);
+      ui.readyBtn.textContent = me && me.ready ? 'Not Ready' : 'Ready';
+      ui.roomSettingsPanel.classList.toggle('hidden', !isHostPlayer);
+      ui.startMatchBtn.classList.toggle('hidden', !isHostPlayer);
+      ui.startMatchBtn.disabled = !allReady;
+      ui.startMatchBtn.classList.toggle('startReady', isHostPlayer && allReady);
+    }
+
+    function isHost(room) {
+      const me = currentPlayer(room);
+      return !!(me && room && room.host === me.id);
+    }
+
+    function renderRoomSettingsControls(room) {
+      document.querySelectorAll('[data-room-setting]').forEach(group => {
+        const setting = group.dataset.roomSetting;
+        const value = setting === 'firstTo' ? String(room.firstTo || 5) : String(room[setting] || '');
+        group.querySelectorAll('.choice').forEach(choice => {
+          const selected = choice.dataset.value === value;
+          choice.classList.toggle('selected', selected);
+          if (selected && choice.classList.contains('mapCard')) loadMapPreview(choice);
+        });
+      });
+    }
+
+    function updateRoomSetting(setting, value) {
+      const me = currentPlayer(state.room);
+      if (!state.code || !me || state.room.host !== me.id) return;
+      const payload = { code: state.code };
+      payload[setting] = setting === 'firstTo' ? Number(value) : value;
+      state.socket.emit('update_room_settings', payload);
+    }
+
+    function toggleReady() {
+      const me = currentPlayer(state.room);
+      if (!state.code || !me) return;
+      state.socket.emit('set_ready', { code: state.code, ready: !me.ready });
+    }
+
+    function toggleBotSlot(slotIndex, difficulty, action) {
+      if (!state.code || !state.socket) return;
+      state.socket.emit('toggle_bot_slot', { code: state.code, slotIndex, difficulty, action });
+    }
+
+    function cycleBotDifficulty(bot) { toggleBotSlot(bot.slotIndex, nextDifficulty(bot.difficulty), 'difficulty'); }
+    function normalizeDifficulty(d) { return d === 'basic' || d === 'elite' ? d : 'pro'; }
+    function nextDifficulty(d) {
+      const c = normalizeDifficulty(d);
+      if (c === 'basic') return 'pro';
+      if (c === 'pro') return 'elite';
+      return 'basic';
+    }
+
+    function startGame(payload) {
+      const room = payload && payload.room ? payload.room : payload;
+      if (!room) return;
+      const bots = payload && payload.room ? (payload.bots || room.bots || []) : (room.bots || []);
+      const me = currentPlayer(room);
+      const team = me ? me.team : 'red';
+      const skin = normalizeSkin(me?.skinId, me?.skinFile, me?.skinName) || getSelectedSkin();
+      sessionStorage.setItem('paintballBots', JSON.stringify(Array.isArray(bots) ? bots : []));
+      const params = new URLSearchParams({
+        room: room.code, team, username: state.username,
+        mode: room.gameMode, map: room.map, firstto: String(room.firstTo || 5),
+        skin: skin.id, skinFile: skin.file, skinName: skin.name
+      });
+      window.location.href = '/game.html?' + params.toString();
+    }
+
+    function leaveLobby() {
+      let navigated = false;
+      const navigate = () => {
+        if (navigated) return;
+        navigated = true;
+        sessionStorage.removeItem('paintballRoom');
+        sessionStorage.removeItem('paintballTeam');
+        window.location.href = '/';
+      };
+      if (state.socket && state.socket.connected && state.code) {
+        state.socket.emit('leave_room', { code: state.code }, navigate);
+        setTimeout(navigate, 200);
+      } else { navigate(); }
+    }
+
+    function rememberCurrentPlayer(room) {
+      const me = currentPlayer(room);
+      if (!me) return;
+      state.username = me.username || state.username;
+      state.team = me.team || state.team;
+      const skin = normalizeSkin(me.skinId, me.skinFile, me.skinName);
+      sessionStorage.setItem('paintballUsername', state.username);
+      sessionStorage.setItem('paintballTeam', state.team);
+      sessionStorage.setItem('paintballRoom', room.code);
+      if (skin) {
+        sessionStorage.setItem('paintballSkinId', skin.id);
+        sessionStorage.setItem('paintballSkinFile', skin.file);
+        sessionStorage.setItem('paintballSkinName', skin.name);
       }
+    }
 
-      function init() {
-        if (state.username) ui.usernameInput.value = state.username
-        if (state.pendingRoom) showView('lobby')
-        bindUi()
-        setupLiveMapPreviews()
-        connectSocket()
-      }
+    function currentPlayer(room) {
+      if (!room || !state.socket) return null;
+      return room.players.find(p => p.id === state.socket.id) || null;
+    }
 
-      function bindUi() {
-        $('#playMultiplayerBtn').addEventListener('click', () => showView('lobby'))
-        $('#playPracticeBtn').addEventListener('click', startPractice)
-        ui.menuBackBtn.addEventListener('click', navigateBack)
-        $('#showCreateBtn').addEventListener('click', () => {
-          if (!captureUsername(ui.entryError)) return
-          showPanel('create')
-        })
-        $('#showJoinBtn').addEventListener('click', () => {
-          if (!captureUsername(ui.entryError)) return
-          showPanel('join')
-        })
-        document.querySelectorAll('.backToEntryBtn').forEach((button) => {
-          button.addEventListener('click', () => showPanel('entry'))
-        })
-        document.querySelectorAll('[data-option-group]').forEach((group) => {
-          group.querySelectorAll('.choice').forEach((choice) => {
-            choice.addEventListener('click', () => selectOption(group.dataset.optionGroup, choice))
-          })
-        })
+    function setStatus(text) { ui.connectionStatus.textContent = text; }
+    function setError(el, msg) { el.textContent = msg || ''; }
+    function clearErrors() {
+      ui.entryError.textContent = '';
+      ui.createError.textContent = '';
+      ui.joinError.textContent = '';
+      ui.lobbyError.textContent = '';
+    }
 
-        // Crosshair style buttons
-        const savedChStyle = localStorage.getItem('chStyle') || 'cross'
-        const savedChColor = localStorage.getItem('chColor') || 'white'
-        document.querySelectorAll('.chStyleBtn').forEach((btn) => {
-          if (btn.dataset.chStyle === savedChStyle) btn.classList.add('selected')
-          else btn.classList.remove('selected')
-          btn.addEventListener('click', () => {
-            document.querySelectorAll('.chStyleBtn').forEach(b => b.classList.remove('selected'))
-            btn.classList.add('selected')
-            localStorage.setItem('chStyle', btn.dataset.chStyle)
-          })
-        })
-        document.querySelectorAll('.chColorBtn').forEach((btn) => {
-          if (btn.dataset.chColor === savedChColor) btn.classList.add('selected')
-          else btn.classList.remove('selected')
-          btn.addEventListener('click', () => {
-            document.querySelectorAll('.chColorBtn').forEach(b => b.classList.remove('selected'))
-            btn.classList.add('selected')
-            localStorage.setItem('chColor', btn.dataset.chColor)
-          })
-        })
-        document.querySelectorAll('[data-room-setting]').forEach((group) => {
-          group.querySelectorAll('.choice').forEach((choice) => {
-            choice.addEventListener('click', () => updateRoomSetting(group.dataset.roomSetting, choice.dataset.value))
-          })
-        })
-        $('#createRoomBtn').addEventListener('click', createRoom)
-        $('#joinRoomBtn').addEventListener('click', joinRoom)
-        ui.switchTeamBtn.addEventListener('click', () => {
-          if (state.code) state.socket.emit('switch_team', { code: state.code })
-        })
-        ui.readyBtn.addEventListener('click', toggleReady)
-        ui.startMatchBtn.addEventListener('click', () => {
-          if (state.code) state.socket.emit('start_game', { code: state.code })
-        })
-        ui.leaveLobbyBtn.addEventListener('click', leaveLobby)
-        ui.roomCodeInput.addEventListener('input', () => {
-          ui.roomCodeInput.value = ui.roomCodeInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4)
-        })
-        ui.usernameInput.addEventListener('input', () => {
-          ui.usernameInput.value = ui.usernameInput.value.toUpperCase().slice(0, 16)
-        })
-        document.addEventListener('keydown', (event) => {
-          if (event.code !== 'Backspace' || isTextEntryTarget(event.target)) return
-          if (navigateBack()) event.preventDefault()
-        })
-      }
+    function formatMap(map) {
+      if (map === 'rooftop')  return 'Rooftop City';
+      if (map === 'ghosttown') return 'Ghost Town';
+      return map === 'funland' ? 'Abandoned Funland' : 'Speedball';
+    }
 
-      function connectSocket() {
-        if (typeof io !== 'function') {
-          setStatus('Socket unavailable')
-          return
-        }
-        state.socket = io(SOCKET_URL, {
-          transports: ['websocket', 'polling']
-        })
-        state.socket.on('connect', () => {
-          setStatus('Connected')
-          if (state.pendingRoom && state.username) {
-            state.socket.emit('rejoin_lobby', { code: state.pendingRoom, username: state.username, team: state.team, ...selectedSkinPayload() })
-          } else if (state.pendingRoom) {
-            ui.roomCodeInput.value = state.pendingRoom
-            showPanel('join')
-          }
-        })
-        state.socket.on('disconnect', () => setStatus('Disconnected'))
-        state.socket.on('room_created', ({ code, room }) => enterRoom(code, room))
-        state.socket.on('room_joined', ({ code, room }) => enterRoom(code, room))
-        state.socket.on('lobby_update', (room) => renderRoom(room))
-        state.socket.on('join_error', (message) => setError(ui.joinError, message))
-        state.socket.on('switch_error', (message) => setError(ui.lobbyError, message))
-        state.socket.on('settings_error', (message) => setError(ui.lobbyError, message))
-        state.socket.on('start_error', (message) => setError(ui.lobbyError, message))
-        state.socket.on('bot_slot_error', (message) => setError(ui.lobbyError, message))
-        state.socket.on('player_disconnected', () => setError(ui.lobbyError, 'Player disconnected'))
-        state.socket.on('game_start', (payload) => startGame(payload))
-      }
+    function normalizeSkin(id, file, name) {
+      const skinId   = String(id   || '').trim();
+      const skinFile = String(file || '').trim();
+      const skinName = String(name || '').trim().toLowerCase();
+      return SKINS.find(s => s.id === skinId)
+          || SKINS.find(s => s.file === skinFile)
+          || SKINS.find(s => s.name.toLowerCase() === skinName)
+          || null;
+    }
 
-      function showView(name) {
-        Object.keys(views).forEach((key) => views[key].classList.toggle('active', key === name))
-        if (name === 'lobby') showPanel('entry')
-        updateBackButton()
-      }
+    function getSelectedSkin() {
+      return normalizeSkin(storageGet('selectedSkin'), storageGet('selectedSkinFile'), storageGet('selectedSkinName')) || DEFAULT_SKIN;
+    }
 
-      function showPanel(name) {
-        Object.keys(panels).forEach((key) => panels[key].classList.toggle('active', key === name))
-        ui.leaveLobbyBtn.classList.toggle('hidden', name !== 'arena')
-        updateBackButton()
-        clearErrors()
-      }
+    function storageGet(key) { try { return localStorage.getItem(key); } catch(_) { return ''; } }
 
-      function activePanelName() {
-        return Object.keys(panels).find((key) => panels[key].classList.contains('active')) || 'entry'
-      }
+    function selectedSkinPayload() {
+      const skin = getSelectedSkin();
+      return { skinId: skin.id, skinFile: skin.file, skinName: skin.name };
+    }
 
-      function navigateBack() {
-        if (!views.lobby.classList.contains('active')) return false
-        const panel = activePanelName()
-        if (panel === 'arena') {
-          leaveLobby()
-          return true
-        }
-        if (panel !== 'entry') {
-          showPanel('entry')
-          return true
-        }
-        showView('hero')
-        return true
-      }
+    function initials(v) { return String(v || 'P').trim().slice(0, 2).toUpperCase(); }
 
-      function updateBackButton() {
-        ui.menuBackBtn.classList.toggle('hidden', !views.lobby.classList.contains('active'))
-      }
+    function escapeHtml(v) {
+      return String(v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+    }
 
-      function isTextEntryTarget(target) {
-        if (!target) return false
-        const tag = target.tagName
-        return target.isContentEditable || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
-      }
-
-      function captureUsername(errorEl) {
-        const username = ui.usernameInput.value.trim().toUpperCase()
-        if (!username) {
-          setError(errorEl, 'Enter your callsign')
-          ui.usernameInput.focus()
-          return false
-        }
-        state.username = username
-        sessionStorage.setItem('paintballUsername', username)
-        return true
-      }
-
-      function selectOption(groupName, choice) {
-        const value = choice.dataset.value
-        state.createOptions[groupName] = groupName === 'firstTo' ? Number(value) : value
-        document.querySelectorAll('[data-option-group="' + groupName + '"]').forEach((group) => {
-          group.querySelectorAll('.choice').forEach((item) => item.classList.toggle('selected', item.dataset.value === value))
-        })
-      }
-
-      function setupLiveMapPreviews() {
-        document.querySelectorAll('.mapCard').forEach((card) => {
-          card.addEventListener('mouseenter', () => loadMapPreview(card))
-          card.addEventListener('focus', () => loadMapPreview(card))
-          card.addEventListener('click', () => loadMapPreview(card))
-          if (card.classList.contains('selected')) loadMapPreview(card)
-        })
-      }
-
-      function loadMapPreview(card) {
-        const frame = card.querySelector('[data-map-preview]')
-        if (!frame || frame.dataset.loaded === '1') return
-        const map = frame.dataset.mapPreview || card.dataset.value || 'speedball'
-        frame.src = '/game.html?preview=1&map=' + encodeURIComponent(map)
-        frame.dataset.loaded = '1'
-      }
-
-      function createRoom() {
-        clearErrors()
-        if (!state.socket || !state.socket.connected) {
-          setError(ui.createError, 'Connecting to server')
-          return
-        }
-        state.socket.emit('create_room', {
-          username: state.username,
-          map: state.createOptions.map,
-          gameMode: state.createOptions.gameMode,
-          firstTo: state.createOptions.firstTo,
-          ...selectedSkinPayload()
-        })
-      }
-
-      function joinRoom() {
-        clearErrors()
-        if (!state.socket || !state.socket.connected) {
-          setError(ui.joinError, 'Connecting to server')
-          return
-        }
-        const code = ui.roomCodeInput.value.trim().toUpperCase()
-        if (code.length !== 4) {
-          setError(ui.joinError, 'Enter a 4 character code')
-          return
-        }
-        state.socket.emit('join_room', { code, username: state.username, ...selectedSkinPayload() })
-      }
-
-      function startPractice() {
-        const skin = getSelectedSkin()
-        const params = new URLSearchParams({
-          practice: '1',
-          map: state.createOptions.map,
-          difficulty: state.createOptions.difficulty,
-          firstto: String(state.createOptions.firstTo),
-          skin: skin.id,
-          skinFile: skin.file,
-          skinName: skin.name
-        })
-        window.location.href = '/game.html?' + params.toString()
-      }
-
-      function enterRoom(code, room) {
-        state.code = code
-        state.pendingRoom = ''
-        showPanel('arena')
-        renderRoom(room)
-      }
-
-      function renderRoom(room) {
-        state.room = room
-        state.code = room.code
-        rememberCurrentPlayer(room)
-        clearErrors()
-        ui.roomCodeDisplay.textContent = room.code
-        ui.roomCodeShare.textContent = room.code
-        ui.modeDisplay.textContent = 'Mode: ' + room.gameMode
-        ui.mapDisplay.textContent = 'Map: ' + formatMap(room.map)
-        ui.firstToDisplay.textContent = 'FIRST TO ' + (room.firstTo || 5)
-        renderRoomSettingsControls(room)
-        renderTeam('red', ui.redSlots, room)
-        renderTeam('blue', ui.blueSlots, room)
-        renderControls(room)
-      }
-
-      function renderTeam(team, container, room) {
-        const maxPerTeam = room.gameMode === '2v2' ? 2 : 1
-        const players = room.players.filter((player) => player.team === team)
-        container.innerHTML = ''
-        for (let i = 0; i < maxPerTeam; i++) {
-          const slotIndex = teamSlotIndex(team, i)
-          const player = players[i]
-          if (player) container.appendChild(createPlayerCard(player, room))
-          else {
-            const bot = botForSlot(room, slotIndex)
-            container.appendChild(bot ? createBotSlot(bot, room) : createEmptySlot(room, slotIndex))
-          }
-        }
-      }
-
-      function teamSlotIndex(team, index) {
-        return team === 'red' ? index : index + 2
-      }
-
-      function botForSlot(room, slotIndex) {
-        return Array.isArray(room.bots) ? room.bots.find((bot) => Number(bot.slotIndex) === slotIndex) : null
-      }
-
-      function createPlayerCard(player, room) {
-        const card = document.createElement('div')
-        card.className = 'playerCard'
-        const isHost = player.id === room.host
-        const skin = normalizeSkin(player.skinId, player.skinFile, player.skinName) || DEFAULT_SKIN
-        card.innerHTML = `
-          <div class="avatar">${escapeHtml(initials(player.username || 'P'))}</div>
-          <div class="playerInfo">
-            <div class="playerName">${escapeHtml(player.username || 'PLAYER')}</div>
-            <div class="playerMeta">${isHost ? 'HOST' : 'PLAYER'} / ${escapeHtml(skin.name)}</div>
-          </div>
-          <div class="readyStatus ${player.ready ? 'ready' : ''}" title="${player.ready ? 'Ready' : 'Not Ready'}">${player.ready ? 'Ready' : 'Not Ready'}</div>
-        `
-        const avatar = card.querySelector('.avatar')
-        avatar.classList.add('skinAvatar')
-        avatar.style.backgroundImage = 'linear-gradient(180deg, rgba(0,0,0,0.04), rgba(0,0,0,0.34)), url("' + skinImageUrl(skin) + '")'
-        return card
-      }
-
-      function createEmptySlot(room, slotIndex) {
-        const slot = document.createElement('div')
-        const host = isHost(room)
-        const botEnabled = room.gameMode === '2v2'
-        slot.className = 'emptySlot' + (botEnabled ? ' waitingSlot' : '')
-        slot.innerHTML = botEnabled
-          ? '<span class="waitingText">WAITING FOR PLAYER</span>'
-          : '<span class="slotHint">Empty Slot</span>'
-        if (botEnabled && host) {
-          const button = document.createElement('button')
-          button.className = 'addBotButton'
-          button.type = 'button'
-          button.textContent = '+ ADD BOT'
-          button.addEventListener('click', () => toggleBotSlot(slotIndex))
-          slot.appendChild(button)
-        }
-        return slot
-      }
-
-      function createBotSlot(bot, room) {
-        const host = isHost(room)
-        const slot = document.createElement('div')
-        slot.className = 'botSlot'
-        const difficulty = normalizeDifficulty(bot.difficulty)
-        slot.innerHTML = `
-          <div class="botLabel">BOT</div>
-          <button class="botDifficulty ${host ? 'hostEditable' : ''}" type="button">${difficulty.toUpperCase()}</button>
-          <div class="botSkinName">${escapeHtml(bot.skinName || 'Bot')}</div>
-        `
-        const difficultyButton = slot.querySelector('.botDifficulty')
-        difficultyButton.disabled = !host
-        if (host) {
-          difficultyButton.addEventListener('click', () => cycleBotDifficulty(bot))
-          const remove = document.createElement('button')
-          remove.className = 'botRemoveButton'
-          remove.type = 'button'
-          remove.textContent = 'REMOVE'
-          remove.addEventListener('click', () => toggleBotSlot(bot.slotIndex, '', 'remove'))
-          slot.appendChild(remove)
-        }
-        return slot
-      }
-
-      function renderControls(room) {
-        const me = currentPlayer(room)
-        const isHostPlayer = isHost(room)
-        const allReady = room.players.length > 0 && room.players.every((player) => player.ready)
-        ui.readyBtn.textContent = me && me.ready ? 'Not Ready' : 'Ready'
-        ui.roomSettingsPanel.classList.toggle('hidden', !isHostPlayer)
-        ui.startMatchBtn.classList.toggle('hidden', !isHostPlayer)
-        ui.startMatchBtn.disabled = !allReady
-        ui.startMatchBtn.classList.toggle('startReady', isHostPlayer && allReady)
-      }
-
-      function isHost(room) {
-        const me = currentPlayer(room)
-        return !!(me && room && room.host === me.id)
-      }
-
-      function renderRoomSettingsControls(room) {
-        document.querySelectorAll('[data-room-setting]').forEach((group) => {
-          const setting = group.dataset.roomSetting
-          const value = setting === 'firstTo' ? String(room.firstTo || 5) : String(room[setting] || '')
-          group.querySelectorAll('.choice').forEach((choice) => {
-            const selected = choice.dataset.value === value
-            choice.classList.toggle('selected', selected)
-            if (selected && choice.classList.contains('mapCard')) loadMapPreview(choice)
-          })
-        })
-      }
-
-      function updateRoomSetting(setting, value) {
-        const me = currentPlayer(state.room)
-        if (!state.code || !me || state.room.host !== me.id) return
-        const payload = { code: state.code }
-        payload[setting] = setting === 'firstTo' ? Number(value) : value
-        state.socket.emit('update_room_settings', payload)
-      }
-
-      function toggleReady() {
-        const me = currentPlayer(state.room)
-        if (!state.code || !me) return
-        state.socket.emit('set_ready', { code: state.code, ready: !me.ready })
-      }
-
-      function toggleBotSlot(slotIndex, difficulty, action) {
-        if (!state.code || !state.socket) return
-        state.socket.emit('toggle_bot_slot', { code: state.code, slotIndex, difficulty, action })
-      }
-
-      function cycleBotDifficulty(bot) {
-        toggleBotSlot(bot.slotIndex, nextDifficulty(bot.difficulty), 'difficulty')
-      }
-
-      function normalizeDifficulty(difficulty) {
-        return difficulty === 'basic' || difficulty === 'elite' ? difficulty : 'pro'
-      }
-
-      function nextDifficulty(difficulty) {
-        const current = normalizeDifficulty(difficulty)
-        if (current === 'basic') return 'pro'
-        if (current === 'pro') return 'elite'
-        return 'basic'
-      }
-
-      function startGame(payload) {
-        const room = payload && payload.room ? payload.room : payload
-        if (!room) return
-        const bots = payload && payload.room ? (payload.bots || room.bots || []) : (room.bots || [])
-        const me = currentPlayer(room)
-        const team = me ? me.team : 'red'
-        const skin = normalizeSkin(me?.skinId, me?.skinFile, me?.skinName) || getSelectedSkin()
-        sessionStorage.setItem('paintballBots', JSON.stringify(Array.isArray(bots) ? bots : []))
-        const params = new URLSearchParams({
-          room: room.code,
-          team,
-          username: state.username,
-          mode: room.gameMode,
-          map: room.map,
-          firstto: String(room.firstTo || 5),
-          skin: skin.id,
-          skinFile: skin.file,
-          skinName: skin.name
-        })
-        window.location.href = '/game.html?' + params.toString()
-      }
-
-      function leaveLobby() {
-        let navigated = false
-        const navigate = () => {
-          if (navigated) return
-          navigated = true
-          sessionStorage.removeItem('paintballRoom')
-          sessionStorage.removeItem('paintballTeam')
-          window.location.href = '/'
-        }
-        if (state.socket && state.socket.connected && state.code) {
-          state.socket.emit('leave_room', { code: state.code }, navigate)
-          setTimeout(navigate, 200)
-        } else {
-          navigate()
-        }
-      }
-
-      function rememberCurrentPlayer(room) {
-        const me = currentPlayer(room)
-        if (!me) return
-        state.username = me.username || state.username
-        state.team = me.team || state.team
-        const skin = normalizeSkin(me.skinId, me.skinFile, me.skinName)
-        sessionStorage.setItem('paintballUsername', state.username)
-        sessionStorage.setItem('paintballTeam', state.team)
-        sessionStorage.setItem('paintballRoom', room.code)
-        if (skin) {
-          sessionStorage.setItem('paintballSkinId', skin.id)
-          sessionStorage.setItem('paintballSkinFile', skin.file)
-          sessionStorage.setItem('paintballSkinName', skin.name)
-        }
-      }
-
-      function currentPlayer(room) {
-        if (!room || !state.socket) return null
-        return room.players.find((player) => player.id === state.socket.id) || null
-      }
-
-      function setStatus(text) {
-        ui.connectionStatus.textContent = text
-      }
-
-      function setError(el, message) {
-        el.textContent = message || ''
-      }
-
-      function clearErrors() {
-        ui.entryError.textContent = ''
-        ui.createError.textContent = ''
-        ui.joinError.textContent = ''
-        ui.lobbyError.textContent = ''
-      }
-
-      function formatMap(map) {
-        if (map === 'rooftop') return 'Rooftop City'
-        if (map === 'ghosttown') return 'Ghost Town'
-        return map === 'funland' ? 'Abandoned Funland' : 'Speedball'
-      }
-
-      function normalizeSkin(id, file, name) {
-        const skinId = String(id || '').trim()
-        const skinFile = String(file || '').trim()
-        const skinName = String(name || '').trim().toLowerCase()
-        return SKINS.find((skin) => skin.id === skinId)
-          || SKINS.find((skin) => skin.file === skinFile)
-          || SKINS.find((skin) => skin.name.toLowerCase() === skinName)
-          || null
-      }
-
-      function getSelectedSkin() {
-        return normalizeSkin(storageGet('selectedSkin'), storageGet('selectedSkinFile'), storageGet('selectedSkinName')) || DEFAULT_SKIN
-      }
-
-      function storageGet(key) {
-        try { return localStorage.getItem(key) } catch (_) { return '' }
-      }
-
-      function selectedSkinPayload() {
-        const skin = getSelectedSkin()
-        return { skinId: skin.id, skinFile: skin.file, skinName: skin.name }
-      }
-
-      function skinImageUrl(skin) {
-        return '/skins/' + encodeURIComponent((skin || DEFAULT_SKIN).file)
-      }
-
-      function initials(value) {
-        return String(value || 'P').trim().slice(0, 2).toUpperCase()
-      }
-
-      function escapeHtml(value) {
-        return String(value).replace(/[&<>"]/g, (char) => ({
-          '&': '&amp;',
-          '<': '&lt;',
-          '>': '&gt;',
-          '"': '&quot;'
-        })[char])
-      }
-
-      init()
-    })()
+    init();
+  })();
   </script>
 </body>
 </html>
