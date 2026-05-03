@@ -4187,7 +4187,7 @@
         const c = document.createElement('canvas'); c.width = 256; c.height = 128;
         const ctx = c.getContext('2d');
         ctx.fillStyle = '#8a8d88'; ctx.fillRect(0, 0, 256, 128);
-        const bw = 40, bh = 18, gap = 3;
+        const bw = 28, bh = 14, gap = 3;
         ctx.fillStyle = '#6a6e68';
         for (let row = 0; row * (bh + gap) < 128; row++) {
           const offset = (row % 2) * (bw / 2);
@@ -4202,10 +4202,11 @@
         const tex = new THREE.CanvasTexture(c);
         tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
         tex.colorSpace = THREE.SRGBColorSpace;
+        tex.anisotropy = renderer.capabilities.getMaxAnisotropy ? renderer.capabilities.getMaxAnisotropy() : 4;
         return tex;
       })();
       const stone = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.88, metalness: 0.04, map: castleBrickTex, envMap: environmentMap, envMapIntensity: 0.35 });
-      castleBrickTex.repeat.set(3.0, 2.0);
+      castleBrickTex.repeat.set(8.0, 5.0);
       // Cobble floor — dark stone tiles with vertex color variation
       const cobble = standard(0x606460, { roughness: 0.92, metalness: 0.02, vertexColors: true, envMapIntensity: 0.2 });
       return {
@@ -4280,8 +4281,8 @@
       addCastleSideWallWithDoor(group, colliders, minX, maxX, -halfWidth, wall, height, sideDoorW, sideDoorH, castle.stone);
 
       [[minX, -halfWidth], [minX, halfWidth], [maxX, -halfWidth], [maxX, halfWidth]].forEach((corner) => addCastleTower(group, colliders, castle, corner[0], corner[1]));
-      addCastleBattlements(group, castle, centerX, frontX, backX, minX, maxX, halfWidth, wall);
-      addCastleStaircase(group, castle, frontX, side, side < 0 ? 5.7 : -5.7);
+      addCastleBattlements(group, colliders, castle, centerX, frontX, backX, minX, maxX, halfWidth, wall);
+      addCastleStaircase(group, colliders, castle, frontX, side, side < 0 ? 5.7 : -5.7);
       addCylinder(group, centerX + side * 1.85, 2, -3.6, 0.4, 4, castle.stone, colliders, 0, false, 1);
       addCylinder(group, centerX + side * 1.85, 2, 3.6, 0.4, 4, castle.stone, colliders, 0, false, 1);
       addCoverPoints(points, centerX, 0, 10, 10, side < 0 ? 'red' : 'blue', 4);
@@ -4303,6 +4304,14 @@
       addBox(group, x, gateH + (height - gateH) / 2, 0, thickness, height - gateH, gateW, material, colliders, 0);
       addBox(group, x, 0.18, -gateW * 0.65, thickness * 1.15, 0.36, 0.22, materials.black, null, 0);
       addBox(group, x, 0.18, gateW * 0.65, thickness * 1.15, 0.36, 0.22, materials.black, null, 0);
+      // invisible blocker so players cannot pass through the front gate
+      const gateBlocker = new THREE.Mesh(
+        new THREE.BoxGeometry(thickness, gateH, gateW),
+        new THREE.MeshBasicMaterial({ visible: false })
+      );
+      gateBlocker.position.set(x, gateH / 2, 0);
+      group.add(gateBlocker);
+      colliders.push(gateBlocker);
     }
 
     function addCastleSideWallWithDoor(group, colliders, minX, maxX, z, thickness, height, doorW, doorH, material) {
@@ -4321,30 +4330,52 @@
         const a = i / 12 * Math.PI * 2;
         const mx = x + Math.cos(a) * 1.45;
         const mz = z + Math.sin(a) * 1.45;
-        addBox(group, mx, 6.12, mz, 0.42, 0.9, 0.42, castle.stone, null, -a);
+        addBox(group, mx, 6.12, mz, 0.42, 0.9, 0.42, castle.stone, colliders, -a);
       }
     }
 
-    function addCastleBattlements(group, castle, centerX, frontX, backX, minX, maxX, halfWidth, wall) {
+    function addCastleBattlements(group, colliders, castle, centerX, frontX, backX, minX, maxX, halfWidth, wall) {
       addBox(group, frontX, 4.08, 0, 1.2, 0.16, halfWidth * 2, castle.stone, null, 0);
       addBox(group, backX, 4.08, 0, 1.2, 0.16, halfWidth * 2, castle.stone, null, 0);
       addBox(group, centerX, 4.08, -halfWidth, maxX - minX, 0.16, 1.2, castle.stone, null, 0);
       addBox(group, centerX, 4.08, halfWidth, maxX - minX, 0.16, 1.2, castle.stone, null, 0);
       for (let z = -halfWidth + 0.8; z <= halfWidth - 0.8; z += 1.5) {
-        addBox(group, frontX, 4.55, z, wall, 1.0, 0.8, castle.stone, null, 0);
-        addBox(group, backX, 4.55, z, wall, 1.0, 0.8, castle.stone, null, 0);
+        addBox(group, frontX, 4.55, z, wall, 1.0, 0.8, castle.stone, colliders, 0);
+        addBox(group, backX, 4.55, z, wall, 1.0, 0.8, castle.stone, colliders, 0);
       }
       for (let x = minX + 0.8; x <= maxX - 0.8; x += 1.5) {
-        addBox(group, x, 4.55, -halfWidth, 0.8, 1.0, wall, castle.stone, null, 0);
-        addBox(group, x, 4.55, halfWidth, 0.8, 1.0, wall, castle.stone, null, 0);
+        addBox(group, x, 4.55, -halfWidth, 0.8, 1.0, wall, castle.stone, colliders, 0);
+        addBox(group, x, 4.55, halfWidth, 0.8, 1.0, wall, castle.stone, colliders, 0);
       }
     }
 
-    function addCastleStaircase(group, castle, frontX, side, z) {
-      for (let i = 0; i < 8; i++) {
-        const h = (i + 1) * 0.5;
-        addBox(group, frontX + side * (0.8 + i * 0.6), h / 2, z, 0.6, h, 1.6, castle.stone, null, 0);
+    function addCastleStaircase(group, colliders, castle, frontX, side, z) {
+      const stepCount = 8;
+      const stepH = 0.5;
+      const stepRun = 0.6;
+      const stepDepth = 1.6;
+      for (let i = 0; i < stepCount; i++) {
+        const h = (i + 1) * stepH;
+        addBox(group, frontX + side * (0.8 + i * stepRun), h / 2, z, stepRun, h, stepDepth, castle.stone, null, 0);
       }
+      // invisible ramp collider so player physics can ride up the stairs
+      const rampLen = stepCount * stepRun;
+      const rampTop = stepCount * stepH;
+      const rampW = 2.4;
+      const rampThick = 0.4;
+      const startX = frontX + side * 0.5;
+      const endX = frontX + side * (0.5 + rampLen);
+      const cx = (startX + endX) / 2;
+      const cy = rampTop / 2;
+      const angle = Math.atan2(rampTop, rampLen);
+      const rampGeom = new THREE.BoxGeometry(rampLen, rampThick, rampW);
+      const rampMat = new THREE.MeshBasicMaterial({ visible: false });
+      const ramp = new THREE.Mesh(rampGeom, rampMat);
+      ramp.position.set(cx, cy, z);
+      // rotate around z-axis so the box top forms a slope along x
+      ramp.rotation.z = side > 0 ? -angle : angle;
+      group.add(ramp);
+      colliders.push(ramp);
     }
 
     function addCastleTorch(group, castle, x, y, z, teamColor) {
@@ -11338,14 +11369,20 @@
         fragmentShader: `
           varying vec3 vWorldPos;
           void main() {
-            float t = clamp((normalize(vWorldPos).y + 0.08) / 1.08, 0.0, 1.0);
-            // Overcast medieval daytime sky: grey-blue zenith fading to pale grey-white horizon
-            vec3 horizon = vec3(0.88, 0.88, 0.86);
-            vec3 mid     = vec3(0.72, 0.78, 0.88);
-            vec3 top     = vec3(0.55, 0.65, 0.80);
+            vec3 n = normalize(vWorldPos);
+            float t = clamp((n.y + 0.08) / 1.08, 0.0, 1.0);
+            // Scary night sky
+            vec3 horizon = vec3(0.04, 0.03, 0.08);
+            vec3 mid     = vec3(0.02, 0.02, 0.06);
+            vec3 top     = vec3(0.01, 0.01, 0.04);
             vec3 col;
             if (t < 0.45) col = mix(horizon, mid, t / 0.45);
             else          col = mix(mid,     top,  (t - 0.45) / 0.55);
+            // stars
+            float star = 0.0;
+            float h = fract(sin(dot(floor(n.xz * 200.0 + n.y * 100.0), vec2(127.1, 311.7))) * 43758.5453);
+            if (h > 0.985 && n.y > 0.05) star = pow((h - 0.985) / 0.015, 2.0) * 2.0;
+            col += vec3(star);
             gl_FragColor = vec4(col, 1.0);
           }
         `
@@ -11556,18 +11593,18 @@
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         scene.background = null;
-        scene.fog = new THREE.Fog(0xd0d8e8, 100, 250);
+        scene.fog = new THREE.Fog(0x050308, 40, 120);
         if (!castleSkyDome) castleSkyDome = createCastleSkyDome();
         if (!castleSkyDome.parent) scene.add(castleSkyDome);
-        skyStatus = 'castle-overcast';
-        renderer.toneMappingExposure = 1.0;
-        // Bright overcast daylight ambient
-        ambientLight.color.setHex(0xd8e4f0);
-        ambientLight.intensity = 5.5;
-        // Soft diffuse overhead key light
-        keyLight.color.setHex(0xfff8f0);
-        keyLight.intensity = 5.0;
-        keyLight.position.set(40, 80, 30);
+        skyStatus = 'castle-night';
+        renderer.toneMappingExposure = 3.5;
+        // Scary night ambient
+        ambientLight.color.setHex(0x1a1528);
+        ambientLight.intensity = 2.5;
+        // Cool moonlight key
+        keyLight.color.setHex(0x4060a0);
+        keyLight.intensity = 1.5;
+        keyLight.position.set(-30, 60, 20);
         keyLight.castShadow = true;
         keyLight.shadow.mapSize.set(2048, 2048);
         keyLight.shadow.camera.left = -80;
@@ -11578,10 +11615,10 @@
         keyLight.shadow.bias = -0.0001;
         keyLight.target.position.set(0, 0, 0);
         keyLight.target.updateMatrixWorld();
-        // Cool sky fill with earthy ground
-        hemiLight.color.setHex(0x88aacc);
-        hemiLight.groundColor.setHex(0x4a5a30);
-        hemiLight.intensity = 2.0;
+        // Cool moonlit sky fill with deep ground
+        hemiLight.color.setHex(0x203050);
+        hemiLight.groundColor.setHex(0x080510);
+        hemiLight.intensity = 1.2;
         return;
       }
       if (active && active.ambient === 'funland') {
