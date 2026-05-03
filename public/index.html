@@ -1475,6 +1475,139 @@
 
     .hidden { display: none !important; }
 
+    /* ─── LAUNCH DRAWER ─── */
+    #launchDrawer {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      pointer-events: none;
+    }
+    #launchDrawer.open { pointer-events: all; }
+
+    .drawerBackdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0);
+      transition: background 320ms ease;
+    }
+    #launchDrawer.open .drawerBackdrop { background: rgba(0,0,0,0.62); }
+
+    .drawerPanel {
+      position: relative;
+      z-index: 1;
+      width: min(860px, 100%);
+      padding: clamp(22px, 3vw, 36px);
+      background: var(--bg-1);
+      border: 1px solid var(--border);
+      border-bottom: 0;
+      box-shadow: 0 -12px 60px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.06);
+      clip-path: polygon(0 28px, 28px 0, 100% 0, 100% 100%, 0 100%);
+      transform: translateY(100%);
+      transition: transform 340ms cubic-bezier(0.22, 1, 0.36, 1);
+      display: grid;
+      gap: 20px;
+    }
+    #launchDrawer.open .drawerPanel { transform: translateY(0); }
+
+    .drawerHeader {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .drawerTitle {
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: clamp(32px, 4vw, 52px);
+      line-height: 0.9;
+      letter-spacing: 0.1em;
+      color: #fff;
+    }
+    .drawerMode {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.22em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .drawerOptions {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    .drawerOptions .optionGroup { padding: 12px 14px; gap: 8px; }
+    .drawerOptions .choice { min-height: 36px; font-size: 14px; }
+    .drawerOptions .choiceSet.threeChoices { grid-template-columns: repeat(3, 1fr); }
+
+    .drawerMapRow {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 7px;
+      height: 110px;
+    }
+    .drawerMapRow .mapCard { height: 100%; }
+
+    .drawerActions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .drawerLaunchBtn {
+      flex: 1;
+      padding: 14px 28px 12px;
+      border: 1px solid rgba(255,255,255,0.18);
+      color: #fff;
+      clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: clamp(26px, 3vw, 38px);
+      line-height: 0.95;
+      letter-spacing: 0.2em;
+      position: relative;
+      overflow: hidden;
+      transition: transform 160ms ease, filter 160ms ease;
+    }
+    .drawerLaunchBtn::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+      transform: translateX(-100%);
+      transition: transform 0.5s ease;
+    }
+    .drawerLaunchBtn:hover::before { transform: translateX(100%); }
+    .drawerLaunchBtn:hover { transform: translateY(-2px); filter: brightness(1.1); }
+    .drawerLaunchBtn.primary {
+      background: linear-gradient(135deg, var(--red-dark), var(--red) 52%, #f43a3a);
+      box-shadow: 0 0 28px rgba(204,21,21,0.38);
+    }
+    .drawerLaunchBtn.practice {
+      background: linear-gradient(135deg, #0d2a6a, var(--blue) 52%, #3a88ff);
+      box-shadow: 0 0 28px rgba(21,102,204,0.32);
+    }
+    .drawerLaunchBtnSub {
+      display: block;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.22em;
+      opacity: 0.72;
+      margin-top: 2px;
+    }
+    .drawerCancelBtn {
+      padding: 14px 20px 12px;
+      border: 1px solid var(--border-bright);
+      background: rgba(255,255,255,0.04);
+      color: var(--text-dim);
+      clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: 22px;
+      letter-spacing: 0.14em;
+      transition: color 160ms ease;
+    }
+    .drawerCancelBtn:hover { color: #fff; }
+
     /* ─── RESPONSIVE ─── */
 
     @media (max-width: 1000px) {
@@ -1742,6 +1875,91 @@
         <button class="subViewConfirmBtn" id="confirmCharBtn" type="button">Confirm Character</button>
       </div>
     </section>
+
+    <!-- ══════ LAUNCH DRAWER ══════ -->
+    <div id="launchDrawer">
+      <div class="drawerBackdrop" id="drawerBackdrop"></div>
+      <div class="drawerPanel">
+        <div class="drawerHeader">
+          <div class="drawerTitle" id="drawerTitle">Deploy</div>
+          <div class="drawerMode" id="drawerMode">// MULTIPLAYER //</div>
+        </div>
+
+        <!-- Map row -->
+        <div class="drawerMapRow" data-option-group="map" aria-label="Map selection">
+          <button class="mapCard choice selected" data-value="speedball" type="button">
+            <iframe class="mapPreviewFrame" data-map-preview="speedball" title="Speedball" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+            <div class="mapSelBadge"><svg viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <span class="cardTag">Tournament</span>
+            <span class="cardName">Speedball</span>
+          </button>
+          <button class="mapCard choice" data-value="funland" type="button">
+            <iframe class="mapPreviewFrame" data-map-preview="funland" title="Funland" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+            <div class="mapSelBadge"><svg viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <span class="cardTag">Scenario</span>
+            <span class="cardName">Funland</span>
+          </button>
+          <button class="mapCard choice" data-value="ghosttown" type="button">
+            <iframe class="mapPreviewFrame" data-map-preview="ghosttown" title="Ghost Town" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+            <div class="mapSelBadge"><svg viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <span class="cardTag">Scenario</span>
+            <span class="cardName">Ghost Town</span>
+          </button>
+          <button class="mapCard choice" data-value="rooftop" type="button">
+            <iframe class="mapPreviewFrame" data-map-preview="rooftop" title="Rooftop" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+            <div class="mapSelBadge"><svg viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <span class="cardTag">Skyline</span>
+            <span class="cardName">Rooftop</span>
+          </button>
+          <button class="mapCard choice" data-value="castle" type="button">
+            <iframe class="mapPreviewFrame" data-map-preview="castle" title="Castle" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+            <span class="cardTag">Fortress</span>
+            <span class="cardName">Castle</span>
+          </button>
+          <button class="mapCard choice" data-value="beachmansion" type="button">
+            <iframe class="mapPreviewFrame" data-map-preview="beachmansion" title="Beach Mansion" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+            <span class="cardTag">Estate</span>
+            <span class="cardName">Beach Mansion</span>
+          </button>
+        </div>
+
+        <!-- Options row -->
+        <div class="drawerOptions">
+          <div class="optionGroup" data-option-group="firstTo">
+            <label>Win Condition</label>
+            <div class="choiceSet">
+              <button class="choice selected" data-value="5" type="button">First to 5</button>
+              <button class="choice" data-value="10" type="button">First to 10</button>
+            </div>
+          </div>
+          <div class="optionGroup" data-option-group="gameMode">
+            <label>Squad Size</label>
+            <div class="choiceSet">
+              <button class="choice selected" data-value="1v1" type="button">1v1</button>
+              <button class="choice" data-value="2v2" type="button">2v2</button>
+            </div>
+          </div>
+          <div class="optionGroup" id="drawerDifficultyGroup" data-option-group="difficulty">
+            <label>AI Difficulty</label>
+            <div class="choiceSet threeChoices">
+              <button class="choice" data-value="basic" type="button">Basic</button>
+              <button class="choice selected" data-value="pro" type="button">Pro</button>
+              <button class="choice" data-value="elite" type="button">Elite</button>
+            </div>
+          </div>
+          <div class="optionGroup" data-option-group="gameMode" style="opacity:0;pointer-events:none"></div>
+        </div>
+
+        <!-- Actions -->
+        <div class="drawerActions">
+          <button class="drawerLaunchBtn primary" id="drawerLaunchBtn" type="button">
+            Deploy
+            <span class="drawerLaunchBtnSub" id="drawerLaunchSub">Multiplayer Lobby</span>
+          </button>
+          <button class="drawerCancelBtn" id="drawerCancelBtn" type="button">Cancel</button>
+        </div>
+      </div>
+    </div>
 
     <!-- ══════ LOBBY VIEW ══════ -->
     <section id="lobbyView" class="view lobbyView">
@@ -2349,8 +2567,8 @@
     }
 
     function bindUi() {
-      $('#playMultiplayerBtn').addEventListener('click', () => showView('lobby'));
-      $('#playPracticeBtn').addEventListener('click', startPractice);
+      $('#playMultiplayerBtn').addEventListener('click', () => openDrawer('multiplayer'));
+      $('#playPracticeBtn').addEventListener('click', () => openDrawer('practice'));
       ui.menuBackBtn.addEventListener('click', navigateBack);
 
       $('#configMapCard').addEventListener('click', () => showSubView('map'));
@@ -2560,6 +2778,46 @@
       if (code.length !== 4) { setError(ui.joinError, 'Enter a 4 character code'); return; }
       state.socket.emit('join_room', { code, username: state.username, ...selectedSkinPayload() });
     }
+
+    let drawerMode = 'multiplayer';
+
+    function openDrawer(mode) {
+      drawerMode = mode;
+      const drawer = $('#launchDrawer');
+      const isPractice = mode === 'practice';
+      $('#drawerTitle').textContent = isPractice ? 'Practice' : 'Deploy';
+      $('#drawerMode').textContent = isPractice ? '// SOLO VS AI //' : '// MULTIPLAYER //';
+      $('#drawerLaunchBtn').className = 'drawerLaunchBtn ' + (isPractice ? 'practice' : 'primary');
+      $('#drawerLaunchBtn').childNodes[0].textContent = isPractice ? 'Practice' : 'Deploy';
+      $('#drawerLaunchSub').textContent = isPractice ? 'Solo vs AI' : 'Multiplayer Lobby';
+      $('#drawerDifficultyGroup').style.opacity = isPractice ? '1' : '0.4';
+      $('#drawerDifficultyGroup').style.pointerEvents = isPractice ? 'all' : 'none';
+      drawer.classList.add('open');
+      setupLiveMapPreviews();
+      // sync selected states in drawer to current createOptions
+      syncDrawerSelections();
+    }
+
+    function closeDrawer() {
+      $('#launchDrawer').classList.remove('open');
+    }
+
+    function syncDrawerSelections() {
+      $('#launchDrawer').querySelectorAll('[data-option-group]').forEach(group => {
+        const gname = group.dataset.optionGroup;
+        const val = gname === 'firstTo' ? String(state.createOptions.firstTo || 5) : String(state.createOptions[gname] || '');
+        group.querySelectorAll('.choice').forEach(c => c.classList.toggle('selected', c.dataset.value === val));
+      });
+    }
+
+    $('#drawerCancelBtn').addEventListener('click', closeDrawer);
+    $('#drawerBackdrop').addEventListener('click', closeDrawer);
+    $('#drawerLaunchBtn').addEventListener('click', () => {
+      closeDrawer();
+      updateConfigCards();
+      if (drawerMode === 'practice') startPractice();
+      else showView('lobby');
+    });
 
     function startPractice() {
       const skin = getSelectedSkin();
