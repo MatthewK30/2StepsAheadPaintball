@@ -6888,26 +6888,31 @@
 
     function createSkinPreviewOperator(skin, team) {
       const root = new THREE.Group();
-      root.position.y = -0.08;
+      root.position.y = -0.18;
       const redTeam = team !== 'blue';
+      const armorColor = redTeam ? 0xc81824 : 0x1b54d8;
+      const armorDark  = redTeam ? 0x6a0a12 : 0x0a2470;
+      const trimColor  = redTeam ? 0xff5566 : 0x5a9eff;
       const mats = {
-        jersey: new THREE.MeshStandardMaterial({ color: redTeam ? 0xdd1111 : 0x1155ee, roughness: 0.72, metalness: 0, emissive: redTeam ? 0x550000 : 0x001d66, emissiveIntensity: 0.2 }),
-        jerseyDark: new THREE.MeshStandardMaterial({ color: redTeam ? 0x8b0000 : 0x003a9f, roughness: 0.78, metalness: 0 }),
-        rim: new THREE.MeshStandardMaterial({ color: redTeam ? 0xff3a3a : 0x3f8cff, roughness: 0.54, metalness: 0, emissive: redTeam ? 0x661010 : 0x103066, emissiveIntensity: 0.35 }),
-        black: new THREE.MeshStandardMaterial({ color: 0x08090b, roughness: 0.68, metalness: 0.1 }),
-        rubber: new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.88, metalness: 0 }),
-        white: new THREE.MeshStandardMaterial({ color: 0xf0f0ea, roughness: 0.35, metalness: 0 }),
-        metal: new THREE.MeshStandardMaterial({ color: 0xd87718, roughness: 0.22, metalness: 0.7 }),
-        photo: createSkinPreviewPhotoMaterial(skin),
-        faceCube: createSkinPreviewFaceCubeMaterials(skin)
+        armor: new THREE.MeshPhysicalMaterial({ color: armorColor, roughness: 0.32, metalness: 0.55, clearcoat: 0.85, clearcoatRoughness: 0.18, envMap: environmentMap, envMapIntensity: 0.9 }),
+        armorDark: new THREE.MeshPhysicalMaterial({ color: armorDark, roughness: 0.45, metalness: 0.5, clearcoat: 0.6, clearcoatRoughness: 0.25, envMap: environmentMap, envMapIntensity: 0.7 }),
+        trim: new THREE.MeshStandardMaterial({ color: trimColor, roughness: 0.35, metalness: 0.6, emissive: trimColor, emissiveIntensity: 0.18 }),
+        plate: new THREE.MeshPhysicalMaterial({ color: 0xb8c0c8, roughness: 0.28, metalness: 0.85, clearcoat: 0.7, envMap: environmentMap, envMapIntensity: 1.1 }),
+        joint: new THREE.MeshStandardMaterial({ color: 0x2a2d34, roughness: 0.55, metalness: 0.5 }),
+        boot: new THREE.MeshPhysicalMaterial({ color: 0x14161c, roughness: 0.45, metalness: 0.4, clearcoat: 0.4 }),
+        glove: new THREE.MeshStandardMaterial({ color: 0x1a1c22, roughness: 0.6, metalness: 0.35 }),
+        helmet: new THREE.MeshPhysicalMaterial({ color: armorColor, roughness: 0.22, metalness: 0.6, clearcoat: 1.0, clearcoatRoughness: 0.08, envMap: environmentMap, envMapIntensity: 1.2 }),
+        visor: new THREE.MeshPhysicalMaterial({ color: 0x081020, roughness: 0.05, metalness: 0.2, clearcoat: 1.0, clearcoatRoughness: 0.04, envMap: environmentMap, envMapIntensity: 1.6 }),
+        photo: createSkinPreviewPhotoMaterial(skin)
       };
       const geos = {
-        box: new THREE.BoxGeometry(1, 1, 1),
-        sphere: new THREE.SphereGeometry(1, 16, 16),
-        cylinder: new THREE.CylinderGeometry(1, 1, 1, 16, 1),
-        cylinderLow: new THREE.CylinderGeometry(1, 1, 1, 10, 1),
-        headCube: new THREE.BoxGeometry(0.4, 0.4, 0.4),
-        torsoPhoto: new THREE.PlaneGeometry(0.62, 0.52)
+        sphere: new THREE.SphereGeometry(1, 24, 18),
+        capsuleHi: new THREE.SphereGeometry(1, 18, 14),
+        cylinder: new THREE.CylinderGeometry(1, 1, 1, 20, 1),
+        cylinderTaper: new THREE.CylinderGeometry(0.85, 1.0, 1, 20, 1),
+        torus: new THREE.TorusGeometry(1, 0.12, 10, 24),
+        plate: new THREE.BoxGeometry(1, 1, 1),
+        facePlane: new THREE.CircleGeometry(0.5, 28)
       };
       const add = (geo, mat, x, y, z, sx, sy, sz, rx, ry, rz, parent) => {
         const mesh = new THREE.Mesh(geo, mat);
@@ -6917,30 +6922,55 @@
         (parent || root).add(mesh);
         return mesh;
       };
-      add(geos.box, mats.rubber, 0, 0.56, 0.02, 0.46, 0.18, 0.26);
-      add(geos.cylinder, mats.jersey, 0, 1.02, 0, 0.32, 0.66, 0.24);
-      add(geos.torsoPhoto, mats.photo, 0, 1.13, -0.265, 1, 1, 1);
-      add(geos.box, mats.black, 0, 0.72, -0.19, 0.36, 0.05, 0.035);
-      add(geos.box, mats.white, -0.13, 1.03, -0.23, 0.035, 0.42, 0.018, 0, 0, -0.22);
-      add(geos.box, mats.white, 0.13, 1.03, -0.23, 0.035, 0.42, 0.018, 0, 0, 0.22);
-      add(geos.cylinderLow, mats.black, 0, 1.42, 0, 0.07, 0.12, 0.07);
-      add(geos.headCube, mats.faceCube, 0, 1.62, -0.01, 1.4, 1.4, 1.4);
+
+      add(geos.sphere, mats.armorDark, 0, 0.56, 0, 0.34, 0.16, 0.26);
+      add(geos.cylinder, mats.joint, 0, 0.78, 0, 0.18, 0.14, 0.16);
+
+      const torso = add(geos.sphere, mats.armor, 0, 1.12, -0.01, 0.36, 0.34, 0.26);
+      add(geos.sphere, mats.armorDark, 0, 1.04, 0.04, 0.34, 0.28, 0.24);
+      const chestPlate = add(geos.sphere, mats.armor, 0, 1.18, -0.18, 0.28, 0.26, 0.1);
+      add(geos.sphere, mats.armor, 0.13, 1.22, -0.16, 0.13, 0.18, 0.07);
+      add(geos.sphere, mats.armor, -0.13, 1.22, -0.16, 0.13, 0.18, 0.07);
+      add(geos.plate, mats.trim, 0, 1.05, -0.255, 0.18, 0.012, 0.015);
+      add(geos.plate, mats.trim, 0, 0.94, -0.245, 0.22, 0.012, 0.018);
+      add(geos.plate, mats.armorDark, 0, 1.34, -0.155, 0.22, 0.05, 0.04);
+      add(geos.plate, mats.plate, 0, 1.42, -0.12, 0.18, 0.06, 0.06);
+
+      const neck = add(geos.cylinder, mats.joint, 0, 1.5, -0.02, 0.075, 0.06, 0.075);
+
+      const helmet = add(geos.sphere, mats.helmet, 0, 1.66, -0.02, 0.21, 0.22, 0.21);
+      add(geos.sphere, mats.armorDark, 0, 1.74, -0.02, 0.215, 0.13, 0.215);
+      add(geos.plate, mats.trim, 0, 1.78, -0.18, 0.32, 0.022, 0.04);
+      add(geos.sphere, mats.visor, 0, 1.66, -0.18, 0.17, 0.1, 0.06);
+      const facePlate = add(geos.facePlane, mats.photo, 0, 1.66, -0.22, 0.29, 0.32, 1);
+      add(geos.torus, mats.trim, 0, 1.66, -0.21, 0.16, 0.16, 0.6, 0, 0, 0);
+      add(geos.plate, mats.armorDark, 0, 1.55, -0.16, 0.18, 0.06, 0.05);
+
       for (let side = -1; side <= 1; side += 2) {
-        add(geos.sphere, mats.jersey, side * 0.34, 1.22, 0, 0.09, 0.1, 0.1);
-        add(geos.cylinderLow, mats.jersey, side * 0.47, 0.96, -0.03, 0.065, 0.34, 0.065, 0, 0, side * 0.34);
-        add(geos.cylinderLow, mats.jersey, side * 0.42, 0.66, -0.13, 0.058, 0.31, 0.058, 0, 0, side * -0.18);
-        add(geos.box, mats.black, side * 0.38, 0.42, -0.18, 0.09, 0.08, 0.1);
-        add(geos.cylinderLow, mats.rubber, side * 0.16, 0.27, 0.02, 0.095, 0.44, 0.095, 0, 0, side * 0.05);
-        add(geos.cylinderLow, mats.rubber, side * 0.15, -0.14, -0.03, 0.08, 0.42, 0.08, 0, 0, side * -0.03);
-        add(geos.box, mats.black, side * 0.15, -0.42, -0.12, 0.16, 0.08, 0.26);
+        add(geos.sphere, mats.armor, side * 0.36, 1.32, 0, 0.16, 0.14, 0.16);
+        add(geos.sphere, mats.armorDark, side * 0.42, 1.24, 0, 0.1, 0.08, 0.1);
+
+        add(geos.cylinderTaper, mats.armor, side * 0.4, 1.04, -0.02, 0.085, 0.18, 0.08, 0, 0, side * 0.18);
+        add(geos.plate, mats.trim, side * 0.46, 1.0, 0.05, 0.02, 0.18, 0.012, 0, 0, side * 0.18);
+        add(geos.sphere, mats.joint, side * 0.43, 0.84, -0.04, 0.075, 0.07, 0.075);
+
+        add(geos.cylinderTaper, mats.armor, side * 0.45, 0.66, -0.06, 0.075, 0.18, 0.07, 0, 0, side * -0.04);
+        add(geos.plate, mats.armorDark, side * 0.46, 0.62, -0.12, 0.06, 0.16, 0.025, 0, 0, side * -0.04);
+
+        add(geos.sphere, mats.glove, side * 0.46, 0.46, -0.08, 0.085, 0.07, 0.09);
+        add(geos.plate, mats.plate, side * 0.46, 0.5, -0.13, 0.07, 0.04, 0.018);
+
+        add(geos.sphere, mats.armorDark, side * 0.13, 0.5, -0.005, 0.115, 0.08, 0.1);
+        add(geos.cylinderTaper, mats.armor, side * 0.13, 0.28, -0.005, 0.105, 0.22, 0.1);
+        add(geos.plate, mats.trim, side * 0.13, 0.28, 0.095, 0.018, 0.22, 0.014);
+        add(geos.sphere, mats.joint, side * 0.13, 0.04, 0.01, 0.09, 0.07, 0.09);
+        add(geos.cylinderTaper, mats.armor, side * 0.13, -0.16, 0.01, 0.085, 0.18, 0.085);
+        add(geos.plate, mats.armorDark, side * 0.13, -0.16, 0.085, 0.05, 0.16, 0.012);
+
+        add(geos.sphere, mats.boot, side * 0.13, -0.36, -0.04, 0.11, 0.07, 0.18);
+        add(geos.plate, mats.plate, side * 0.13, -0.32, -0.13, 0.08, 0.025, 0.04);
       }
-      const marker = new THREE.Group();
-      marker.position.set(0.34, 0.93, -0.42);
-      marker.rotation.set(0.05, -0.16, -0.1);
-      root.add(marker);
-      add(geos.box, mats.metal, 0, 0, 0, 0.26, 0.12, 0.28, 0, 0, 0, marker);
-      add(geos.cylinderLow, mats.black, 0, 0.02, -0.42, 0.035, 0.62, 0.035, Math.PI / 2, 0, 0, marker);
-      add(geos.sphere, mats.black, 0, 0.22, 0.02, 0.17, 0.13, 0.15, 0, 0, 0, marker);
+
       root.userData.previewMaterials = mats;
       root.userData.previewGeometries = geos;
       return root;
