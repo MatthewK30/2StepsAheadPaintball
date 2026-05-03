@@ -6491,9 +6491,9 @@
 
       // HEAD — face-textured cube
       const initialSkin = aiInst.skin || (aiInst === ai ? remotePlayer?.skin : null) || DEFAULT_SKIN;
-      const faceCube = buildSkinFaceCube(initialSkin, 0.4);
+      const faceCube = buildSkinFaceCube(initialSkin, 0.32);
       faceCube.name = 'faceCube';
-      faceCube.position.set(0, 1.72, 0);
+      faceCube.position.set(0, 1.66, 0);
       shadowMesh(faceCube, true, true);
       faceCube.frustumCulled = false;
       faceCube.userData.coverCull = false;
@@ -6503,55 +6503,55 @@
       aiInst.limbs.visor = faceCube;
 
       // neck connector
-      addSphere('neck', jointMat, 0, 1.52, 0, 0.065, 0.085, 0.065, root);
+      addSphere('neck', jointMat, 0, 1.52, 0, 0.042, 0.06, 0.042, root);
 
       // TORSO — large primary-colored orb
       const torsoMesh = new THREE.Mesh(geometries.sphere, armorMat);
       torsoMesh.position.set(0, 1.24, 0);
-      torsoMesh.scale.set(0.27, 0.3, 0.24);
+      torsoMesh.scale.set(0.17, 0.22, 0.14);
       torsoMesh.userData.teamSlot = 'primary';
       addMesh(torsoMesh, root, 'torso');
       aiInst.body = torsoMesh;
 
       // HIPS — slightly smaller primary orb
-      const hipsMesh = addSphere('hips', armorMat, 0, 0.9, 0, 0.22, 0.2, 0.2, root, 'primary');
+      const hipsMesh = addSphere('hips', armorMat, 0, 0.92, 0, 0.13, 0.14, 0.12, root, 'primary');
       aiInst.limbs.hips = hipsMesh;
 
       // shoulder connectors + shoulder orbs
-      addSphere('leftShoulderConn', jointMat, -0.27, 1.4, 0, 0.072, 0.072, 0.072, root);
-      addSphere('rightShoulderConn', jointMat, 0.27, 1.4, 0, 0.072, 0.072, 0.072, root);
-      aiInst.limbs.leftShoulderJoint = addSphere('leftShoulder', armorMat, -0.38, 1.4, 0, 0.14, 0.14, 0.14, root, 'primary');
-      aiInst.limbs.rightShoulderJoint = addSphere('rightShoulder', armorMat, 0.38, 1.4, 0, 0.14, 0.14, 0.14, root, 'primary');
+      addSphere('leftShoulderConn', jointMat, -0.21, 1.38, 0, 0.045, 0.045, 0.045, root);
+      addSphere('rightShoulderConn', jointMat, 0.21, 1.38, 0, 0.045, 0.045, 0.045, root);
+      aiInst.limbs.leftShoulderJoint = addSphere('leftShoulder', armorMat, -0.29, 1.38, 0, 0.095, 0.095, 0.095, root, 'primary');
+      aiInst.limbs.rightShoulderJoint = addSphere('rightShoulder', armorMat, 0.29, 1.38, 0, 0.095, 0.095, 0.095, root, 'primary');
 
       // ARMS — sphere orbs with dark joint connectors
       function buildArm(prefix, side) {
-        const upper = addPivot(prefix + 'UpperArm', side * 0.4, 1.32, 0, root);
+        const upper = addPivot(prefix + 'UpperArm', side * 0.31, 1.3, 0, root);
         upper.userData.side = side;
         const uBall = new THREE.Mesh(geometries.sphere, armorMat);
-        uBall.position.y = -0.13;
-        uBall.scale.set(0.115, 0.135, 0.115);
+        uBall.position.y = -0.11;
+        uBall.scale.set(0.078, 0.1, 0.078);
         uBall.userData.teamSlot = 'primary';
         addMesh(uBall, upper, prefix + 'UpperArmBall');
         aiInst.limbs[prefix + 'UpperArm'] = upper;
 
         const elbowConn = new THREE.Mesh(geometries.sphere, jointMat);
-        elbowConn.position.y = -0.28;
-        elbowConn.scale.set(0.065, 0.065, 0.065);
+        elbowConn.position.y = -0.24;
+        elbowConn.scale.set(0.042, 0.042, 0.042);
         addMesh(elbowConn, upper, prefix + 'ElbowConn');
         aiInst.limbs[prefix + 'ElbowJoint'] = elbowConn;
 
-        const fore = addPivot(prefix + 'ForeArm', 0, -0.28, 0, upper);
+        const fore = addPivot(prefix + 'ForeArm', 0, -0.24, 0, upper);
         fore.userData.side = side;
         const fBall = new THREE.Mesh(geometries.sphere, armorMat);
-        fBall.position.y = -0.13;
-        fBall.scale.set(0.1, 0.12, 0.1);
+        fBall.position.y = -0.11;
+        fBall.scale.set(0.068, 0.088, 0.068);
         fBall.userData.teamSlot = 'primary';
         addMesh(fBall, fore, prefix + 'ForeArmBall');
         aiInst.limbs[prefix + 'ForeArm'] = fore;
 
         const hand = new THREE.Mesh(geometries.sphere, jointMat);
-        hand.position.y = -0.27;
-        hand.scale.set(0.072, 0.072, 0.072);
+        hand.position.y = -0.23;
+        hand.scale.set(0.05, 0.05, 0.05);
         addMesh(hand, fore, prefix + 'Hand');
         aiInst.limbs[prefix + 'Hand'] = hand;
       }
@@ -6559,39 +6559,39 @@
       buildArm('right', 1);
 
       // hip connectors + LEGS — sphere orbs
-      addSphere('leftHipConn', jointMat, -0.14, 0.86, 0, 0.068, 0.068, 0.068, root);
-      addSphere('rightHipConn', jointMat, 0.14, 0.86, 0, 0.068, 0.068, 0.068, root);
-      aiInst.limbs.leftHipJoint = addSphere('leftHipJoint', armorMat, -0.14, 0.76, 0, 0.12, 0.12, 0.12, root, 'primary');
-      aiInst.limbs.rightHipJoint = addSphere('rightHipJoint', armorMat, 0.14, 0.76, 0, 0.12, 0.12, 0.12, root, 'primary');
+      addSphere('leftHipConn', jointMat, -0.1, 0.88, 0, 0.044, 0.044, 0.044, root);
+      addSphere('rightHipConn', jointMat, 0.1, 0.88, 0, 0.044, 0.044, 0.044, root);
+      aiInst.limbs.leftHipJoint = addSphere('leftHipJoint', armorMat, -0.1, 0.8, 0, 0.082, 0.082, 0.082, root, 'primary');
+      aiInst.limbs.rightHipJoint = addSphere('rightHipJoint', armorMat, 0.1, 0.8, 0, 0.082, 0.082, 0.082, root, 'primary');
 
       function buildLeg(prefix, side) {
-        const thigh = addPivot(prefix + 'Thigh', side * 0.14, 0.74, 0, root);
+        const thigh = addPivot(prefix + 'Thigh', side * 0.1, 0.78, 0, root);
         thigh.userData.side = side;
         const tBall = new THREE.Mesh(geometries.sphere, armorMat);
-        tBall.position.y = -0.14;
-        tBall.scale.set(0.115, 0.145, 0.115);
+        tBall.position.y = -0.13;
+        tBall.scale.set(0.082, 0.105, 0.082);
         tBall.userData.teamSlot = 'primary';
         addMesh(tBall, thigh, prefix + 'ThighBall');
         aiInst.limbs[prefix + 'Thigh'] = thigh;
 
         const kneeConn = new THREE.Mesh(geometries.sphere, jointMat);
-        kneeConn.position.y = -0.3;
-        kneeConn.scale.set(0.07, 0.07, 0.07);
+        kneeConn.position.y = -0.27;
+        kneeConn.scale.set(0.046, 0.046, 0.046);
         addMesh(kneeConn, thigh, prefix + 'KneeConn');
         aiInst.limbs[prefix + 'KneeJoint'] = kneeConn;
 
-        const shin = addPivot(prefix + 'Shin', 0, -0.3, 0, thigh);
+        const shin = addPivot(prefix + 'Shin', 0, -0.27, 0, thigh);
         shin.userData.side = side;
         const sBall = new THREE.Mesh(geometries.sphere, armorMat);
-        sBall.position.y = -0.13;
-        sBall.scale.set(0.1, 0.13, 0.1);
+        sBall.position.y = -0.12;
+        sBall.scale.set(0.072, 0.1, 0.072);
         sBall.userData.teamSlot = 'primary';
         addMesh(sBall, shin, prefix + 'ShinBall');
         aiInst.limbs[prefix + 'Shin'] = shin;
 
         const foot = new THREE.Mesh(geometries.sphere, jointMat);
-        foot.position.y = -0.27;
-        foot.scale.set(0.09, 0.065, 0.115);
+        foot.position.y = -0.25;
+        foot.scale.set(0.065, 0.048, 0.088);
         addMesh(foot, shin, prefix + 'Foot');
         aiInst.limbs[prefix + 'Foot'] = foot;
       }
