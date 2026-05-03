@@ -46,7 +46,7 @@ function normalizeTeam(team) {
 }
 
 function normalizeMap(map) {
-  return map === 'funland' || map === 'ghosttown' || map === 'rooftop' || map === 'castle' ? map : 'speedball'
+  return map === 'funland' || map === 'ghosttown' || map === 'rooftop' || map === 'castle' || map === 'beachmansion' ? map : 'speedball'
 }
 
 function normalizeGameMode(gameMode) {
@@ -157,7 +157,7 @@ function normalizeSkin({ skinId, skinFile, skinName } = {}) {
 }
 
 function isValidMap(map) {
-  return map === 'speedball' || map === 'funland' || map === 'ghosttown' || map === 'rooftop' || map === 'castle'
+  return map === 'speedball' || map === 'funland' || map === 'ghosttown' || map === 'rooftop' || map === 'castle' || map === 'beachmansion'
 }
 
 function isValidGameMode(gameMode) {

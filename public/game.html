@@ -1494,7 +1494,7 @@
 
     .cards {
       display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-template-columns: repeat(6, minmax(0, 1fr));
       gap: clamp(16px, 2.4vw, 26px);
     }
 
@@ -2091,6 +2091,14 @@
             <p class="cardCopy">MEDIEVAL FORTRESS SIEGE</p>
           </div>
         </div>
+        <div class="card" data-map="beachmansion" tabindex="0">
+          <canvas class="cardPreview" data-preview="beachmansion" aria-hidden="true"></canvas>
+          <div class="cardText">
+            <p class="cardTag">Estate</p>
+            <p class="cardTitle">BEACH MANSION</p>
+            <p class="cardCopy">MEDITERRANEAN BEACH MANSION</p>
+          </div>
+        </div>
       </div>
       <div class="menuOptions">
         <div class="optionGroup">
@@ -2347,6 +2355,9 @@
 
     const ARENA_HALF_X = 30;
     const ARENA_HALF_Z = 20;
+    const DEFAULT_ARENA_BOUNDS = Object.freeze({ halfX: ARENA_HALF_X, halfZ: ARENA_HALF_Z });
+    const BEACH_MANSION_BOUNDS = Object.freeze({ halfX: 40, halfZ: 30 });
+    const MAX_WALKABLE_STEP = 0.95;
     const WALK_SPEED = 6.5;
     const SPRINT_MULTIPLIER = 1.5;
     const CROUCH_SPEED = 3.6;
@@ -2423,7 +2434,7 @@
     const MY_USERNAME = urlParams.get('username') || 'Player';
     const GAME_MODE = urlParams.get('mode') || '1v1';
     const requestedMap = urlParams.get('map');
-    const SELECTED_MAP = requestedMap === 'funland' || requestedMap === 'ghosttown' || requestedMap === 'rooftop' || requestedMap === 'castle' ? requestedMap : 'speedball';
+    const SELECTED_MAP = requestedMap === 'funland' || requestedMap === 'ghosttown' || requestedMap === 'rooftop' || requestedMap === 'castle' || requestedMap === 'beachmansion' ? requestedMap : 'speedball';
     const requestedDifficulty = urlParams.get('difficulty');
     const SELECTED_DIFFICULTY = AI_DIFFICULTIES[requestedDifficulty] ? requestedDifficulty : 'pro';
     const FIRST_TO = parseInt(urlParams.get('firstto'), 10) === 10 ? 10 : 5;
@@ -2808,6 +2819,81 @@
     const activeColliders = [];
     const activeCoverMeshes = [];
     const activeCoverPoints = [];
+
+    function getActiveMap() {
+      return maps[state.selectedMap] || maps.speedball;
+    }
+
+    function getActiveBounds() {
+      const active = getActiveMap();
+      return active && active.bounds ? active.bounds : DEFAULT_ARENA_BOUNDS;
+    }
+
+    function getTeamSpawn(team, laneOffset) {
+      const active = getActiveMap();
+      const spawns = active && active.teamSpawns;
+      const spawn = spawns && spawns[team === 'blue' ? 'blue' : 'red'];
+      if (spawn) return new THREE.Vector3(spawn.x, spawn.y || 0, (spawn.z || 0) + (laneOffset || 0));
+      const x = team === 'blue' ? 24 : -24;
+      return new THREE.Vector3(x, 0, laneOffset || 0);
+    }
+
+    function teamStartYaw(team) {
+      const own = getTeamSpawn(team === 'blue' ? 'blue' : 'red', 0);
+      const other = getTeamSpawn(team === 'blue' ? 'red' : 'blue', 0);
+      return own.x < other.x ? -Math.PI / 2 : Math.PI / 2;
+    }
+
+    function pointInWalkSurface(surface, x, z) {
+      const x1 = Math.min(surface.x1, surface.x2);
+      const x2 = Math.max(surface.x1, surface.x2);
+      const z1 = Math.min(surface.z1, surface.z2);
+      const z2 = Math.max(surface.z1, surface.z2);
+      return x >= x1 && x <= x2 && z >= z1 && z <= z2;
+    }
+
+    function walkSurfaceHeight(surface, x, z) {
+      if (surface.type === 'ramp') {
+        const a = surface.axis === 'z' ? z : x;
+        const start = surface.axis === 'z' ? surface.z1 : surface.x1;
+        const end = surface.axis === 'z' ? surface.z2 : surface.x2;
+        const t = Math.abs(end - start) > 0.000001 ? clamp((a - start) / (end - start), 0, 1) : 0;
+        return (surface.y1 || 0) + ((surface.y2 || 0) - (surface.y1 || 0)) * t;
+      }
+      return surface.y || 0;
+    }
+
+    function getWalkHeightAt(x, z, currentY) {
+      const active = getActiveMap();
+      const surfaces = active && active.walkSurfaces;
+      const baseY = active && Number.isFinite(active.baseY) ? active.baseY : 0;
+      if (!surfaces || surfaces.length === 0) return baseY;
+      const y0 = Number.isFinite(currentY) ? currentY : baseY;
+      let bestAnyY = baseY;
+      let bestAnyDelta = Math.abs(y0 - baseY);
+      let bestReachY = bestAnyDelta <= MAX_WALKABLE_STEP ? baseY : y0;
+      let bestReachDelta = bestAnyDelta <= MAX_WALKABLE_STEP ? bestAnyDelta : Infinity;
+      for (let i = 0; i < surfaces.length; i++) {
+        const surface = surfaces[i];
+        if (!pointInWalkSurface(surface, x, z)) continue;
+        const y = walkSurfaceHeight(surface, x, z);
+        const delta = Math.abs(y - y0);
+        if (delta < bestAnyDelta) {
+          bestAnyDelta = delta;
+          bestAnyY = y;
+        }
+        if (delta <= MAX_WALKABLE_STEP && delta < bestReachDelta) {
+          bestReachDelta = delta;
+          bestReachY = y;
+        }
+      }
+      return bestReachDelta < Infinity ? bestReachY : bestAnyY;
+    }
+
+    function applyWalkHeight(pos) {
+      pos.y = getWalkHeightAt(pos.x, pos.z, pos.y);
+    }
+
     const projectiles = createProjectilePool();
     const splats = createSplatPool();
     const killCamBall = new THREE.Mesh(geometries.paintball, materials.paintRed);
@@ -3400,7 +3486,8 @@
         speedball: createSpeedballMap(),
         ghosttown: createGhostTownMap(),
         rooftop: createRooftopCityMap(),
-        castle: createCastleSiegeMap()
+        castle: createCastleSiegeMap(),
+        beachmansion: createBeachMansionMap()
       };
       return built;
     }
@@ -4667,6 +4754,352 @@
         roof.position.set(bx, bh + roofH / 2, bz);
         roof.rotation.y = Math.PI / 4;
         group.add(roof);
+      }
+    }
+
+    function createBeachMansionMap() {
+      const group = new THREE.Group();
+      const colliders = [];
+      const shootables = [];
+      colliders.shootables = shootables;
+      const coverPoints = [];
+      const beach = createBeachMansionMaterials();
+      const beachWater = [];
+      const walkSurfaces = [
+        { x1: -BEACH_MANSION_BOUNDS.halfX, x2: BEACH_MANSION_BOUNDS.halfX, z1: -BEACH_MANSION_BOUNDS.halfZ, z2: BEACH_MANSION_BOUNDS.halfZ, y: 0 },
+        { type: 'ramp', axis: 'x', x1: -16.2, x2: -6.4, z1: 6.0, z2: 10.6, y1: 0, y2: 3.2 },
+        { type: 'ramp', axis: 'x', x1: 7.2, x2: 13.8, z1: -13.2, z2: -9.4, y1: 0, y2: 3.2 },
+        { x1: -18.2, x2: -10.2, z1: -14.2, z2: 14.2, y: 3.2 },
+        { x1: -10.2, x2: 8.8, z1: 5.0, z2: 14.2, y: 3.2 },
+        { x1: -10.2, x2: 8.8, z1: -14.2, z2: -5.0, y: 3.2 },
+        { x1: -3.2, x2: 9.0, z1: -5.0, z2: 5.0, y: 3.2 },
+        { x1: 8.8, x2: 18.5, z1: -12.2, z2: 12.2, y: 3.2 }
+      ];
+
+      group.add(makeBeachMansionGround(beach.ground));
+      addBeachMansionBoundary(group, colliders, beach.invisible);
+      addBeachMansionLandscape(group, beach, beachWater);
+      addBeachMansionExterior(group, colliders, shootables, coverPoints, beach, beachWater);
+      addBeachMansionHouse(group, colliders, shootables, coverPoints, beach);
+      addSpawnMark(group, -34, 0, BLUE, false);
+      addSpawnMark(group, 34, 0, RED, false);
+      finalizeMapShadows(group);
+      beachWater.forEach((mesh) => { mesh.castShadow = false; mesh.receiveShadow = false; });
+      return {
+        group,
+        colliders,
+        shootables,
+        coverPoints,
+        bounds: BEACH_MANSION_BOUNDS,
+        baseY: 0,
+        walkSurfaces,
+        teamSpawns: {
+          blue: { x: -34, y: 0, z: 0 },
+          red: { x: 34, y: 0, z: 0 }
+        },
+        sky: 0x87CEEB,
+        fog: 0x87CEEB,
+        ambient: 'beachmansion',
+        beachWater
+      };
+    }
+
+    function createBeachMansionMaterials() {
+      const standard = (color, opts = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.82, metalness: 0.02, envMap: environmentMap, envMapIntensity: 0.28, ...opts });
+      const basic = (color, opts = {}) => new THREE.MeshBasicMaterial({ color, ...opts });
+      const stucco = standard(0xfffbf0, { roughness: 0.92, metalness: 0, envMapIntensity: 0.18 });
+      const travertine = standard(0xd8c39a, { roughness: 0.88, metalness: 0.02, envMapIntensity: 0.22 });
+      const terracotta = standard(0xb85a2b, { roughness: 0.78, metalness: 0.02, envMapIntensity: 0.18 });
+      textureLibrary.apply(stucco, 'concrete', 3.6, 2.8);
+      textureLibrary.apply(travertine, 'concrete', 5, 4);
+      textureLibrary.apply(terracotta, 'concrete', 2.4, 2.4);
+      return {
+        ground: standard(0xf5e6c8, { roughness: 1, metalness: 0, vertexColors: true, envMapIntensity: 0.12 }),
+        stucco,
+        travertine,
+        terracotta,
+        marble: standard(0xf7efe0, { roughness: 0.6, metalness: 0.03, envMapIntensity: 0.34 }),
+        wood: standard(0x7a573a, { roughness: 0.86, metalness: 0.02, envMapIntensity: 0.2 }),
+        darkWood: standard(0x3d2819, { roughness: 0.9, metalness: 0.02, envMapIntensity: 0.16 }),
+        glass: new THREE.MeshPhysicalMaterial({ color: 0xbfe6ff, roughness: 0.08, metalness: 0, transmission: 0.55, thickness: 0.16, transparent: true, opacity: 0.45, envMap: environmentMap, envMapIntensity: 0.8 }),
+        hedge: standard(0x2f7f3a, { roughness: 1, metalness: 0, envMapIntensity: 0.08 }),
+        flower: standard(0xd45672, { roughness: 0.86, metalness: 0, envMapIntensity: 0.12 }),
+        asphalt: standard(0x32363a, { roughness: 0.95, metalness: 0.01, envMapIntensity: 0.12 }),
+        line: standard(0xf8f1d4, { roughness: 0.5, metalness: 0, transparent: true, opacity: 0.72, depthWrite: false }),
+        poolWater: standard(0x2bb7d4, { roughness: 0.18, metalness: 0, transparent: true, opacity: 0.72, emissive: 0x0b5f78, emissiveIntensity: 0.18, side: THREE.DoubleSide }),
+        ocean: basic(0x1d88bd, { transparent: true, opacity: 0.72, side: THREE.DoubleSide }),
+        beach: basic(0xe8d39a, { side: THREE.DoubleSide }),
+        cliff: basic(0x9b7a57),
+        suburbWall: basic(0xf1e6d0),
+        suburbRoof: basic(0xb85a2b),
+        hills: basic(0x7ca172, { transparent: true, opacity: 0.48, side: THREE.DoubleSide, depthWrite: false }),
+        haze: basic(0xccefff, { transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide }),
+        rail: standard(0xfaf6e8, { roughness: 0.72, metalness: 0.02, envMapIntensity: 0.24 }),
+        blackIron: standard(0x1b1a18, { roughness: 0.5, metalness: 0.72, envMapIntensity: 0.45 }),
+        invisible: new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0, depthWrite: false })
+      };
+    }
+
+    function makeBeachMansionGround(material) {
+      const geo = new THREE.PlaneGeometry(BEACH_MANSION_BOUNDS.halfX * 2, BEACH_MANSION_BOUNDS.halfZ * 2, 56, 42);
+      geo.rotateX(-Math.PI / 2);
+      const color = new THREE.Color();
+      const colors = [];
+      const pos = geo.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i);
+        const z = pos.getZ(i);
+        const noise = Math.sin(x * 0.31 + z * 0.17) * 0.025 + Math.cos(z * 0.43) * 0.018;
+        if (x < -30) color.setHex(0x34383c).offsetHSL(0, 0, noise);
+        else if (x < -20) color.setHex(0x5f9f4a).offsetHSL(0.02, 0.03, noise);
+        else if (x < 12) color.setHex(0xd8c39a).offsetHSL(0, 0, noise * 0.7);
+        else if (x < 34) color.setHex(0xc9b083).offsetHSL(0, 0, noise * 0.8);
+        else color.setHex(0xa98960).offsetHSL(0, -0.02, noise);
+        colors.push(color.r, color.g, color.b);
+      }
+      geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+      const mesh = new THREE.Mesh(geo, material);
+      mesh.castShadow = false;
+      mesh.receiveShadow = true;
+      return mesh;
+    }
+
+    function addBeachMansionBoundary(group, colliders, material) {
+      const bx = BEACH_MANSION_BOUNDS.halfX;
+      const bz = BEACH_MANSION_BOUNDS.halfZ;
+      addBox(group, 0, 1.6, -bz - 0.08, bx * 2 + 0.4, 3.2, 0.18, material, colliders, 0);
+      addBox(group, 0, 1.6, bz + 0.08, bx * 2 + 0.4, 3.2, 0.18, material, colliders, 0);
+      addBox(group, -bx - 0.08, 1.6, 0, 0.18, 3.2, bz * 2 + 0.4, material, colliders, 0);
+      addBox(group, bx + 0.08, 1.6, 0, 0.18, 3.2, bz * 2 + 0.4, material, colliders, 0);
+    }
+
+    function addBeachMansionLandscape(group, beach, waterMeshes) {
+      const ocean = new THREE.Mesh(new THREE.PlaneGeometry(130, 100, 1, 1), beach.ocean);
+      ocean.rotation.x = -Math.PI / 2;
+      ocean.position.set(86, -7.2, 0);
+      ocean.userData.beachWater = true;
+      ocean.userData.baseY = ocean.position.y;
+      group.add(ocean);
+      waterMeshes.push(ocean);
+
+      const beachStrip = new THREE.Mesh(new THREE.PlaneGeometry(42, 80, 1, 1), beach.beach);
+      beachStrip.rotation.x = -Math.PI / 2;
+      beachStrip.position.set(53, -6.9, 0);
+      group.add(beachStrip);
+      addBox(group, 41.2, -3.1, 0, 2.4, 7.2, 62, beach.cliff, null, 0);
+      addBox(group, 39.2, 0.42, 0, 0.36, 0.84, 58, beach.rail, null, 0);
+      addBeachRailLine(group, null, beach, 38.6, -25, 38.6, 25, 0);
+
+      for (let i = 0; i < 18; i++) {
+        const x = -62 - (i % 4) * 6.8;
+        const z = -33 + i * 3.9;
+        const house = addBox(group, x, 1.1, z, 4.2, 2.2, 3.2, beach.suburbWall, null, 0.05 * ((i % 3) - 1));
+        house.castShadow = false;
+        const roof = addBox(group, x, 2.45, z, 4.8, 0.42, 3.8, beach.suburbRoof, null, house.rotation.y);
+        roof.castShadow = false;
+      }
+      for (let i = 0; i < 3; i++) {
+        const hills = new THREE.Mesh(createRooftopHillGeometry(170 + i * 28, 16 + i * 5, 0.8 + i * 1.7), beach.hills);
+        hills.position.set(-72 - i * 7, 2 + i * 1.8, -38 - i * 8);
+        hills.rotation.y = 0.22;
+        group.add(hills);
+      }
+      const haze = new THREE.Mesh(new THREE.PlaneGeometry(150, 55, 1, 1), beach.haze);
+      haze.position.set(62, 16, -48);
+      haze.rotation.y = -0.35;
+      group.add(haze);
+    }
+
+    function addBeachMansionExterior(group, colliders, shootables, points, beach, waterMeshes) {
+      addBox(group, -36, 0.035, 0, 8.0, 0.035, 60, beach.asphalt, null, 0);
+      for (let z = -24; z <= 24; z += 8) addBox(group, -36, 0.065, z, 0.16, 0.018, 4.8, beach.line, null, 0);
+      addBox(group, -27.2, 0.045, 0, 15.0, 0.035, 8.0, beach.travertine, null, 0);
+      addBox(group, -28.2, 0.6, -9.6, 10.5, 1.2, 1.1, beach.hedge, colliders, 0);
+      addBox(group, -28.2, 0.6, 9.6, 10.5, 1.2, 1.1, beach.hedge, colliders, 0);
+      addBeachCar(group, colliders, points, beach, -33.4, -10.5, 0.05, materials.blue);
+      addBeachCar(group, colliders, points, beach, -34.2, 11.2, -0.08, materials.white);
+      addBeachPalm(group, beach, -23.5, -18.6, 5.2);
+      addBeachPalm(group, beach, -23.5, 18.6, 5.0);
+
+      addBox(group, 23.5, 0.04, 0, 25, 0.035, 27, beach.travertine, null, 0);
+      addBox(group, 25.2, 0.055, -10.5, 13.4, 0.08, 7.2, beach.marble, null, 0);
+      const pool = new THREE.Mesh(new THREE.PlaneGeometry(11.6, 5.4, 1, 1), beach.poolWater);
+      pool.rotation.x = -Math.PI / 2;
+      pool.position.set(25.2, 0.115, -10.5);
+      pool.userData.beachWater = true;
+      pool.userData.baseY = pool.position.y;
+      group.add(pool);
+      waterMeshes.push(pool);
+      shootables.push(pool);
+      addBox(group, 25.2, 0.62, 7.8, 8.2, 1.15, 0.5, beach.stucco, colliders, 0.12);
+      addBox(group, 30.8, 0.62, -2.0, 0.5, 1.15, 8.2, beach.stucco, colliders, -0.08);
+      addBox(group, 19.2, 0.62, 14.5, 8.0, 1.15, 0.5, beach.hedge, colliders, 0);
+      addBox(group, 30.8, 0.62, 14.5, 8.0, 1.15, 0.5, beach.hedge, colliders, 0);
+      addCoverPoints(points, 25.2, 7.8, 8.4, 1.2, 'red', 1.2);
+      addCoverPoints(points, 30.8, -2.0, 1.2, 8.4, 'red', 1.2);
+      addBeachPalm(group, beach, 33.0, -18.5, 5.4);
+      addBeachPalm(group, beach, 33.5, 19.0, 5.1);
+    }
+
+    function addBeachMansionHouse(group, colliders, shootables, points, beach) {
+      addBox(group, -5, 0.12, 0, 30.6, 0.24, 34.2, beach.marble, null, 0);
+      addBeachWalkableBox(group, colliders, -14.2, 3.08, 0, 8.0, 0.22, 28.4, beach.marble, 0);
+      addBeachWalkableBox(group, colliders, -0.7, 3.08, 9.6, 19.0, 0.22, 9.2, beach.marble, 0);
+      addBeachWalkableBox(group, colliders, -0.7, 3.08, -9.6, 19.0, 0.22, 9.2, beach.marble, 0);
+      addBeachWalkableBox(group, colliders, 3.0, 3.08, 0, 12.4, 0.22, 10.0, beach.marble, 0);
+      addBeachWalkableBox(group, colliders, 13.6, 3.08, 0, 9.4, 0.22, 24.0, beach.travertine, 0);
+
+      addBeachWallX(group, colliders, -19.4, -16, 16, 0, 3.1, beach.stucco, [{ from: -3.2, to: 3.2, height: 2.35 }]);
+      addBeachWallX(group, colliders, 9.4, -16, 16, 0, 3.1, beach.stucco, [{ from: -13.0, to: -9.0, height: 2.35 }, { from: -5.0, to: 5.0, height: 2.45 }]);
+      addBeachWallZ(group, colliders, -16, -19.4, 9.4, 0, 3.1, beach.stucco, [{ from: -7.0, to: -4.2, height: 2.25 }, { from: 3.8, to: 6.4, height: 2.25 }]);
+      addBeachWallZ(group, colliders, 16, -19.4, 9.4, 0, 3.1, beach.stucco, [{ from: -6.4, to: -3.8, height: 2.25 }, { from: 4.2, to: 7.0, height: 2.25 }]);
+
+      addBeachWallX(group, colliders, -19.4, -16, 16, 3.15, 2.9, beach.stucco, [{ from: -2.8, to: 2.8, height: 2.05 }]);
+      addBeachWallX(group, colliders, 9.4, -16, 16, 3.15, 2.9, beach.stucco, [{ from: -13.0, to: -9.0, height: 2.35 }, { from: -4.8, to: 4.8, height: 2.45 }]);
+      addBeachWallZ(group, colliders, -16, -19.4, 9.4, 3.15, 2.9, beach.stucco, []);
+      addBeachWallZ(group, colliders, 16, -19.4, 9.4, 3.15, 2.9, beach.stucco, []);
+
+      addBox(group, -5, 6.22, 0, 31.5, 0.5, 35.0, beach.terracotta, null, 0);
+      addBox(group, -14.6, 6.58, 0, 6.8, 0.55, 29.6, beach.terracotta, null, 0);
+      addBox(group, 2.6, 6.58, -10.2, 13.0, 0.55, 8.8, beach.terracotta, null, 0);
+      addBox(group, 2.6, 6.58, 10.2, 13.0, 0.55, 8.8, beach.terracotta, null, 0);
+      addBox(group, 13.6, 3.24, 0, 10.2, 0.26, 24.8, beach.travertine, null, 0);
+
+      for (let z = -13.2; z <= 13.2; z += 6.6) {
+        addCylinder(group, -18.9, 1.55, z, 0.22, 3.1, beach.stucco, colliders, 0, false, 1);
+        addCylinder(group, 8.9, 1.55, z, 0.22, 3.1, beach.stucco, colliders, 0, false, 1);
+        addCylinder(group, 9.0, 4.55, z, 0.18, 2.7, beach.stucco, colliders, 0, false, 1);
+      }
+      addBox(group, -18.8, 1.2, -8.5, 0.12, 1.25, 3.0, beach.glass, null, 0);
+      addBox(group, -18.8, 1.2, 8.5, 0.12, 1.25, 3.0, beach.glass, null, 0);
+      addBox(group, 9.0, 4.45, -9.2, 0.12, 1.25, 3.2, beach.glass, null, 0);
+      addBox(group, 9.0, 4.45, 9.2, 0.12, 1.25, 3.2, beach.glass, null, 0);
+
+      addBeachStaircase(group, shootables, beach, -16.2, -6.4, 8.3, 4.2);
+      addBeachStaircase(group, shootables, beach, 7.2, 13.8, -11.3, 3.5);
+      addBeachRailLine(group, colliders, beach, 18.4, -12.0, 18.4, 12.0, 3.2);
+      addBeachRailLine(group, colliders, beach, 9.0, -12.0, 18.4, -12.0, 3.2);
+      addBeachRailLine(group, colliders, beach, 9.0, 12.0, 18.4, 12.0, 3.2);
+      addBeachRailLine(group, colliders, beach, -10.1, -5.0, -3.2, -5.0, 3.2);
+      addBeachRailLine(group, colliders, beach, -10.1, 5.0, -3.2, 5.0, 3.2);
+      addBeachRailLine(group, colliders, beach, -10.1, -5.0, -10.1, 5.0, 3.2);
+      addBeachRailLine(group, colliders, beach, -3.2, -5.0, -3.2, 5.0, 3.2);
+
+      addBox(group, -7.0, 0.72, -9.8, 5.6, 1.35, 0.55, beach.darkWood, colliders, -0.08);
+      addBox(group, 0.0, 0.68, 6.2, 4.8, 1.25, 0.5, beach.stucco, colliders, 0.18);
+      addBox(group, 2.8, 0.62, -3.8, 0.55, 1.15, 6.2, beach.darkWood, colliders, 0);
+      addBox(group, -13.4, 0.65, -2.4, 0.52, 1.25, 5.8, beach.stucco, colliders, 0);
+      addBox(group, -0.6, 3.82, -10.4, 4.8, 1.15, 0.5, beach.darkWood, colliders, 0.14);
+      addBox(group, 5.2, 3.82, 8.7, 5.4, 1.15, 0.5, beach.stucco, colliders, -0.14);
+      addCoverPoints(points, -7.0, -9.8, 5.8, 1.1, 'any', 1.35);
+      addCoverPoints(points, 0.0, 6.2, 5.0, 1.0, 'any', 1.25);
+      addCoverPoints(points, 2.8, -3.8, 1.1, 6.4, 'any', 1.2);
+
+      const lightPositions = [[-12, 2.45, -10], [-12, 2.45, 10], [1.5, 2.45, -10], [1.5, 2.45, 10], [-9, 5.35, 0], [4.5, 5.35, 0]];
+      lightPositions.forEach((p) => {
+        const light = new THREE.PointLight(0xfff1d0, 0.42, 12);
+        light.position.set(p[0], p[1], p[2]);
+        light.castShadow = false;
+        group.add(light);
+        addCylinder(group, p[0], p[1] - 0.18, p[2], 0.09, 0.08, beach.terracotta, null, 0, false, 1);
+      });
+    }
+
+    function addBeachWalkableBox(group, colliders, x, y, z, sx, sy, sz, material, yaw) {
+      const mesh = addBox(group, x, y, z, sx, sy, sz, material, null, yaw || 0);
+      const collider = addMeshCollider(colliders, mesh, 'box');
+      if (collider) collider.walkable = true;
+      return mesh;
+    }
+
+    function addBeachWallX(group, colliders, x, z1, z2, yBase, height, material, openings, thickness) {
+      const sorted = (openings || []).slice().sort((a, b) => a.from - b.from);
+      let cursor = z1;
+      sorted.forEach((opening) => {
+        const from = clamp(opening.from, z1, z2);
+        const to = clamp(opening.to, z1, z2);
+        if (from > cursor + 0.05) addBox(group, x, yBase + height * 0.5, (cursor + from) * 0.5, thickness || 0.55, height, from - cursor, material, colliders, 0);
+        const doorHeight = opening.height || 2.35;
+        if (height > doorHeight + 0.1) addBox(group, x, yBase + doorHeight + (height - doorHeight) * 0.5, (from + to) * 0.5, thickness || 0.55, height - doorHeight, to - from, material, colliders, 0);
+        cursor = Math.max(cursor, to);
+      });
+      if (cursor < z2 - 0.05) addBox(group, x, yBase + height * 0.5, (cursor + z2) * 0.5, thickness || 0.55, height, z2 - cursor, material, colliders, 0);
+    }
+
+    function addBeachWallZ(group, colliders, z, x1, x2, yBase, height, material, openings, thickness) {
+      const sorted = (openings || []).slice().sort((a, b) => a.from - b.from);
+      let cursor = x1;
+      sorted.forEach((opening) => {
+        const from = clamp(opening.from, x1, x2);
+        const to = clamp(opening.to, x1, x2);
+        if (from > cursor + 0.05) addBox(group, (cursor + from) * 0.5, yBase + height * 0.5, z, from - cursor, height, thickness || 0.55, material, colliders, 0);
+        const doorHeight = opening.height || 2.35;
+        if (height > doorHeight + 0.1) addBox(group, (from + to) * 0.5, yBase + doorHeight + (height - doorHeight) * 0.5, z, to - from, height - doorHeight, thickness || 0.55, material, colliders, 0);
+        cursor = Math.max(cursor, to);
+      });
+      if (cursor < x2 - 0.05) addBox(group, (cursor + x2) * 0.5, yBase + height * 0.5, z, x2 - cursor, height, thickness || 0.55, material, colliders, 0);
+    }
+
+    function addBeachStaircase(group, shootables, beach, x1, x2, z, width) {
+      const steps = 12;
+      for (let i = 0; i < steps; i++) {
+        const t0 = i / steps;
+        const t1 = (i + 1) / steps;
+        const x = x1 + (x2 - x1) * (t0 + t1) * 0.5;
+        const sx = Math.abs(x2 - x1) / steps + 0.05;
+        const h = 3.2 * t1;
+        const step = addBox(group, x, h * 0.5, z, sx, h, width, beach.travertine, null, 0);
+        shootables.push(step);
+      }
+      addBox(group, (x1 + x2) * 0.5, 0.16, z - width * 0.52, Math.abs(x2 - x1), 0.32, 0.18, beach.rail, null, 0);
+      addBox(group, (x1 + x2) * 0.5, 0.16, z + width * 0.52, Math.abs(x2 - x1), 0.32, 0.18, beach.rail, null, 0);
+    }
+
+    function addBeachRailLine(group, colliders, beach, x1, z1, x2, z2, baseY) {
+      const horizontal = Math.abs(x2 - x1) >= Math.abs(z2 - z1);
+      const len = horizontal ? Math.abs(x2 - x1) : Math.abs(z2 - z1);
+      const cx = (x1 + x2) * 0.5;
+      const cz = (z1 + z2) * 0.5;
+      if (horizontal) {
+        addBox(group, cx, baseY + 0.72, cz, len, 0.08, 0.08, beach.rail, colliders, 0);
+        addBox(group, cx, baseY + 1.12, cz, len, 0.08, 0.08, beach.rail, colliders, 0);
+      } else {
+        addBox(group, cx, baseY + 0.72, cz, 0.08, 0.08, len, beach.rail, colliders, 0);
+        addBox(group, cx, baseY + 1.12, cz, 0.08, 0.08, len, beach.rail, colliders, 0);
+      }
+      const posts = Math.max(2, Math.ceil(len / 2.2));
+      for (let i = 0; i <= posts; i++) {
+        const t = i / posts;
+        const px = x1 + (x2 - x1) * t;
+        const pz = z1 + (z2 - z1) * t;
+        addBox(group, px, baseY + 0.62, pz, 0.12, 1.18, 0.12, beach.blackIron, colliders, 0);
+      }
+    }
+
+    function addBeachCar(group, colliders, points, beach, x, z, yaw, material) {
+      addBox(group, x, 0.54, z, 3.2, 0.9, 1.55, material, colliders, yaw);
+      addBox(group, x - Math.sin(yaw) * 0.25, 1.05, z - Math.cos(yaw) * 0.25, 1.55, 0.55, 1.25, beach.glass, null, yaw);
+      addCylinder(group, x - 1.05, 0.2, z - 0.72, 0.22, 0.16, beach.blackIron, null, 0, true, 1);
+      addCylinder(group, x + 1.05, 0.2, z - 0.72, 0.22, 0.16, beach.blackIron, null, 0, true, 1);
+      addCylinder(group, x - 1.05, 0.2, z + 0.72, 0.22, 0.16, beach.blackIron, null, 0, true, 1);
+      addCylinder(group, x + 1.05, 0.2, z + 0.72, 0.22, 0.16, beach.blackIron, null, 0, true, 1);
+      addCoverPoints(points, x, z, 3.6, 1.9, 'blue', 1.2);
+    }
+
+    function addBeachPalm(group, beach, x, z, height) {
+      const trunk = new THREE.Mesh(geometries.cylinderLow, beach.wood);
+      trunk.position.set(x, height * 0.5, z);
+      trunk.scale.set(0.18, height, 0.18);
+      shadowMesh(trunk, true, true);
+      group.add(trunk);
+      for (let i = 0; i < 7; i++) {
+        const leaf = new THREE.Mesh(geometries.plane, materials.containerGreen);
+        const angle = i / 7 * Math.PI * 2;
+        leaf.position.set(x + Math.cos(angle) * 0.75, height + 0.15, z + Math.sin(angle) * 0.75);
+        leaf.scale.set(2.8, 0.95, 0.45);
+        leaf.rotation.set(-0.75, angle, 0.18);
+        shadowMesh(leaf, false, true);
+        group.add(leaf);
       }
     }
 
@@ -7263,10 +7696,7 @@
       const mainOpponentBot = opposingBot();
       botDefs.forEach(def => {
         const botData = matchBots.find(b => b.team === def.team && b !== mainOpponentBot && extraBots.every(e => e.matchBot !== b));
-        const spawnX = def.team === MY_TEAM
-          ? (MY_TEAM === 'blue' ? 24 : -24)
-          : (MY_TEAM === 'blue' ? -24 : 24);
-        const spawnPos = new THREE.Vector3(spawnX, 0, def.spawnOffset.z);
+        const spawnPos = getTeamSpawn(def.team, def.spawnOffset.z);
         const inst = makeExtraBotAiInst(def.team, spawnPos);
         inst.role = def.role;
         inst.matchBot = botData || null;
@@ -7320,7 +7750,8 @@
       }
       inst.coverIndex = (inst.coverIndex + 5) % activeCoverPoints.length;
       inst.cover = best;
-      inst.target.set(clamp(best.x, -ARENA_HALF_X + 4, ARENA_HALF_X - 4), 0, clamp(best.z, -ARENA_HALF_Z + 4, ARENA_HALF_Z - 4));
+      const bounds = getActiveBounds();
+      inst.target.set(clamp(best.x, -bounds.halfX + 4, bounds.halfX - 4), best.y || 0, clamp(best.z, -bounds.halfZ + 4, bounds.halfZ - 4));
       inst.moveClock = (1.6 + ((inst.coverIndex * 13) % 8) * 0.18) / config.aggression;
     }
 
@@ -7338,13 +7769,14 @@
         origin = new THREE.Vector3();
         inst.markerBarrelTip.getWorldPosition(origin);
       } else {
-        origin = new THREE.Vector3(inst.position.x + perp.x, Math.max(0.55, Math.min(inst.tacticalHeight, inst.height) * 0.82), inst.position.z + perp.z);
+        origin = new THREE.Vector3(inst.position.x + perp.x, (inst.position.y || 0) + Math.max(0.55, Math.min(inst.tacticalHeight, inst.height) * 0.82), inst.position.z + perp.z);
       }
-      const dir = new THREE.Vector3(bx, bh * 0.78, bz).sub(origin);
+      const targetY = ((tgt.position && tgt.position.y) || 0) + bh * 0.78;
+      const dir = new THREE.Vector3(bx, targetY, bz).sub(origin);
       const shotDist = Math.hypot(dir.x, dir.z);
       dir.y += 0.5 * PAINTBALL_GRAVITY * Math.pow(shotDist / PAINTBALL_SPEED, 2) * (0.58 + config.accuracy * 0.28);
       const shootY = Math.max(0.55, Math.min(inst.tacticalHeight, inst.height) * 0.82);
-      const hasSight = hasLineOfSight(inst.position.x, shootY, inst.position.z, bx, bh * 0.78, bz);
+      const hasSight = hasLineOfSight(inst.position.x, (inst.position.y || 0) + shootY, inst.position.z, bx, targetY, bz);
       const spread = hasSight ? config.sightSpread : config.blindSpread;
       if (!hasSight) {
         dir.x += Math.sin(state.elapsed * 2.3) * spread;
@@ -7488,10 +7920,11 @@
           inst.lastKnownTime = 1.5;
         }
       }
-      inst.bodyCenter.set(inst.position.x, (inst.tacticalHeight || inst.height) * 0.5, inst.position.z);
+      inst.bodyCenter.set(inst.position.x, (inst.position.y || 0) + (inst.tacticalHeight || inst.height) * 0.5, inst.position.z);
       const shootY = Math.max(0.55, Math.min(inst.tacticalHeight, inst.height) * 0.82);
       const tgtPos = tgt ? tgt.bodyCenter : null;
-      const hasSight = tgtPos ? hasLineOfSight(inst.position.x, shootY, inst.position.z, tgtPos.x, (tgt.height || 1.8) * 0.78, tgtPos.z) : false;
+      const targetY = tgt ? ((tgt.position && tgt.position.y) || 0) + (tgt.height || 1.8) * 0.78 : 0;
+      const hasSight = tgtPos ? hasLineOfSight(inst.position.x, (inst.position.y || 0) + shootY, inst.position.z, tgtPos.x, targetY, tgtPos.z) : false;
       inst.aiming = hasSight || inst.reactClock > 0.12;
       _updateExtraBotAiVisual(dt, inst, dist > 0.12, atCover);
       inst.shotClock -= dt;
@@ -7575,15 +8008,29 @@
     }
 
     function setTeamSpawns(team) {
-      const localX = team === 'blue' ? 24 : -24;
-      const remoteX = team === 'blue' ? -24 : 24;
-      player.spawn.set(localX, 0, 0);
-      ai.spawn.set(remoteX, 0, 0);
+      const localTeam = team === 'blue' ? 'blue' : 'red';
+      const remoteTeam = localTeam === 'blue' ? 'red' : 'blue';
+      player.spawn.copy(getTeamSpawn(localTeam, 0));
+      ai.spawn.copy(getTeamSpawn(remoteTeam, 0));
       ai.position.copy(ai.spawn);
       ai.target.copy(ai.spawn);
       ai.group.position.copy(ai.spawn);
       remotePlayer.position = ai.position;
       remotePlayer.lastPosition.copy(ai.spawn);
+      updateExtraBotSpawns();
+    }
+
+    function updateExtraBotSpawns() {
+      for (let i = 0; i < extraBots.length; i++) {
+        const inst = extraBots[i];
+        const lane = inst.role === 'ally' ? 5 : -5;
+        inst.spawn.copy(getTeamSpawn(inst.team, lane));
+        if (!state.running) {
+          inst.position.copy(inst.spawn);
+          inst.target.copy(inst.spawn);
+          inst.group.position.copy(inst.spawn);
+        }
+      }
     }
 
     function updateTeamBadge() {
@@ -8109,7 +8556,7 @@
       ai.group.position.copy(ai.position);
       if (rotation && Number.isFinite(Number(rotation.y))) ai.group.rotation.y = Number(rotation.y);
       ai.tacticalHeight = remotePlayer.prone ? 0.5 : remotePlayer.crouching ? 0.95 : ai.height;
-      ai.bodyCenter.set(ai.position.x, ai.tacticalHeight * 0.5, ai.position.z);
+      ai.bodyCenter.set(ai.position.x, (ai.position.y || 0) + ai.tacticalHeight * 0.5, ai.position.z);
       if (!state.aiEliminated) ai.group.visible = true;
     }
 
@@ -8168,7 +8615,7 @@
         const previewRenderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'low-power' });
         previewRenderer.outputColorSpace = THREE.SRGBColorSpace;
         previewRenderer.toneMapping = THREE.ACESFilmicToneMapping;
-        previewRenderer.toneMappingExposure = mapName === 'castle' ? 1.05 : mapName === 'rooftop' ? 0.85 : mapName === 'ghosttown' ? 1.08 : mapName === 'funland' ? 0.86 : 0.7;
+        previewRenderer.toneMappingExposure = mapName === 'beachmansion' ? 0.92 : mapName === 'castle' ? 1.05 : mapName === 'rooftop' ? 0.85 : mapName === 'ghosttown' ? 1.08 : mapName === 'funland' ? 0.86 : 0.7;
         previewRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
 
         const mapClone = map.group.clone(true);
@@ -8180,18 +8627,30 @@
           child.frustumCulled = false;
         });
         const castleTorches = [];
+        const beachWater = [];
         mapClone.traverse((child) => {
           if (child.userData.castleFlame) castleTorches.push(child);
+          if (child.userData.beachWater) beachWater.push(child);
         });
         previewScene.add(mapClone);
         applyDronePreviewLighting(previewScene, mapName);
 
-        dronePreviews.push({ mapName, canvas, card: canvas.closest('[data-map]'), scene: previewScene, camera: previewCamera, renderer: previewRenderer, carousel: mapClone.getObjectByName('funlandCarousel'), castleTorches, time: mapName === 'speedball' ? 0 : 1.4 });
+        dronePreviews.push({ mapName, canvas, card: canvas.closest('[data-map]'), scene: previewScene, camera: previewCamera, renderer: previewRenderer, carousel: mapClone.getObjectByName('funlandCarousel'), castleTorches, beachWater, time: mapName === 'speedball' ? 0 : 1.4 });
       });
       resizeDronePreviews();
     }
 
     function applyDronePreviewLighting(previewScene, mapName) {
+      if (mapName === 'beachmansion') {
+        previewScene.background = new THREE.Color(0x87CEEB);
+        previewScene.fog = new THREE.Fog(0x87CEEB, 120, 360);
+        previewScene.add(new THREE.AmbientLight(0xfff5e0, 0.6));
+        previewScene.add(new THREE.HemisphereLight(0x87CEEB, 0xf5e6c8, 1.0));
+        const sun = new THREE.DirectionalLight(0xfff5e0, 2.5);
+        sun.position.set(40, 80, 20);
+        previewScene.add(sun);
+        return;
+      }
       if (mapName === 'rooftop') {
         previewScene.background = new THREE.Color(0xffa36f);
         previewScene.fog = new THREE.Fog(0xffa36f, 130, 520);
@@ -8256,6 +8715,7 @@
         const active = preview.card && (preview.card.classList.contains('previewing') || preview.card.classList.contains('selected'));
         preview.time += dt * (active ? 1 : 0.35);
         animateCastleTorchFlames(dt, preview.castleTorches, preview.time);
+        animateBeachWater(preview.beachWater, preview.time);
         updateDronePreviewCamera(preview);
         preview.renderer.render(preview.scene, preview.camera);
       }
@@ -8292,6 +8752,12 @@
         const radius = 38 + Math.sin(t * 0.45) * 3;
         preview.camera.position.set(Math.cos(angle) * radius, 15.5 + Math.sin(t * 0.55) * 2.2, Math.sin(angle) * 26);
         tmpVecA.set(Math.sin(angle * 0.8) * 3.5, 2.2, Math.cos(angle * 0.7) * 2.8);
+      } else if (preview.mapName === 'beachmansion') {
+        const phase = (t * 0.08) % 1;
+        const sweep = 0.5 - 0.5 * Math.cos(phase * Math.PI * 2);
+        const side = Math.sin(phase * Math.PI * 2);
+        preview.camera.position.set(-42 + sweep * 92, 18 + (1 - Math.abs(side)) * 8, -34 + side * 50);
+        tmpVecA.set(-8 + sweep * 24, 3.0, side * 7.0);
       } else {
         const phase = (t * 0.085) % 1;
         const sweep = 0.5 - 0.5 * Math.cos(phase * Math.PI * 2);
@@ -8564,6 +9030,7 @@
       disposeSkinPreviews();
       if (ui.skinSelect) ui.skinSelect.classList.remove('visible');
       clearKillFeed();
+      setTeamSpawns(MULTIPLAYER ? MY_TEAM : 'red');
       hideAllMaps();
       const active = maps[state.selectedMap];
       active.group.visible = true;
@@ -8620,10 +9087,10 @@
       // Re-attach camera to player.root if it was detached for ally spectate
       if (camera.parent !== player.root) player.root.attach(camera);
       gun.group.visible = true; // restore gun hidden during spectate
-      player.yaw = MULTIPLAYER && MY_TEAM === 'blue' ? Math.PI / 2 : -Math.PI / 2;
+      player.yaw = teamStartYaw(MULTIPLAYER ? MY_TEAM : 'red');
       player.pitch = 0;
       player.root.position.copy(player.spawn);
-      player.root.position.y = 0;
+      applyWalkHeight(player.root.position);
       player.root.rotation.y = player.yaw;
       camera.rotation.order = 'YXZ';
       camera.rotation.set(0, 0, 0);
@@ -8650,6 +9117,7 @@
       camera.rotation.z = 0;
       camera.position.set(0, player.height, 0);
       ai.position.copy(ai.spawn);
+      applyWalkHeight(ai.position);
       ai.target.copy(ai.spawn);
       ai.group.position.copy(ai.position);
       ai.group.rotation.set(0, 0, 0);
@@ -8684,8 +9152,9 @@
         for (let i = 0; i < extraBots.length; i++) {
           const inst = extraBots[i];
           inst.position.copy(inst.spawn);
+          applyWalkHeight(inst.position);
           inst.target.copy(inst.spawn);
-          inst.group.position.copy(inst.spawn);
+          inst.group.position.copy(inst.position);
           inst.group.rotation.set(0, 0, 0);
           inst.group.scale.set(1, 1, 1);
           restoreCoverCullVisibility(inst.group);
@@ -8738,7 +9207,7 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
       hideAllMaps();
       const active = maps[state.selectedMap] || maps.speedball;
-      state.selectedMap = active === maps.funland ? 'funland' : active === maps.ghosttown ? 'ghosttown' : active === maps.rooftop ? 'rooftop' : active === maps.castle ? 'castle' : 'speedball';
+      state.selectedMap = active === maps.funland ? 'funland' : active === maps.ghosttown ? 'ghosttown' : active === maps.rooftop ? 'rooftop' : active === maps.castle ? 'castle' : active === maps.beachmansion ? 'beachmansion' : 'speedball';
       active.group.visible = true;
       if (!active.group.parent) scene.add(active.group);
       applyMapLighting(active);
@@ -8789,6 +9258,7 @@
       const mapName = state.selectedMap || 'speedball';
       updateFunlandCarousel(dt);
       updateCastleTorches(dt);
+      updateBeachMansionWater();
       updateClouds(dt);
       updateSpectators();
       const t = state.elapsed;
@@ -8814,6 +9284,12 @@
         const radius = 38 + Math.sin(t * 0.45) * 3;
         camera.position.set(Math.cos(angle) * radius, 15.5 + Math.sin(t * 0.55) * 2.2, Math.sin(angle) * 26);
         tmpVecA.set(Math.sin(angle * 0.8) * 3.5, 2.2, Math.cos(angle * 0.7) * 2.8);
+      } else if (mapName === 'beachmansion') {
+        const phase = (t * 0.08) % 1;
+        const sweep = 0.5 - 0.5 * Math.cos(phase * Math.PI * 2);
+        const side = Math.sin(phase * Math.PI * 2);
+        camera.position.set(-42 + sweep * 92, 18 + (1 - Math.abs(side)) * 8, -34 + side * 50);
+        tmpVecA.set(-8 + sweep * 24, 3.0, side * 7.0);
       } else {
         const angle = t * 0.46;
         const descend = 0.5 + 0.5 * Math.sin(t * 0.42 - 1.1);
@@ -8839,6 +9315,7 @@
       state.shotClock = Math.max(0, state.nextShotTime - performance.now() / 1000);
       updateFunlandCarousel(dt);
       updateCastleTorches(dt);
+      updateBeachMansionWater();
       updatePlayer(dt);
       sendMultiplayerUpdate();
       updateReload(dt);
@@ -8879,6 +9356,21 @@
     function updateCastleTorches(dt) {
       const active = maps[state.selectedMap];
       animateCastleTorchFlames(dt, active && active.castleTorches, state.elapsed);
+    }
+
+    function updateBeachMansionWater() {
+      const active = maps[state.selectedMap];
+      animateBeachWater(active && active.beachWater, state.elapsed);
+    }
+
+    function animateBeachWater(meshes, elapsed) {
+      if (!meshes || meshes.length === 0) return;
+      const t = elapsed || 0;
+      for (let i = 0; i < meshes.length; i++) {
+        const mesh = meshes[i];
+        const baseY = Number.isFinite(mesh.userData.baseY) ? mesh.userData.baseY : mesh.position.y;
+        mesh.position.y = baseY + Math.sin(t * 0.8 + i * 1.7) * (i === 0 ? 0.08 : 0.018);
+      }
     }
 
     function animateCastleTorchFlames(dt, flames, elapsed) {
@@ -8965,7 +9457,7 @@
       const leanAmount = clamp(player.peek / LEAN_DISTANCE, -1, 1);
       camera.rotation.z = -leanAmount * LEAN_ANGLE;
       camera.position.set(player.peek, player.height + player.bobOffset, 0);
-      player.bodyCenter.set(player.root.position.x + player.hitLeanX, player.height * 0.5, player.root.position.z + player.hitLeanZ);
+      player.bodyCenter.set(player.root.position.x + player.hitLeanX, player.root.position.y + player.height * 0.5, player.root.position.z + player.hitLeanZ);
 
       if (state.phase !== 'active' || state.playerEliminated) {
         player.diving = false;
@@ -9008,7 +9500,7 @@
           player.velocity.set(0, 0, 0);
           input.crouch = true;
         }
-        player.bodyCenter.set(player.root.position.x + player.hitLeanX, player.height * 0.5, player.root.position.z + player.hitLeanZ);
+        player.bodyCenter.set(player.root.position.x + player.hitLeanX, player.root.position.y + player.height * 0.5, player.root.position.z + player.hitLeanZ);
         camera.position.set(player.peek, player.height, 0);
         audio.updateRattle(false, false);
         return;
@@ -9029,7 +9521,7 @@
           input.crawl = true;
           player.velocity.set(0, 0, 0);
         }
-        player.bodyCenter.set(player.root.position.x + player.hitLeanX, player.height * 0.5, player.root.position.z + player.hitLeanZ);
+        player.bodyCenter.set(player.root.position.x + player.hitLeanX, player.root.position.y + player.height * 0.5, player.root.position.z + player.hitLeanZ);
         camera.position.set(player.peek, player.height, 0);
         audio.updateRattle(false, false);
         return;
@@ -9060,7 +9552,7 @@
         player.bobOffset = 0;
       }
       moveWithCollision(player.root.position, player.velocity.x * dt, player.velocity.z * dt, player.radius);
-      player.bodyCenter.set(player.root.position.x + player.hitLeanX, player.height * 0.5, player.root.position.z + player.hitLeanZ);
+      player.bodyCenter.set(player.root.position.x + player.hitLeanX, player.root.position.y + player.height * 0.5, player.root.position.z + player.hitLeanZ);
       // camera shake decay
       if (cameraShake.decay > 0) {
         cameraShake.decay = Math.max(0, cameraShake.decay - dt * 8);
@@ -9093,18 +9585,23 @@
         constrainBounds(pos, radius);
         resolveCoverCollision(pos, radius, false, velocity, height);
       }
+      applyWalkHeight(pos);
     }
 
     function constrainBounds(pos, radius) {
-      pos.x = clamp(pos.x, -ARENA_HALF_X + radius + 0.18, ARENA_HALF_X - radius - 0.18);
-      pos.z = clamp(pos.z, -ARENA_HALF_Z + radius + 0.18, ARENA_HALF_Z - radius - 0.18);
+      const bounds = getActiveBounds();
+      pos.x = clamp(pos.x, -bounds.halfX + radius + 0.18, bounds.halfX - radius - 0.18);
+      pos.z = clamp(pos.z, -bounds.halfZ + radius + 0.18, bounds.halfZ - radius - 0.18);
     }
 
     function resolveCoverCollision(pos, radius, xAxis, velocity, height) {
       for (let i = 0; i < activeColliders.length; i++) {
         const c = activeColliders[i];
+        if (c.walkable) continue;
         updateMeshCollider(c);
-        if (c.y - c.halfY > height || c.y + c.halfY < 0) continue;
+        const bottom = pos.y || 0;
+        const top = bottom + (height || STAND_HEIGHT);
+        if (c.y - c.halfY > top || c.y + c.halfY < bottom) continue;
         if (c.type === 'box') {
           const lx = (pos.x - c.x) * c.cos - (pos.z - c.z) * c.sin;
           const lz = (pos.x - c.x) * c.sin + (pos.z - c.z) * c.cos;
@@ -9181,9 +9678,10 @@
       const yaw = player.yaw;
       const x = player.root.position.x + offset * Math.cos(yaw);
       const z = player.root.position.z - offset * Math.sin(yaw);
-      const y = player.height;
+      const y = player.root.position.y + player.height;
       for (let i = 0; i < activeColliders.length; i++) {
         const c = activeColliders[i];
+        if (c.walkable) continue;
         updateMeshCollider(c);
         if (y < c.y - c.halfY || y > c.y + c.halfY) continue;
         if (c.type === 'box') {
@@ -9446,7 +9944,7 @@
           if (!eb.visible || eb.eliminated) continue;
           const canHit = (eb.role === 'enemy2' && p.team === MY_TEAM) || (eb.role === 'ally' && p.team !== MY_TEAM);
           if (!canHit) continue;
-          if (segmentHitsBody(p.prev, p.pos, eb.position.x, eb.position.z, 1.8, 0, eb.height + 0.3)) {
+          if (segmentHitsBody(p.prev, p.pos, eb.position.x, eb.position.z, 1.8, (eb.position.y || 0) + 0.12, (eb.position.y || 0) + eb.height + 0.3)) {
             const t2 = segmentHitT;
             if (t2 < bodyT) { bodyHit = true; bodyT = t2; bodyTarget = 3; bodyTargetExtraBot = eb; }
           }
@@ -9465,12 +9963,12 @@
           if (MULTIPLAYER) confirmOpponentHit(p.pos, killingShot);
           else {
             aiEliminated(p.pos, killingShot);
-            spawnSplat('red', ai.position.x, 1.25, ai.position.z - 0.45, 0, 0, -1, 0.72);
+            spawnSplat('red', ai.position.x, (ai.position.y || 0) + 1.25, ai.position.z - 0.45, 0, 0, -1, 0.72);
           }
           deactivateProjectile(p);
           continue;
         }
-        if (!MULTIPLAYER && p.team === 'red' && !state.aiEliminated && segmentHitsBody(p.prev, p.pos, ai.position.x, ai.position.z, 2.2, 0, ai.height + 0.5)) {
+        if (!MULTIPLAYER && p.team === 'red' && !state.aiEliminated && segmentHitsBody(p.prev, p.pos, ai.position.x, ai.position.z, 2.2, (ai.position.y || 0) + 0.12, (ai.position.y || 0) + ai.height + 0.5)) {
           ai.reactClock = 0.45;
           state.aiMoveClock = 0;
         }
@@ -9479,10 +9977,10 @@
           p.pos.copy(p.prev).lerp(tmpVecA, bodyT);
           if (MULTIPLAYER && remotePlayer.isBot) {
             hitPlayer(shotWithImpact(p.shotData, p.pos), remotePlayer.id);
-            spawnSplat(remotePlayer.team || OPPONENT_TEAM, player.bodyCenter.x, player.height * 0.82, player.bodyCenter.z, 0, 0, 1, 0.72);
+            spawnSplat(remotePlayer.team || OPPONENT_TEAM, player.bodyCenter.x, player.bodyCenter.y, player.bodyCenter.z, 0, 0, 1, 0.72);
           } else if (!MULTIPLAYER) {
             playerEliminated(shotWithImpact(p.shotData, p.pos));
-            spawnSplat('blue', player.bodyCenter.x, player.height * 0.82, player.bodyCenter.z, 0, 0, 1, 0.72);
+            spawnSplat('blue', player.bodyCenter.x, player.bodyCenter.y, player.bodyCenter.z, 0, 0, 1, 0.72);
           }
           deactivateProjectile(p);
           continue;
@@ -9513,7 +10011,8 @@
     }
 
     function outOfBounds(pos) {
-      return pos.x < -ARENA_HALF_X - 2 || pos.x > ARENA_HALF_X + 2 || pos.z < -ARENA_HALF_Z - 2 || pos.z > ARENA_HALF_Z + 2 || pos.y > 60;
+      const bounds = getActiveBounds();
+      return pos.x < -bounds.halfX - 2 || pos.x > bounds.halfX + 2 || pos.z < -bounds.halfZ - 2 || pos.z > bounds.halfZ + 2 || pos.y > 60;
     }
 
     function deactivateProjectile(p) {
@@ -9539,7 +10038,7 @@
 
     function confirmOpponentHit(hitPos, shotData) {
       if (!remotePlayer.id || !multiplayer.socket || !multiplayer.socket.connected) return;
-      spawnSplat(MY_TEAM, hitPos.x, Math.max(0.6, ai.tacticalHeight * 0.82), hitPos.z, 0, 0, -1, 0.72);
+      spawnSplat(MY_TEAM, hitPos.x, (ai.position.y || 0) + Math.max(0.6, ai.tacticalHeight * 0.82), hitPos.z, 0, 0, -1, 0.72);
       if (remotePlayer.isBot) {
         hitOpponent(shotWithImpact(shotData, hitPos), multiplayer.socket.id);
         return;
@@ -9554,11 +10053,13 @@
     function projectileHitsAi(p) {
       const height = Math.max(0.62, ai.tacticalHeight || ai.height);
       const radius = height < 1.1 ? 0.24 : ai.radius;
-      return segmentHitsBody(p.prev, p.pos, ai.position.x, ai.position.z, radius + p.radius, 0.12, height);
+      const baseY = ai.position.y || 0;
+      return segmentHitsBody(p.prev, p.pos, ai.position.x, ai.position.z, radius + p.radius, baseY + 0.12, baseY + height);
     }
 
     function projectileHitsPlayer(p) {
-      return segmentHitsBody(p.prev, p.pos, player.bodyCenter.x, player.bodyCenter.z, player.radius + p.radius, 0.12, player.height + 0.05);
+      const baseY = player.root.position.y || 0;
+      return segmentHitsBody(p.prev, p.pos, player.bodyCenter.x, player.bodyCenter.z, player.radius + p.radius, baseY + 0.12, baseY + player.height + 0.05);
     }
 
     function segmentHitsBody(start, end, x, z, radius, minY, maxY) {
@@ -9662,6 +10163,7 @@
       }
       for (let i = 0; i < activeColliders.length; i++) {
         const c = activeColliders[i];
+        if (c.walkable) continue;
         let cx = c.x;
         let cz = c.z;
         let halfX = c.radius || c.halfX;
@@ -9685,6 +10187,7 @@
 
     function pointInsideActiveCover(pos, pad) {
       for (let i = 0; i < activeColliders.length; i++) {
+        if (activeColliders[i].walkable) continue;
         if (pointInCollider(pos, activeColliders[i], pad)) return true;
       }
       return false;
@@ -9692,6 +10195,7 @@
 
     function pointInsideUpdatedActiveCover(pos, pad) {
       for (let i = 0; i < activeColliders.length; i++) {
+        if (activeColliders[i].walkable) continue;
         if (pointInUpdatedCollider(pos, activeColliders[i], pad)) return true;
       }
       return false;
@@ -10000,7 +10504,7 @@
         ai.group.rotation.y = Math.atan2(tmpVecB.x, tmpVecB.z);
       }
       const shootY = Math.max(0.55, Math.min(ai.tacticalHeight, ai.height) * 0.82);
-      const hasSight = hasLineOfSight(ai.position.x, shootY, ai.position.z, player.bodyCenter.x, player.height * 0.78, player.bodyCenter.z);
+      const hasSight = hasLineOfSight(ai.position.x, (ai.position.y || 0) + shootY, ai.position.z, player.bodyCenter.x, (player.root.position.y || 0) + player.height * 0.78, player.bodyCenter.z);
       ai.aiming = hasSight || ai.reactClock > 0.12;
       updateAiVisual(dt, dist > 0.12, atCover);
       state.aiShotClock -= dt;
@@ -10126,9 +10630,10 @@
       const lowHopperPush = config.elite && ammo.hopper <= 10;
       let best = activeCoverPoints[state.aiCoverIndex % activeCoverPoints.length];
       let bestScore = -9999;
+      const aiOnPositiveSide = ai.spawn.x >= player.spawn.x;
       for (let i = 0; i < activeCoverPoints.length; i++) {
         const p = activeCoverPoints[(state.aiCoverIndex + i * 7 + (initial ? 0 : 3)) % activeCoverPoints.length];
-        if (p.x < -8) continue;
+        if (aiOnPositiveSide ? p.x < -8 : p.x > 8) continue;
         const dx = p.x - focus.x;
         const dz = p.z - focus.z;
         const distPlayer = Math.sqrt(dx * dx + dz * dz);
@@ -10150,7 +10655,8 @@
       }
       state.aiCoverIndex = (state.aiCoverIndex + 5) % activeCoverPoints.length;
       ai.cover = best;
-      ai.target.set(clamp(best.x, -ARENA_HALF_X + 4, ARENA_HALF_X - 4), 0, clamp(best.z, -ARENA_HALF_Z + 4, ARENA_HALF_Z - 4));
+      const bounds = getActiveBounds();
+      ai.target.set(clamp(best.x, -bounds.halfX + 4, bounds.halfX - 4), best.y || 0, clamp(best.z, -bounds.halfZ + 4, bounds.halfZ - 4));
       state.aiMoveClock = initial ? config.reaction : (1.6 + ((state.aiCoverIndex * 13) % 8) * 0.18) / config.aggression;
     }
 
@@ -10161,8 +10667,8 @@
       if (tmpVecB.lengthSq() > 0.001) tmpVecB.normalize();
       tmpVecC.set(-tmpVecB.z, 0, tmpVecB.x).multiplyScalar(ai.peekSide * 0.42);
       if (ai.markerBarrelTip) ai.markerBarrelTip.getWorldPosition(tmpVecA);
-      else tmpVecA.set(ai.position.x + tmpVecC.x, Math.max(0.55, Math.min(ai.tacticalHeight, ai.height) * 0.82), ai.position.z + tmpVecC.z);
-      tmpVecB.set(player.bodyCenter.x, player.height * 0.78, player.bodyCenter.z).sub(tmpVecA);
+      else tmpVecA.set(ai.position.x + tmpVecC.x, (ai.position.y || 0) + Math.max(0.55, Math.min(ai.tacticalHeight, ai.height) * 0.82), ai.position.z + tmpVecC.z);
+      tmpVecB.set(player.bodyCenter.x, (player.root.position.y || 0) + player.height * 0.78, player.bodyCenter.z).sub(tmpVecA);
       const shotDistance = Math.hypot(tmpVecB.x, tmpVecB.z);
       tmpVecB.y += 0.5 * PAINTBALL_GRAVITY * Math.pow(shotDistance / PAINTBALL_SPEED, 2) * (0.58 + config.accuracy * 0.28);
       const spread = hasSight ? config.sightSpread : config.blindSpread;
@@ -10257,7 +10763,7 @@
       addKillFeedEntry(selectedSkinName(), 'red', aiDifficultyName(), 'blue');
       playEliminationAudio('shooter');
       scoreTeam('red');
-      tmpVecA.set(ai.position.x, Math.max(0.7, (ai.tacticalHeight || ai.height) * 0.76), ai.position.z);
+      tmpVecA.set(ai.position.x, (ai.position.y || 0) + Math.max(0.7, (ai.tacticalHeight || ai.height) * 0.76), ai.position.z);
       if (!startKillCam({
         shot: shotWithImpact(shotData, hitPos),
         killerName: selectedSkinName(),
@@ -10283,7 +10789,7 @@
       playEliminationAudio('victim');
       scoreTeam('blue');
       tmpVecA.copy(player.bodyCenter);
-      tmpVecA.y = Math.max(0.55, player.height * 0.78);
+      tmpVecA.y = (player.root.position.y || 0) + Math.max(0.55, player.height * 0.78);
       if (!startKillCam({
         shot: shotData,
         killerName: aiDifficultyName(),
@@ -10326,7 +10832,7 @@
       // In 2v2, only end round if the 2nd enemy is also eliminated
       if (GAME_MODE === '2v2' && !allEnemiesEliminated()) return;
       scoreTeam(MY_TEAM);
-      tmpVecA.set(ai.position.x, Math.max(0.7, (ai.tacticalHeight || ai.height) * 0.76), ai.position.z);
+      tmpVecA.set(ai.position.x, (ai.position.y || 0) + Math.max(0.7, (ai.tacticalHeight || ai.height) * 0.76), ai.position.z);
       if (!startKillCam({
         shot: shotData,
         killerName: selectedSkinName(),
@@ -10358,7 +10864,7 @@
       // In 2v2, only score/end round if ally is also dead
       if (GAME_MODE !== '2v2' || allAlliesEliminated()) scoreTeam(winner);
       tmpVecA.copy(player.bodyCenter);
-      tmpVecA.y = Math.max(0.55, player.height * 0.78);
+      tmpVecA.y = (player.root.position.y || 0) + Math.max(0.55, player.height * 0.78);
       // In 2v2 with a living ally, skip kill cam and spectate ally instead
       if (GAME_MODE === '2v2' && allyBotInst()) {
         startAllySpectate();
@@ -10478,7 +10984,7 @@
       const victimStyle = teamCss(victimTeam);
       const fallbackVictim = options.victimType === 'player'
         ? player.bodyCenter
-        : tmpVecC.set(ai.position.x, Math.max(0.7, (ai.tacticalHeight || ai.height) * 0.74), ai.position.z);
+        : tmpVecC.set(ai.position.x, (ai.position.y || 0) + Math.max(0.7, (ai.tacticalHeight || ai.height) * 0.74), ai.position.z);
       setKillCamVector(killCam.victimPosition, options.victimPosition, fallbackVictim);
       const primaryShot = cloneShotData(options.shot) || latestShotForTeam(killerTeam) || fallbackKillCamShot(killerTeam, !!options.killerIsLocal, killCam.victimPosition, options.killerName);
       const shot = shotWithImpact(primaryShot, options.impactPosition || killCam.victimPosition);
@@ -11104,6 +11610,7 @@
     }
 
     function formatMapName(mapName) {
+      if (mapName === 'beachmansion') return 'Beach Mansion';
       if (mapName === 'castle') return 'Castle Siege';
       if (mapName === 'rooftop') return 'Rooftop City';
       if (mapName === 'ghosttown') return 'Ghost Town';
@@ -11111,18 +11618,21 @@
     }
 
     function miniX(x) {
-      return clamp((x + ARENA_HALF_X) / (ARENA_HALF_X * 2), 0, 1) * 180;
+      const bounds = getActiveBounds();
+      return clamp((x + bounds.halfX) / (bounds.halfX * 2), 0, 1) * 180;
     }
 
     function miniY(z) {
-      return clamp((z + ARENA_HALF_Z) / (ARENA_HALF_Z * 2), 0, 1) * 120;
+      const bounds = getActiveBounds();
+      return clamp((z + bounds.halfZ) / (bounds.halfZ * 2), 0, 1) * 120;
     }
 
     function miniRect(x, z, width, depth, fill, stroke, yaw, opacity) {
       const cx = miniX(x);
       const cy = miniY(z);
-      const w = width / (ARENA_HALF_X * 2) * 180;
-      const h = depth / (ARENA_HALF_Z * 2) * 120;
+      const bounds = getActiveBounds();
+      const w = width / (bounds.halfX * 2) * 180;
+      const h = depth / (bounds.halfZ * 2) * 120;
       const angle = -((yaw || 0) * 180 / Math.PI);
       const transform = angle ? ' transform="rotate(' + angle.toFixed(1) + ' ' + cx.toFixed(1) + ' ' + cy.toFixed(1) + ')"' : '';
       return '<rect x="' + (cx - w / 2).toFixed(1) + '" y="' + (cy - h / 2).toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + h.toFixed(1) + '" fill="' + fill + '" stroke="' + (stroke || 'none') + '" opacity="' + (opacity || 1) + '"' + transform + '/>';
@@ -11237,12 +11747,31 @@
       return html;
     }
 
+    function buildBeachMansionMiniMap() {
+      let html = '<rect width="180" height="120" fill="rgba(219,199,153,0.92)"/>';
+      html += miniRect(-36, 0, 8, 60, 'rgba(49,54,58,0.82)', '#f8f1d4', 0, 1);
+      html += miniRect(-28, 0, 14, 8, 'rgba(216,195,154,0.9)', '#fff1d0', 0, 0.95);
+      html += miniRect(-5, 0, 30, 34, 'rgba(255,251,240,0.92)', '#9d7f55', 0, 1);
+      html += miniRect(-6.6, 0, 7.2, 10.0, 'rgba(25,25,25,0.28)', '#222222', 0, 0.9);
+      html += miniRect(13.7, 0, 9.4, 24.0, 'rgba(216,195,154,0.88)', '#fff1d0', 0, 0.95);
+      html += miniRect(25.2, -10.5, 11.6, 5.4, 'rgba(43,183,212,0.9)', '#bff5ff', 0, 0.98);
+      html += miniRect(25.2, 7.8, 8.2, 1.2, '#fffaf0', '#9d7f55', 0.12, 0.95);
+      html += miniRect(30.8, -2.0, 1.2, 8.2, '#fffaf0', '#9d7f55', -0.08, 0.95);
+      html += miniRect(-11.3, 8.3, 9.8, 4.6, 'rgba(194,164,112,0.92)', '#fff1d0', 0, 0.95);
+      html += miniRect(10.5, -11.3, 6.6, 3.8, 'rgba(194,164,112,0.92)', '#fff1d0', 0, 0.95);
+      html += miniCircle(-34, 0, 4.5, 'rgba(35,100,222,0.26)', '#2364de', 1);
+      html += miniCircle(34, 0, 4.5, 'rgba(192,21,26,0.26)', '#c0151a', 1);
+      html += '<path d="M' + miniX(38.5).toFixed(1) + ',0 L' + miniX(38.5).toFixed(1) + ',120" stroke="rgba(130,92,54,0.9)" stroke-width="2" stroke-dasharray="5 4"/>';
+      html += '<rect x="1" y="1" width="178" height="118" fill="none" stroke="rgba(255,255,255,0.88)" stroke-width="2"/>';
+      return html;
+    }
+
     function updateMiniMapLayout() {
       if (!ui.miniLayout) return;
       const mapName = state.selectedMap || 'speedball';
       if (ui.miniLayout.dataset.map === mapName) return;
       ui.miniLayout.dataset.map = mapName;
-      ui.miniLayout.innerHTML = mapName === 'castle' ? buildCastleMiniMap() : mapName === 'rooftop' ? buildRooftopMiniMap() : mapName === 'ghosttown' ? buildGhostTownMiniMap() : mapName === 'funland' ? buildFunlandMiniMap() : buildSpeedballMiniMap();
+      ui.miniLayout.innerHTML = mapName === 'beachmansion' ? buildBeachMansionMiniMap() : mapName === 'castle' ? buildCastleMiniMap() : mapName === 'rooftop' ? buildRooftopMiniMap() : mapName === 'ghosttown' ? buildGhostTownMiniMap() : mapName === 'funland' ? buildFunlandMiniMap() : buildSpeedballMiniMap();
       if (ui.miniMapName) ui.miniMapName.textContent = formatMapName(mapName);
     }
 
@@ -11590,6 +12119,33 @@
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 0.55;
       if (castleSkyDome && castleSkyDome.parent) scene.remove(castleSkyDome);
+      if (active && active.ambient === 'beachmansion') {
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        scene.background = new THREE.Color(0x87CEEB);
+        scene.fog = new THREE.Fog(0x87CEEB, 120, 360);
+        skyStatus = 'beachmansion-day';
+        renderer.toneMappingExposure = 0.95;
+        ambientLight.color.setHex(0xfff5e0);
+        ambientLight.intensity = 0.6;
+        hemiLight.color.setHex(0x87CEEB);
+        hemiLight.groundColor.setHex(0xf5e6c8);
+        hemiLight.intensity = 1.0;
+        keyLight.color.setHex(0xfff5e0);
+        keyLight.intensity = 2.5;
+        keyLight.position.set(40, 80, 20);
+        keyLight.castShadow = true;
+        keyLight.shadow.mapSize.set(2048, 2048);
+        keyLight.shadow.camera.left = -50;
+        keyLight.shadow.camera.right = 50;
+        keyLight.shadow.camera.top = 40;
+        keyLight.shadow.camera.bottom = -40;
+        keyLight.shadow.camera.far = 180;
+        keyLight.shadow.bias = -0.0001;
+        keyLight.target.position.set(0, 0, 0);
+        keyLight.target.updateMatrixWorld();
+        return;
+      }
       if (active && active.ambient === 'castle') {
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;

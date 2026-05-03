@@ -492,7 +492,7 @@
     /* ─── MAP GRID ─── */
     .mapGrid {
       display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-template-columns: repeat(6, minmax(0, 1fr));
       gap: 8px;
       height: 100%;
       min-height: 0;
@@ -1295,7 +1295,7 @@
             </div>
             <div class="statRow">
               <div class="statItem">
-                <span class="statNum"><span class="countup" data-target="4">0</span></span>
+                <span class="statNum"><span class="countup" data-target="6">0</span></span>
                 <span class="statLabel">Maps</span>
               </div>
               <div class="statItem">
@@ -1349,6 +1349,12 @@
               <span class="cardTag">Fortress</span>
               <span class="cardName">Castle Siege</span>
               <span class="cardSub">Medieval fortress siege</span>
+            </button>
+            <button class="mapCard choice" data-value="beachmansion" type="button">
+              <iframe class="mapPreviewFrame" data-map-preview="beachmansion" title="Beach Mansion drone preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+              <span class="cardTag">Estate</span>
+              <span class="cardName">Beach Mansion</span>
+              <span class="cardSub">Mediterranean cliff-side villa</span>
             </button>
           </div>
 
@@ -1558,6 +1564,12 @@
               <span class="cardTag">Fortress</span>
               <span class="cardName">Castle Siege</span>
               <span class="cardSub">Medieval fortress siege</span>
+            </button>
+            <button class="mapCard choice" data-value="beachmansion" type="button">
+              <iframe class="mapPreviewFrame" data-map-preview="beachmansion" title="Beach Mansion drone preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+              <span class="cardTag">Estate</span>
+              <span class="cardName">Beach Mansion</span>
+              <span class="cardSub">Mediterranean cliff-side villa</span>
             </button>
           </div>
           <div class="optionGrid roomSettingsOptions">
@@ -2369,6 +2381,7 @@
     }
 
     function formatMap(map) {
+      if (map === 'beachmansion') return 'Beach Mansion';
       if (map === 'castle') return 'Castle Siege';
       if (map === 'rooftop')  return 'Rooftop City';
       if (map === 'ghosttown') return 'Ghost Town';
