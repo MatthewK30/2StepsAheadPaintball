@@ -4182,10 +4182,8 @@
 
     function createCastleSiegeMaterials() {
       const standard = (color, opts = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.9, metalness: 0.02, envMap: environmentMap, envMapIntensity: 0.4, ...opts });
-      const stone = standard(0x9a9a96, { roughness: 0.88, metalness: 0.05, envMapIntensity: 0.35 });
-      const cobble = standard(0x808078, { roughness: 0.9, metalness: 0.02, vertexColors: true, envMapIntensity: 0.3 });
-      textureLibrary.apply(stone, 'concrete', 2.4, 1.8);
-      textureLibrary.apply(cobble, 'concrete', 15, 8);
+      const stone = standard(0x8c8f8a, { roughness: 0.85, metalness: 0.04, envMapIntensity: 0.35 });
+      const cobble = standard(0x747870, { roughness: 0.9, metalness: 0.02, vertexColors: true, envMapIntensity: 0.3 });
       return {
         stone,
         cobble,
