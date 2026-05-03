@@ -4182,8 +4182,32 @@
 
     function createCastleSiegeMaterials() {
       const standard = (color, opts = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.9, metalness: 0.02, envMap: environmentMap, envMapIntensity: 0.4, ...opts });
-      const stone = standard(0x8c8f8a, { roughness: 0.85, metalness: 0.04, envMapIntensity: 0.35 });
-      const cobble = standard(0x747870, { roughness: 0.9, metalness: 0.02, vertexColors: true, envMapIntensity: 0.3 });
+      // Generate a grey brick canvas texture for walls
+      const castleBrickTex = (() => {
+        const c = document.createElement('canvas'); c.width = 256; c.height = 128;
+        const ctx = c.getContext('2d');
+        ctx.fillStyle = '#8a8d88'; ctx.fillRect(0, 0, 256, 128);
+        const bw = 40, bh = 18, gap = 3;
+        ctx.fillStyle = '#6a6e68';
+        for (let row = 0; row * (bh + gap) < 128; row++) {
+          const offset = (row % 2) * (bw / 2);
+          for (let col = -1; col * (bw + gap) < 256 + bw; col++) {
+            const x = col * (bw + gap) + offset, y = row * (bh + gap);
+            // slight color variation per brick
+            const v = (Math.sin(col * 3.7 + row * 5.3) * 0.06 + 1);
+            ctx.fillStyle = `rgb(${Math.round(110*v)},${Math.round(113*v)},${Math.round(108*v)})`;
+            ctx.fillRect(x + gap, y + gap, bw - gap, bh - gap);
+          }
+        }
+        const tex = new THREE.CanvasTexture(c);
+        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+        tex.colorSpace = THREE.SRGBColorSpace;
+        return tex;
+      })();
+      const stone = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.88, metalness: 0.04, map: castleBrickTex, envMap: environmentMap, envMapIntensity: 0.35 });
+      castleBrickTex.repeat.set(3.0, 2.0);
+      // Cobble floor — dark stone tiles with vertex color variation
+      const cobble = standard(0x606460, { roughness: 0.92, metalness: 0.02, vertexColors: true, envMapIntensity: 0.2 });
       return {
         stone,
         cobble,
@@ -4217,7 +4241,7 @@
         const z = pos.getZ(i);
         const tile = ((Math.floor((x + ARENA_HALF_X) / 2) + Math.floor((z + ARENA_HALF_Z) / 2)) & 1) ? 0.02 : -0.015;
         const wear = Math.sin(x * 0.7) * 0.018 + Math.cos(z * 0.9) * 0.018 + (((i * 17) % 11) - 5) * 0.003;
-        color.setHex(0x808078).offsetHSL(0, -0.03, tile + wear);
+        color.setHex(0x606460).offsetHSL(0, -0.03, tile + wear);
         colors.push(color.r, color.g, color.b);
       }
       geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
