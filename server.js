@@ -362,6 +362,30 @@ io.on('connection', (socket) => {
     pruneBotConflicts(room)
     const allReady = room.players.length > 0 && room.players.every(p => p.ready)
     if (!allReady) { socket.emit('start_error', 'Not all players ready'); return }
+    if (room.gameMode === '2v2') {
+      const totalSlots = 4
+      ensureRoomBots(room)
+      const teamOccupants = { red: 0, blue: 0 }
+      room.players.forEach(p => { if (p.team === 'red' || p.team === 'blue') teamOccupants[p.team]++ })
+      const filled = new Set()
+      ;['red', 'blue'].forEach(team => {
+        for (let i = 0; i < teamOccupants[team]; i++) filled.add(team === 'red' ? i : i + 2)
+      })
+      room.bots.forEach(b => filled.add(normalizeSlotIndex(b.slotIndex)))
+      for (let slot = 0; slot < totalSlots; slot++) {
+        if (filled.has(slot)) continue
+        const idx = Math.floor(Math.random() * skins.length)
+        room.bots.push({
+          slotIndex: slot,
+          team: slotTeam(slot),
+          difficulty: 'pro',
+          skinId: skins[idx].id,
+          skinFile: skins[idx].file,
+          skinName: skins[idx].name
+        })
+      }
+      io.to(code).emit('lobby_update', room)
+    }
     room.state = 'playing'
     io.to(code).emit('game_start', { room, bots: room.bots || [] })
   })
