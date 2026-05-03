@@ -6224,13 +6224,23 @@
         return group;
       };
 
-      const jersey = teamMats.primary;
-      const helmet = teamMats.helmet;
-      const rim = teamMats.rim;
-      const pants = materials.rubber;
-      const pad = materials.black;
-      const glove = materials.glove;
-      const boot = materials.rubber;
+      const baseTeamColor = team === 'blue' ? 0x1b54d8 : 0xc81824;
+      const baseDarkColor = team === 'blue' ? 0x0a2470 : 0x6a0a12;
+      const baseTrimColor = team === 'blue' ? 0x5a9eff : 0xff5566;
+      const armorMat = new THREE.MeshPhysicalMaterial({ color: baseTeamColor, roughness: 0.32, metalness: 0.55, clearcoat: 0.85, clearcoatRoughness: 0.18, envMap: environmentMap, envMapIntensity: 0.9 });
+      const armorDarkMat = new THREE.MeshPhysicalMaterial({ color: baseDarkColor, roughness: 0.45, metalness: 0.5, clearcoat: 0.6, clearcoatRoughness: 0.25, envMap: environmentMap, envMapIntensity: 0.7 });
+      const trimMat = new THREE.MeshStandardMaterial({ color: baseTrimColor, roughness: 0.35, metalness: 0.6, emissive: baseTrimColor, emissiveIntensity: 0.18 });
+      const jointMat = new THREE.MeshStandardMaterial({ color: 0x2a2d34, roughness: 0.55, metalness: 0.5 });
+      const bootMat = new THREE.MeshPhysicalMaterial({ color: 0x14161c, roughness: 0.45, metalness: 0.4, clearcoat: 0.4 });
+      const gloveMat = new THREE.MeshStandardMaterial({ color: 0x1a1c22, roughness: 0.6, metalness: 0.35 });
+      const plateMat = new THREE.MeshPhysicalMaterial({ color: 0xb8c0c8, roughness: 0.28, metalness: 0.85, clearcoat: 0.7, envMap: environmentMap, envMapIntensity: 1.1 });
+      const jersey = armorMat;
+      const helmet = armorMat;
+      const rim = trimMat;
+      const pants = armorDarkMat;
+      const pad = jointMat;
+      const glove = gloveMat;
+      const boot = bootMat;
 
       const hips = addBox('hips', pants, 0, 0.92, 0.01, 0.24, 0.11, 0.17, root);
       aiInst.limbs.hips = hips;
@@ -9025,38 +9035,44 @@
       const crouch = visual.crouch;
       const prone = visual.prone;
       const aim = visual.aim;
-      const cycle = state.elapsed * (moving ? 7.4 + run * 5.2 : 2.1);
+      const cycle = state.elapsed * (moving ? 8.4 + run * 5.6 : 1.6);
       const stride = Math.sin(cycle);
+      const strideCos = Math.cos(cycle);
       const crawl = Math.sin(state.elapsed * 4.4);
       const idle = Math.sin(state.elapsed * Math.PI * 2 / 3);
-      const legAmp = (25 + run * 15) * deg * moveBlend * (1 - prone);
-      const armAmp = (20 + run * 15) * deg * moveBlend * (1 - prone);
-      const bob = (moving ? Math.abs(Math.cos(cycle)) * (0.025 + run * 0.03) : idle * 0.02) * (1 - prone);
+      const legAmp = (38 + run * 22) * deg * moveBlend * (1 - prone);
+      const armAmp = (32 + run * 24) * deg * moveBlend * (1 - prone);
+      const bob = (moving ? -Math.abs(strideCos) * (0.05 + run * 0.06) + 0.05 : idle * 0.008) * (1 - prone);
       root.position.y = bob - crouch * 0.22 + prone * 0.18;
-      root.position.x = idle * 0.012 * (1 - moveBlend) * (1 - prone);
-      root.rotation.x = -run * 0.16 - crouch * 0.22 - prone * Math.PI * 0.5;
-      root.rotation.z = idle * 0.025 * (1 - moveBlend) * (1 - prone);
+      root.position.x = idle * 0.005 * (1 - moveBlend) * (1 - prone);
+      root.rotation.x = -run * 0.28 - crouch * 0.22 - prone * Math.PI * 0.5 - moveBlend * 0.08;
+      root.rotation.z = idle * 0.012 * (1 - moveBlend) * (1 - prone) + stride * 0.04 * moveBlend * (1 - prone);
 
       const sideLean = atCover ? ai.peekSide * 0.1 : 0;
       ai.group.rotation.z += (sideLean - ai.group.rotation.z) * Math.min(1, dt * 8);
-      ai.body.position.y = 1.22 + idle * 0.008 * (1 - moving) * (1 - prone);
-      ai.body.rotation.x += ((-0.08 * crouch - 0.08 * run) - ai.body.rotation.x) * rate;
+      ai.body.position.y = 1.22 + idle * 0.004 * (1 - moving) * (1 - prone);
+      ai.body.rotation.x += ((-0.08 * crouch - 0.12 * run) - ai.body.rotation.x) * rate;
+      ai.body.rotation.y += ((stride * 0.08 * moveBlend * (1 - prone)) - ai.body.rotation.y) * rate;
 
       const leftLeg = stride * legAmp;
       const rightLeg = -stride * legAmp;
       setRot(ai.limbs.leftThigh, leftLeg - crouch * 0.55 + prone * (-0.55 + crawl * 0.16), 0, -0.035, 12);
       setRot(ai.limbs.rightThigh, rightLeg - crouch * 0.55 + prone * (-0.55 - crawl * 0.16), 0, 0.035, 12);
-      setRot(ai.limbs.leftShin, Math.max(0, -stride) * 0.72 * moveBlend + crouch * 0.95 + prone * (0.85 - crawl * 0.18), 0, 0, 12);
-      setRot(ai.limbs.rightShin, Math.max(0, stride) * 0.72 * moveBlend + crouch * 0.95 + prone * (0.85 + crawl * 0.18), 0, 0, 12);
-      setRot(ai.limbs.leftFoot, -0.1 - crouch * 0.2, 0, 0, 12);
-      setRot(ai.limbs.rightFoot, -0.1 - crouch * 0.2, 0, 0, 12);
+      const leftKneeBend = Math.max(0, -stride) * (0.95 + run * 0.45) * moveBlend;
+      const rightKneeBend = Math.max(0, stride) * (0.95 + run * 0.45) * moveBlend;
+      setRot(ai.limbs.leftShin, leftKneeBend + crouch * 0.95 + prone * (0.85 - crawl * 0.18), 0, 0, 12);
+      setRot(ai.limbs.rightShin, rightKneeBend + crouch * 0.95 + prone * (0.85 + crawl * 0.18), 0, 0, 12);
+      setRot(ai.limbs.leftFoot, -0.18 - crouch * 0.2 + leftKneeBend * 0.55, 0, 0, 12);
+      setRot(ai.limbs.rightFoot, -0.18 - crouch * 0.2 + rightKneeBend * 0.55, 0, 0, 12);
 
-      const leftWalkArm = -stride * armAmp + idle * 0.04 * (1 - moveBlend);
-      const rightWalkArm = stride * armAmp - idle * 0.04 * (1 - moveBlend);
+      const leftWalkArm = -stride * armAmp + idle * 0.03 * (1 - moveBlend);
+      const rightWalkArm = stride * armAmp - idle * 0.03 * (1 - moveBlend);
       setRot(ai.limbs.leftUpperArm, leftWalkArm * (1 - aim) + aim * 1.3 + prone * (1.05 + crawl * 0.2), 0, -0.11 - aim * 0.08, 12);
       setRot(ai.limbs.rightUpperArm, rightWalkArm * (1 - aim) + aim * 1.16 + prone * (1.0 - crawl * 0.2), 0, 0.11 + aim * 0.1, 12);
-      setRot(ai.limbs.leftForeArm, -0.08 - aim * 0.18 + prone * -0.78, 0, 0, 12);
-      setRot(ai.limbs.rightForeArm, -0.12 - aim * 0.7 + prone * -0.85, 0, 0, 12);
+      const leftForeBend = (1 - aim) * (0.55 + Math.max(0, -stride) * 0.55 * moveBlend);
+      const rightForeBend = (1 - aim) * (0.55 + Math.max(0, stride) * 0.55 * moveBlend);
+      setRot(ai.limbs.leftForeArm, -0.08 - aim * 0.18 + prone * -0.78 - leftForeBend, 0, 0, 12);
+      setRot(ai.limbs.rightForeArm, -0.12 - aim * 0.7 + prone * -0.85 - rightForeBend, 0, 0, 12);
 
       if (ai.marker) {
         const aimBlend = aim * (1 - prone);
