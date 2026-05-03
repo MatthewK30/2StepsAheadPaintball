@@ -11363,14 +11363,14 @@
         scene.background = new THREE.Color(0x3a4a6b);
         scene.fog = new THREE.Fog(0x3a4a6b, 60, 160);
         skyStatus = 'castle-night';
-        renderer.toneMappingExposure = 1.1;
-        // Bright enough to see everything, cool blue-grey ambient
-        ambientLight.color.setHex(0x8090b8);
-        ambientLight.intensity = 1.2;
-        // Warm directional sun low on the horizon
-        keyLight.color.setHex(0xffcc88);
-        keyLight.intensity = 2.2;
-        keyLight.position.set(40, 60, 30);
+        renderer.toneMappingExposure = 2.2;
+        // Bright cool-white ambient so everything is clearly visible
+        ambientLight.color.setHex(0xc8d8f0);
+        ambientLight.intensity = 3.5;
+        // Strong warm sun
+        keyLight.color.setHex(0xffeebb);
+        keyLight.intensity = 4.5;
+        keyLight.position.set(40, 80, 30);
         keyLight.castShadow = true;
         keyLight.shadow.mapSize.set(2048, 2048);
         keyLight.shadow.camera.left = -80;
@@ -11381,10 +11381,10 @@
         keyLight.shadow.bias = -0.0001;
         keyLight.target.position.set(0, 0, 0);
         keyLight.target.updateMatrixWorld();
-        // Subtle blue-sky fill from above
-        hemiLight.color.setHex(0x7090cc);
-        hemiLight.groundColor.setHex(0x3d3020);
-        hemiLight.intensity = 0.6;
+        // Strong sky fill
+        hemiLight.color.setHex(0x9ab0e0);
+        hemiLight.groundColor.setHex(0x6a5a3a);
+        hemiLight.intensity = 1.8;
         return;
       }
       if (active && active.ambient === 'funland') {
