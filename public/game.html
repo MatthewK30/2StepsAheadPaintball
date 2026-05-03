@@ -11351,32 +11351,65 @@
 
     function buildPlayerKillCamProxy() {
       removePlayerKillCamProxy();
-      const tm = getTeamMaterials(MY_TEAM);
+      const baseColor = MY_TEAM === 'blue' ? 0x1b54d8 : 0xc81824;
+      const armorMat = new THREE.MeshPhysicalMaterial({ color: baseColor, roughness: 0.28, metalness: 0.55, clearcoat: 0.95, clearcoatRoughness: 0.12, envMap: environmentMap, envMapIntensity: 1.1 });
+      const jointMat = new THREE.MeshStandardMaterial({ color: 0x1a1d24, roughness: 0.5, metalness: 0.6 });
       const g = new THREE.Group();
-      const torso = new THREE.Mesh(geometries.cylinderLow, tm.primary);
-      torso.scale.set(0.28, 0.35, 0.22);
-      torso.position.y = 0.86;
-      const head = new THREE.Mesh(geometries.sphere, tm.primary);
-      head.scale.setScalar(0.22);
-      head.position.y = 1.52;
-      [-0.38, 0.38].forEach((x) => {
-        const arm = new THREE.Mesh(geometries.cylinderLow, tm.dark);
-        arm.scale.set(0.07, 0.28, 0.07);
-        arm.position.set(x, 0.88, 0);
-        g.add(arm);
+      const add = (geo, mat, x, y, z, sx, sy, sz) => {
+        const m = new THREE.Mesh(geo, mat); m.position.set(x,y,z); m.scale.set(sx,sy,sz); g.add(m); return m;
+      };
+      const bone = (x, y, z, len, rotZ) => {
+        const m = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, len, 6, 1), jointMat);
+        m.position.set(x,y,z); if (rotZ) m.rotation.z = rotZ; g.add(m);
+      };
+      // head
+      const faceCube = buildSkinFaceCube(state.selectedSkin || DEFAULT_SKIN, 0.32);
+      faceCube.position.set(0, 1.66, 0); g.add(faceCube);
+      // neck
+      add(geometries.sphere, jointMat, 0, 1.52, 0, 0.042, 0.06, 0.042);
+      bone(0, 1.37, 0, 0.3);
+      // torso
+      add(geometries.sphere, armorMat, 0, 1.24, 0, 0.17, 0.22, 0.14);
+      bone(0, 1.05, 0, 0.14);
+      // hips
+      add(geometries.sphere, armorMat, 0, 0.92, 0, 0.13, 0.14, 0.12);
+      // shoulders
+      add(geometries.sphere, jointMat, -0.21, 1.38, 0, 0.045, 0.045, 0.045);
+      add(geometries.sphere, jointMat,  0.21, 1.38, 0, 0.045, 0.045, 0.045);
+      add(geometries.sphere, armorMat, -0.29, 1.38, 0, 0.095, 0.095, 0.095);
+      add(geometries.sphere, armorMat,  0.29, 1.38, 0, 0.095, 0.095, 0.095);
+      bone(-0.33, 1.38, 0, 0.06, Math.PI/2);
+      bone( 0.33, 1.38, 0, 0.06, Math.PI/2);
+      // arms
+      [-1, 1].forEach(side => {
+        const ux = side * 0.31, uy = 1.3;
+        bone(ux, uy - 0.12, 0, 0.24);
+        add(geometries.sphere, armorMat, ux, uy - 0.11, 0, 0.078, 0.1, 0.078);
+        add(geometries.sphere, jointMat, ux, uy - 0.24, 0, 0.042, 0.042, 0.042);
+        bone(ux, uy - 0.24 - 0.115, 0, 0.23);
+        add(geometries.sphere, armorMat, ux, uy - 0.35, 0, 0.068, 0.088, 0.068);
+        add(geometries.sphere, jointMat, ux, uy - 0.47, 0, 0.05, 0.05, 0.05);
       });
-      [-0.13, 0.13].forEach((x) => {
-        const leg = new THREE.Mesh(geometries.cylinderLow, tm.dark);
-        leg.scale.set(0.09, 0.3, 0.09);
-        leg.position.set(x, 0.28, 0);
-        g.add(leg);
+      // hip joints
+      add(geometries.sphere, jointMat, -0.1, 0.88, 0, 0.044, 0.044, 0.044);
+      add(geometries.sphere, jointMat,  0.1, 0.88, 0, 0.044, 0.044, 0.044);
+      add(geometries.sphere, armorMat, -0.1, 0.8, 0, 0.082, 0.082, 0.082);
+      add(geometries.sphere, armorMat,  0.1, 0.8, 0, 0.082, 0.082, 0.082);
+      bone(-0.1, 0.84, 0, 0.12);
+      bone( 0.1, 0.84, 0, 0.12);
+      // legs
+      [-1, 1].forEach(side => {
+        const lx = side * 0.1, ly = 0.78;
+        bone(lx, ly - 0.135, 0, 0.27);
+        add(geometries.sphere, armorMat, lx, ly - 0.13, 0, 0.082, 0.105, 0.082);
+        add(geometries.sphere, jointMat, lx, ly - 0.27, 0, 0.046, 0.046, 0.046);
+        bone(lx, ly - 0.27 - 0.125, 0, 0.25);
+        add(geometries.sphere, armorMat, lx, ly - 0.39, 0, 0.072, 0.1, 0.072);
+        add(geometries.sphere, jointMat, lx, ly - 0.52, 0, 0.065, 0.048, 0.088);
       });
-      g.add(torso, head);
-      // paint hit mark on chest
+      // paint splat on chest
       const hitMark = new THREE.Mesh(geometries.sphere, getTeamMaterials(MULTIPLAYER ? (MY_TEAM === 'red' ? 'blue' : 'red') : 'blue').paint);
-      hitMark.scale.set(0.19, 0.13, 0.07);
-      hitMark.position.set(0.03, 0.95, 0.23);
-      g.add(hitMark);
+      hitMark.scale.set(0.19, 0.13, 0.07); hitMark.position.set(0.03, 1.24, -0.15); g.add(hitMark);
       g.position.copy(player.root.position);
       g.rotation.y = player.yaw;
       scene.add(g);
