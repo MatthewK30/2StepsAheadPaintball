@@ -1494,7 +1494,7 @@
 
     .cards {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: clamp(16px, 2.4vw, 26px);
     }
 
@@ -2083,6 +2083,14 @@
             <p class="cardCopy">Grass roof / huge city drop</p>
           </div>
         </div>
+        <div class="card" data-map="castle" tabindex="0">
+          <canvas class="cardPreview" data-preview="castle" aria-hidden="true"></canvas>
+          <div class="cardText">
+            <p class="cardTag">Fortress</p>
+            <p class="cardTitle">CASTLE SIEGE</p>
+            <p class="cardCopy">MEDIEVAL FORTRESS SIEGE</p>
+          </div>
+        </div>
       </div>
       <div class="menuOptions">
         <div class="optionGroup">
@@ -2415,7 +2423,7 @@
     const MY_USERNAME = urlParams.get('username') || 'Player';
     const GAME_MODE = urlParams.get('mode') || '1v1';
     const requestedMap = urlParams.get('map');
-    const SELECTED_MAP = requestedMap === 'funland' || requestedMap === 'ghosttown' || requestedMap === 'rooftop' ? requestedMap : 'speedball';
+    const SELECTED_MAP = requestedMap === 'funland' || requestedMap === 'ghosttown' || requestedMap === 'rooftop' || requestedMap === 'castle' ? requestedMap : 'speedball';
     const requestedDifficulty = urlParams.get('difficulty');
     const SELECTED_DIFFICULTY = AI_DIFFICULTIES[requestedDifficulty] ? requestedDifficulty : 'pro';
     const FIRST_TO = parseInt(urlParams.get('firstto'), 10) === 10 ? 10 : 5;
@@ -2771,7 +2779,7 @@
     const keyLight = new THREE.DirectionalLight(0xe8eef0, 0.6);
     keyLight.position.set(50, 80, 30);
     keyLight.castShadow = false;
-    keyLight.shadow.mapSize.set(4096, 4096);
+    keyLight.shadow.mapSize.set(2048, 2048);
     keyLight.shadow.camera.left = -60;
     keyLight.shadow.camera.right = 60;
     keyLight.shadow.camera.top = 60;
@@ -3390,7 +3398,8 @@
         funland: createFunlandMap(),
         speedball: createSpeedballMap(),
         ghosttown: createGhostTownMap(),
-        rooftop: createRooftopCityMap()
+        rooftop: createRooftopCityMap(),
+        castle: createCastleSiegeMap()
       };
       return built;
     }
@@ -4137,6 +4146,335 @@
       addRooftopCover(group, colliders, coverPoints, roof);
       finalizeRooftopShadows(group);
       return { group, colliders, shootables, coverPoints, sky: 0x0a0014, fog: 0x0d0020, ambient: 'rooftop' };
+    }
+
+    function createCastleSiegeMap() {
+      const group = new THREE.Group();
+      const colliders = [];
+      const shootables = [];
+      colliders.shootables = shootables;
+      const coverPoints = [];
+      const castle = createCastleSiegeMaterials();
+
+      group.add(makeCastleForestFloor(castle.forestFloor));
+      group.add(makeCastleCobblestoneGround(castle.cobble));
+      addCastleBoundary(group, colliders, castle.invisible);
+      addSpawnMark(group, player.spawn.x, 0, RED, false);
+      addSpawnMark(group, ai.spawn.x, 0, BLUE, false);
+
+      addCastleSideHallways(group, colliders, coverPoints, castle);
+      addCastleFortress(group, colliders, coverPoints, castle, -1);
+      addCastleFortress(group, colliders, coverPoints, castle, 1);
+      addCastleCourtyardCover(group, colliders, coverPoints, castle);
+      addCastleForest(group, castle);
+
+      finalizeMapShadows(group);
+      group.traverse((child) => {
+        if (child.userData.castleForest) {
+          child.castShadow = false;
+          child.receiveShadow = true;
+        }
+      });
+      return { group, colliders, shootables, coverPoints, sky: 0x0a0810, fog: 0x0a0810, ambient: 'castle', castleTorches: group.userData.castleTorches || [] };
+    }
+
+    function createCastleSiegeMaterials() {
+      const standard = (color, opts = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.9, metalness: 0.02, envMap: environmentMap, envMapIntensity: 0.18, ...opts });
+      const stone = standard(0x555550, { roughness: 0.95, metalness: 0.05, envMapIntensity: 0.16 });
+      const cobble = standard(0x3a3a38, { roughness: 0.96, metalness: 0.02, vertexColors: true, envMapIntensity: 0.12 });
+      textureLibrary.apply(stone, 'concrete', 2.4, 1.8);
+      textureLibrary.apply(cobble, 'concrete', 15, 8);
+      return {
+        stone,
+        cobble,
+        forestFloor: standard(0x1a1208, { roughness: 1, metalness: 0, envMapIntensity: 0.04 }),
+        wood: standard(0x4f321c, { roughness: 0.92, metalness: 0, envMapIntensity: 0.12 }),
+        trunk: standard(0x2a1a0a, { roughness: 0.96, metalness: 0, envMapIntensity: 0.08 }),
+        canopy: standard(0x1a2d0a, { roughness: 1, metalness: 0, envMapIntensity: 0.05 }),
+        water: standard(0x004488, { roughness: 0.3, metalness: 0, emissive: 0x004488, emissiveIntensity: 0.3, transparent: true, opacity: 0.7 }),
+        flame: standard(0xff8844, { roughness: 0.38, metalness: 0, emissive: 0xff6622, emissiveIntensity: 1.45, transparent: true, opacity: 0.9 }),
+        invisible: new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0, depthWrite: false })
+      };
+    }
+
+    function makeCastleForestFloor(material) {
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(92, 64, 1, 1), material);
+      mesh.rotation.x = -Math.PI / 2;
+      mesh.position.y = -0.035;
+      mesh.castShadow = false;
+      mesh.receiveShadow = true;
+      return mesh;
+    }
+
+    function makeCastleCobblestoneGround(material) {
+      const geo = new THREE.PlaneGeometry(ARENA_HALF_X * 2, ARENA_HALF_Z * 2, 48, 32);
+      geo.rotateX(-Math.PI / 2);
+      const color = new THREE.Color();
+      const colors = [];
+      const pos = geo.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i);
+        const z = pos.getZ(i);
+        const tile = ((Math.floor((x + ARENA_HALF_X) / 2) + Math.floor((z + ARENA_HALF_Z) / 2)) & 1) ? 0.02 : -0.015;
+        const wear = Math.sin(x * 0.7) * 0.018 + Math.cos(z * 0.9) * 0.018 + (((i * 17) % 11) - 5) * 0.003;
+        color.setHex(0x3a3a38).offsetHSL(0, -0.03, tile + wear);
+        colors.push(color.r, color.g, color.b);
+      }
+      geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+      const mesh = new THREE.Mesh(geo, material);
+      mesh.castShadow = false;
+      mesh.receiveShadow = true;
+      return mesh;
+    }
+
+    function addCastleBoundary(group, colliders, material) {
+      addBox(group, 0, 1.5, -ARENA_HALF_Z - 0.1, ARENA_HALF_X * 2 + 0.6, 3.0, 0.2, material, colliders, 0);
+      addBox(group, 0, 1.5, ARENA_HALF_Z + 0.1, ARENA_HALF_X * 2 + 0.6, 3.0, 0.2, material, colliders, 0);
+      addBox(group, -ARENA_HALF_X - 0.1, 1.5, 0, 0.2, 3.0, ARENA_HALF_Z * 2 + 0.6, material, colliders, 0);
+      addBox(group, ARENA_HALF_X + 0.1, 1.5, 0, 0.2, 3.0, ARENA_HALF_Z * 2 + 0.6, material, colliders, 0);
+    }
+
+    function addCastleFortress(group, colliders, points, castle, side) {
+      const centerX = side * 23;
+      const halfDepth = 6;
+      const halfWidth = 9;
+      const wall = 0.6;
+      const height = 4;
+      const frontX = centerX - side * halfDepth;
+      const backX = centerX + side * halfDepth;
+      const minX = Math.min(frontX, backX);
+      const maxX = Math.max(frontX, backX);
+      const gateW = 4;
+      const gateH = 3;
+      const sideDoorW = 2;
+      const sideDoorH = 2.5;
+      const teamColor = side < 0 ? RED : BLUE;
+
+      addCastleWallWithGate(group, colliders, frontX, halfWidth, wall, height, gateW, gateH, castle.stone);
+      addBox(group, backX, height / 2, 0, wall, height, halfWidth * 2, castle.stone, colliders, 0);
+      addCastleSideWallWithDoor(group, colliders, minX, maxX, halfWidth, wall, height, sideDoorW, sideDoorH, castle.stone);
+      addCastleSideWallWithDoor(group, colliders, minX, maxX, -halfWidth, wall, height, sideDoorW, sideDoorH, castle.stone);
+
+      [[minX, -halfWidth], [minX, halfWidth], [maxX, -halfWidth], [maxX, halfWidth]].forEach((corner) => addCastleTower(group, colliders, castle, corner[0], corner[1]));
+      addCastleBattlements(group, castle, centerX, frontX, backX, minX, maxX, halfWidth, wall);
+      addCastleStaircase(group, castle, frontX, side, side < 0 ? 5.7 : -5.7);
+      addCylinder(group, centerX + side * 1.85, 2, -3.6, 0.4, 4, castle.stone, colliders, 0, false, 1);
+      addCylinder(group, centerX + side * 1.85, 2, 3.6, 0.4, 4, castle.stone, colliders, 0, false, 1);
+      addCoverPoints(points, centerX, 0, 10, 10, side < 0 ? 'red' : 'blue', 4);
+
+      addBox(group, centerX, 0.022, 0, 5.2, 0.018, 5.2, side < 0 ? materials.redRim : materials.blueRim, null, 0);
+      addBox(group, backX - side * 0.35, 2.45, 0, 0.08, 1.0, 4.2, side < 0 ? materials.flagRed : materials.flagBlue, null, 0);
+      addBox(group, backX - side * 0.43, 2.45, 0, 0.06, 1.18, 0.08, castle.wood, null, 0);
+
+      addCastleTorch(group, castle, frontX - side * 0.42, 2.1, -5.1, teamColor);
+      addCastleTorch(group, castle, frontX - side * 0.42, 2.1, 5.1, teamColor);
+      addCastleTorch(group, castle, centerX, 2.1, halfWidth - 0.42, teamColor);
+      addCastleTorch(group, castle, centerX, 2.1, -halfWidth + 0.42, teamColor);
+    }
+
+    function addCastleWallWithGate(group, colliders, x, halfWidth, thickness, height, gateW, gateH, material) {
+      const sideLen = (halfWidth * 2 - gateW) / 2;
+      addBox(group, x, height / 2, -gateW / 2 - sideLen / 2, thickness, height, sideLen, material, colliders, 0);
+      addBox(group, x, height / 2, gateW / 2 + sideLen / 2, thickness, height, sideLen, material, colliders, 0);
+      addBox(group, x, gateH + (height - gateH) / 2, 0, thickness, height - gateH, gateW, material, colliders, 0);
+      addBox(group, x, 0.18, -gateW * 0.65, thickness * 1.15, 0.36, 0.22, materials.black, null, 0);
+      addBox(group, x, 0.18, gateW * 0.65, thickness * 1.15, 0.36, 0.22, materials.black, null, 0);
+    }
+
+    function addCastleSideWallWithDoor(group, colliders, minX, maxX, z, thickness, height, doorW, doorH, material) {
+      const openCenter = (minX + maxX) / 2;
+      const leftEnd = openCenter - doorW / 2;
+      const rightStart = openCenter + doorW / 2;
+      addBox(group, (minX + leftEnd) / 2, height / 2, z, leftEnd - minX, height, thickness, material, colliders, 0);
+      addBox(group, (rightStart + maxX) / 2, height / 2, z, maxX - rightStart, height, thickness, material, colliders, 0);
+      addBox(group, openCenter, doorH + (height - doorH) / 2, z, doorW, height - doorH, thickness, material, colliders, 0);
+    }
+
+    function addCastleTower(group, colliders, castle, x, z) {
+      addCylinder(group, x, 2.75, z, 1.5, 5.5, castle.stone, colliders, 0, false, 1);
+      addCylinder(group, x, 5.65, z, 1.65, 0.28, castle.stone, null, 0, false, 1);
+      for (let i = 0; i < 12; i++) {
+        const a = i / 12 * Math.PI * 2;
+        const mx = x + Math.cos(a) * 1.45;
+        const mz = z + Math.sin(a) * 1.45;
+        addBox(group, mx, 6.12, mz, 0.42, 0.9, 0.42, castle.stone, null, -a);
+      }
+    }
+
+    function addCastleBattlements(group, castle, centerX, frontX, backX, minX, maxX, halfWidth, wall) {
+      addBox(group, frontX, 4.08, 0, 1.2, 0.16, halfWidth * 2, castle.stone, null, 0);
+      addBox(group, backX, 4.08, 0, 1.2, 0.16, halfWidth * 2, castle.stone, null, 0);
+      addBox(group, centerX, 4.08, -halfWidth, maxX - minX, 0.16, 1.2, castle.stone, null, 0);
+      addBox(group, centerX, 4.08, halfWidth, maxX - minX, 0.16, 1.2, castle.stone, null, 0);
+      for (let z = -halfWidth + 0.8; z <= halfWidth - 0.8; z += 1.5) {
+        addBox(group, frontX, 4.55, z, wall, 1.0, 0.8, castle.stone, null, 0);
+        addBox(group, backX, 4.55, z, wall, 1.0, 0.8, castle.stone, null, 0);
+      }
+      for (let x = minX + 0.8; x <= maxX - 0.8; x += 1.5) {
+        addBox(group, x, 4.55, -halfWidth, 0.8, 1.0, wall, castle.stone, null, 0);
+        addBox(group, x, 4.55, halfWidth, 0.8, 1.0, wall, castle.stone, null, 0);
+      }
+    }
+
+    function addCastleStaircase(group, castle, frontX, side, z) {
+      for (let i = 0; i < 8; i++) {
+        const h = (i + 1) * 0.5;
+        addBox(group, frontX + side * (0.8 + i * 0.6), h / 2, z, 0.6, h, 1.6, castle.stone, null, 0);
+      }
+    }
+
+    function addCastleTorch(group, castle, x, y, z, teamColor) {
+      addCylinder(group, x, y, z, 0.045, 0.85, castle.wood, null, 0, false, 1);
+      const flame = new THREE.Mesh(geometries.cone, castle.flame);
+      flame.position.set(x, y + 0.58, z);
+      flame.scale.set(0.18, 0.42, 0.18);
+      flame.userData.castleFlame = true;
+      flame.userData.baseScale = 0.18;
+      flame.userData.phase = (Math.abs(x * 3.1 + z * 5.7) % 10) * 0.37;
+      shadowMesh(flame, false, false);
+      group.add(flame);
+      const ember = new THREE.PointLight(0xff6622, 1.2, 8);
+      ember.position.set(x, y + 0.55, z);
+      ember.castShadow = false;
+      group.add(ember);
+      const ring = addCylinder(group, x, y + 0.21, z, 0.13, 0.04, teamColor === BLUE ? materials.blueRim : materials.redRim, null, 0, false, 1);
+      ring.castShadow = false;
+      if (!group.userData.castleTorches) group.userData.castleTorches = [];
+      group.userData.castleTorches.push(flame);
+    }
+
+    function addCastleSideHallways(group, colliders, points, castle) {
+      [-1, 1].forEach((side) => {
+        const innerZ = side * 15.8;
+        const outerZ = side * 19.75;
+        const centerZ = side * 17.8;
+        addCastleHallwayInnerWall(group, colliders, innerZ, castle);
+        addBox(group, 0, 1.5, outerZ, ARENA_HALF_X * 2 + 0.4, 3.0, 0.5, castle.stone, colliders, 0);
+        addBox(group, 0, 3.05, centerZ, ARENA_HALF_X * 2 + 0.4, 0.16, 4.0, castle.stone, colliders, 0);
+        addBox(group, 0, 0.035, centerZ, ARENA_HALF_X * 2 + 0.2, 0.025, 3.6, castle.cobble, null, 0);
+        for (let x = -27; x <= 27; x += 6) {
+          addCylinder(group, x, 1.5, centerZ, 0.18, 3.0, castle.stone, colliders, 0, false, 1);
+          addBox(group, x, 1.78, outerZ - side * 0.28, 0.9, 0.24, 0.035, materials.black, null, 0);
+          if (x % 12 === 0) addCoverPoints(points, x, centerZ, 0.9, 0.9, 'any', 2.8);
+        }
+      });
+    }
+
+    function addCastleHallwayInnerWall(group, colliders, z, castle) {
+      const openings = [-24, -12, 0, 12, 24];
+      const doorW = 3.6;
+      const doorH = 2.5;
+      const height = 3.0;
+      let cursor = -ARENA_HALF_X;
+      openings.forEach((center) => {
+        const start = center - doorW / 2;
+        const end = center + doorW / 2;
+        if (start > cursor) addBox(group, (cursor + start) / 2, height / 2, z, start - cursor, height, 0.5, castle.stone, colliders, 0);
+        addBox(group, center, doorH + (height - doorH) / 2, z, doorW, height - doorH, 0.5, castle.stone, colliders, 0);
+        cursor = end;
+      });
+      if (cursor < ARENA_HALF_X) addBox(group, (cursor + ARENA_HALF_X) / 2, height / 2, z, ARENA_HALF_X - cursor, height, 0.5, castle.stone, colliders, 0);
+    }
+
+    function addCastleCourtyardCover(group, colliders, points, castle) {
+      addCastleFountain(group, colliders, points, castle, 0, 0);
+      const lowWalls = [
+        [-10, -5.8, 5.6, 0.45, 0.18], [10, 5.8, 5.6, 0.45, 0.18],
+        [-9.5, 7.2, 4.8, 0.45, -0.28], [9.5, -7.2, 4.8, 0.45, -0.28],
+        [0, -12.2, 5.8, 0.45, 0], [0, 12.2, 5.8, 0.45, 0]
+      ];
+      lowWalls.forEach((w) => {
+        addBox(group, w[0], 0.68, w[1], w[2], 1.36, w[3], castle.stone, colliders, w[4]);
+        addCoverPoints(points, w[0], w[1], w[2], 1.0, 'any', 1.35);
+      });
+      [[-15, -2.5, 0.18], [15, 2.5, 0.18], [-4, 10.7, -0.45], [4, -10.7, -0.45]].forEach((b) => addCastleBarricade(group, colliders, points, castle, b[0], b[1], b[2]));
+      [[-16, 6, 2, 2, 0.08], [-6, -9, 2, 1, -0.2], [-2, 6, 3, 1, 0.15], [6, 9, 2, 2, -0.12], [14, -6, 2, 1, 0.25], [18, 8, 1, 2, -0.32]].forEach((c) => {
+        addCastleCrateStack(group, colliders, points, castle, c[0], c[1], c[2], c[3], c[4]);
+      });
+      addCastleWell(group, colliders, points, castle, -4.2, 15.1);
+    }
+
+    function addCastleFountain(group, colliders, points, castle, x, z) {
+      addCylinder(group, x, 0.25, z, 2.0, 0.5, castle.stone, colliders, 0, false, 1);
+      const basin = new THREE.Mesh(new THREE.TorusGeometry(1.6, 0.3, 8, 24), castle.stone);
+      basin.position.set(x, 0.62, z);
+      basin.rotation.x = Math.PI / 2;
+      shadowMesh(basin, true, true);
+      group.add(basin);
+      addCylinder(group, x, 0.95, z, 0.2, 1.4, castle.stone, colliders, 0, false, 1);
+      const water = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, 0.035, 32, 1), castle.water);
+      water.position.set(x, 0.68, z);
+      water.castShadow = false;
+      water.receiveShadow = false;
+      group.add(water);
+      addCoverPoints(points, x, z, 4.2, 4.2, 'any', 1.15);
+    }
+
+    function addCastleWell(group, colliders, points, castle, x, z) {
+      addCylinder(group, x, 0.48, z, 1.0, 0.95, castle.stone, colliders, 0, false, 1);
+      const lip = new THREE.Mesh(new THREE.TorusGeometry(1.0, 0.16, 8, 20), castle.stone);
+      lip.position.set(x, 1.02, z);
+      lip.rotation.x = Math.PI / 2;
+      shadowMesh(lip, true, true);
+      group.add(lip);
+      addBox(group, x - 0.72, 1.85, z, 0.14, 1.5, 0.14, castle.wood, null, 0);
+      addBox(group, x + 0.72, 1.85, z, 0.14, 1.5, 0.14, castle.wood, null, 0);
+      addBox(group, x, 2.55, z, 1.9, 0.16, 0.14, castle.wood, null, 0);
+      addCoverPoints(points, x, z, 2.2, 2.2, 'any', 1.4);
+    }
+
+    function addCastleBarricade(group, colliders, points, castle, x, z, yaw) {
+      addBox(group, x, 0.68, z, 3.5, 1.2, 0.18, castle.wood, colliders, yaw);
+      addLocalBox(group, x, 0, z, yaw, -1.1, 1.0, -0.12, 1.15, 0.18, 0.06, castle.wood);
+      addLocalBox(group, x, 0, z, yaw, 1.0, 0.42, -0.12, 1.25, 0.18, 0.06, castle.wood);
+      addLocalBox(group, x, 0, z, yaw, -1.6, 0.34, 0, 0.14, 0.7, 0.14, castle.wood);
+      addLocalBox(group, x, 0, z, yaw, 1.6, 0.34, 0, 0.14, 0.7, 0.14, castle.wood);
+      addCoverPoints(points, x, z, 3.7, 0.8, 'any', 1.2);
+    }
+
+    function addCastleCrateStack(group, colliders, points, castle, x, z, width, height, yaw) {
+      const crateSize = 1.15;
+      for (let ix = 0; ix < width; ix++) {
+        for (let iy = 0; iy < height; iy++) {
+          const lx = (ix - (width - 1) / 2) * crateSize;
+          const mesh = addLocalBox(group, x, 0, z, yaw, lx, 0.58 + iy * crateSize, 0, crateSize * 0.96, crateSize * 0.96, crateSize * 0.96, castle.wood);
+          addMeshCollider(colliders, mesh, 'box');
+          addLocalBox(group, x, 0, z, yaw, lx, mesh.position.y + 0.22, crateSize * 0.49, crateSize * 0.82, 0.045, 0.035, castle.stone);
+          addLocalBox(group, x, 0, z, yaw, lx, mesh.position.y - 0.16, crateSize * 0.50, 0.22, 0.14, 0.036, castle.stone);
+        }
+      }
+      addCoverPoints(points, x, z, width * crateSize, crateSize, 'any', height * crateSize);
+    }
+
+    function addCastleForest(group, castle) {
+      const trunkGeo = new THREE.CylinderGeometry(0.2, 0.2, 4, 8, 1);
+      const canopyGeo = new THREE.SphereGeometry(1.5, 8, 6);
+      const trunks = new THREE.InstancedMesh(trunkGeo, castle.trunk, 40);
+      const canopies = new THREE.InstancedMesh(canopyGeo, castle.canopy, 40);
+      const dummy = new THREE.Object3D();
+      for (let i = 0; i < 40; i++) {
+        const side = i % 4;
+        const row = Math.floor(i / 4);
+        const x = side < 2 ? -34 + ((row * 13 + side * 9) % 68) : (side === 2 ? -36 - (row % 3) * 2.2 : 36 + (row % 3) * 2.2);
+        const z = side < 2 ? (side === 0 ? -24 - (row % 4) * 2.2 : 24 + (row % 4) * 2.2) : -24 + ((row * 11 + side * 5) % 48);
+        dummy.position.set(x, 2, z);
+        dummy.rotation.set(0, (i * 0.47) % (Math.PI * 2), 0);
+        dummy.scale.set(1, 1, 1);
+        dummy.updateMatrix();
+        trunks.setMatrixAt(i, dummy.matrix);
+        dummy.position.set(x, 4.7, z);
+        dummy.rotation.set(0, (i * 0.31) % (Math.PI * 2), 0);
+        dummy.scale.setScalar(0.92 + (i % 5) * 0.04);
+        dummy.updateMatrix();
+        canopies.setMatrixAt(i, dummy.matrix);
+      }
+      trunks.userData.castleForest = true;
+      canopies.userData.castleForest = true;
+      trunks.castShadow = false;
+      trunks.receiveShadow = true;
+      canopies.castShadow = false;
+      canopies.receiveShadow = true;
+      group.add(trunks, canopies);
     }
 
     function createRooftopMaterials() {
@@ -7637,7 +7975,7 @@
         const previewRenderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'low-power' });
         previewRenderer.outputColorSpace = THREE.SRGBColorSpace;
         previewRenderer.toneMapping = THREE.ACESFilmicToneMapping;
-        previewRenderer.toneMappingExposure = mapName === 'rooftop' ? 0.85 : mapName === 'ghosttown' ? 1.08 : mapName === 'funland' ? 0.86 : 0.7;
+        previewRenderer.toneMappingExposure = mapName === 'castle' ? 1.05 : mapName === 'rooftop' ? 0.85 : mapName === 'ghosttown' ? 1.08 : mapName === 'funland' ? 0.86 : 0.7;
         previewRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
 
         const mapClone = map.group.clone(true);
@@ -7648,10 +7986,14 @@
           child.receiveShadow = true;
           child.frustumCulled = false;
         });
+        const castleTorches = [];
+        mapClone.traverse((child) => {
+          if (child.userData.castleFlame) castleTorches.push(child);
+        });
         previewScene.add(mapClone);
         applyDronePreviewLighting(previewScene, mapName);
 
-        dronePreviews.push({ mapName, canvas, card: canvas.closest('[data-map]'), scene: previewScene, camera: previewCamera, renderer: previewRenderer, carousel: mapClone.getObjectByName('funlandCarousel'), time: mapName === 'speedball' ? 0 : 1.4 });
+        dronePreviews.push({ mapName, canvas, card: canvas.closest('[data-map]'), scene: previewScene, camera: previewCamera, renderer: previewRenderer, carousel: mapClone.getObjectByName('funlandCarousel'), castleTorches, time: mapName === 'speedball' ? 0 : 1.4 });
       });
       resizeDronePreviews();
     }
@@ -7690,6 +8032,15 @@
         previewScene.add(new THREE.HemisphereLight(0xa8d8ff, 0xc2ad86, 1.25));
         return;
       }
+      if (mapName === 'castle') {
+        previewScene.background = new THREE.Color(0x0a0810);
+        previewScene.fog = new THREE.Fog(0x0a0810, 30, 80);
+        previewScene.add(new THREE.AmbientLight(0x1a1208, 0.38));
+        const moon = new THREE.DirectionalLight(0x334422, 0.65);
+        moon.position.set(0, 80, 0);
+        previewScene.add(moon);
+        return;
+      }
       previewScene.add(new THREE.AmbientLight(0xd8e0e8, 0.8));
       const previewKey = new THREE.DirectionalLight(0xe8eef0, 0.6);
       previewKey.position.set(36, 52, 34);
@@ -7711,6 +8062,7 @@
         const preview = dronePreviews[i];
         const active = preview.card && (preview.card.classList.contains('previewing') || preview.card.classList.contains('selected'));
         preview.time += dt * (active ? 1 : 0.35);
+        animateCastleTorchFlames(dt, preview.castleTorches, preview.time);
         updateDronePreviewCamera(preview);
         preview.renderer.render(preview.scene, preview.camera);
       }
@@ -7742,6 +8094,11 @@
         const side = Math.sin(phase * Math.PI * 2);
         preview.camera.position.set(-48 + sweep * 96, 15 + (1 - Math.abs(side)) * 7, -44 + side * 60);
         tmpVecA.set(-4 + sweep * 8, -12 - Math.abs(side) * 10, side * 10);
+      } else if (preview.mapName === 'castle') {
+        const angle = t * 0.26;
+        const radius = 38 + Math.sin(t * 0.45) * 3;
+        preview.camera.position.set(Math.cos(angle) * radius, 15.5 + Math.sin(t * 0.55) * 2.2, Math.sin(angle) * 26);
+        tmpVecA.set(Math.sin(angle * 0.8) * 3.5, 2.2, Math.cos(angle * 0.7) * 2.8);
       } else {
         const phase = (t * 0.085) % 1;
         const sweep = 0.5 - 0.5 * Math.cos(phase * Math.PI * 2);
@@ -8188,7 +8545,7 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
       hideAllMaps();
       const active = maps[state.selectedMap] || maps.speedball;
-      state.selectedMap = active === maps.funland ? 'funland' : active === maps.ghosttown ? 'ghosttown' : active === maps.rooftop ? 'rooftop' : 'speedball';
+      state.selectedMap = active === maps.funland ? 'funland' : active === maps.ghosttown ? 'ghosttown' : active === maps.rooftop ? 'rooftop' : active === maps.castle ? 'castle' : 'speedball';
       active.group.visible = true;
       if (!active.group.parent) scene.add(active.group);
       applyMapLighting(active);
@@ -8238,6 +8595,7 @@
     function updateLivePreview(dt) {
       const mapName = state.selectedMap || 'speedball';
       updateFunlandCarousel(dt);
+      updateCastleTorches(dt);
       updateClouds(dt);
       updateSpectators();
       const t = state.elapsed;
@@ -8258,6 +8616,11 @@
         const side = Math.sin(phase * Math.PI * 2);
         camera.position.set(-48 + sweep * 96, 15 + (1 - Math.abs(side)) * 7, -44 + side * 60);
         tmpVecA.set(-4 + sweep * 8, -12 - Math.abs(side) * 10, side * 10);
+      } else if (mapName === 'castle') {
+        const angle = t * 0.26;
+        const radius = 38 + Math.sin(t * 0.45) * 3;
+        camera.position.set(Math.cos(angle) * radius, 15.5 + Math.sin(t * 0.55) * 2.2, Math.sin(angle) * 26);
+        tmpVecA.set(Math.sin(angle * 0.8) * 3.5, 2.2, Math.cos(angle * 0.7) * 2.8);
       } else {
         const angle = t * 0.46;
         const descend = 0.5 + 0.5 * Math.sin(t * 0.42 - 1.1);
@@ -8282,6 +8645,7 @@
       }
       state.shotClock = Math.max(0, state.nextShotTime - performance.now() / 1000);
       updateFunlandCarousel(dt);
+      updateCastleTorches(dt);
       updatePlayer(dt);
       sendMultiplayerUpdate();
       updateReload(dt);
@@ -8317,6 +8681,24 @@
       player.root.position.z = carousel.z + dx * sin + dz * cos;
       player.yaw += delta;
       player.root.rotation.y = player.yaw;
+    }
+
+    function updateCastleTorches(dt) {
+      const active = maps[state.selectedMap];
+      animateCastleTorchFlames(dt, active && active.castleTorches, state.elapsed);
+    }
+
+    function animateCastleTorchFlames(dt, flames, elapsed) {
+      if (!flames || flames.length === 0) return;
+      const time = elapsed || 0;
+      for (let i = 0; i < flames.length; i++) {
+        const flame = flames[i];
+        const phase = flame.userData.phase || 0;
+        const base = flame.userData.baseScale || 0.18;
+        const flicker = 1 + Math.sin(time * 12.5 + phase) * 0.08 + Math.sin(time * 21.0 + phase * 1.7) * 0.04;
+        flame.scale.set(base * flicker, 0.42 * (0.94 + flicker * 0.08), base * (1.04 - (flicker - 1) * 0.35));
+        flame.rotation.y += dt * (1.1 + (phase % 0.9));
+      }
     }
 
     function updateCountdown(dt) {
@@ -10529,6 +10911,7 @@
     }
 
     function formatMapName(mapName) {
+      if (mapName === 'castle') return 'Castle Siege';
       if (mapName === 'rooftop') return 'Rooftop City';
       if (mapName === 'ghosttown') return 'Ghost Town';
       return mapName === 'funland' ? 'Abandoned Funland' : 'Speedball';
@@ -10642,12 +11025,31 @@
       return html;
     }
 
+    function buildCastleMiniMap() {
+      let html = '<rect width="180" height="120" fill="rgba(10,8,16,0.96)"/>';
+      html += '<rect x="1" y="1" width="178" height="118" fill="none" stroke="rgba(160,150,135,0.86)" stroke-width="2"/>';
+      html += miniRect(0, -17.8, 60, 3.6, 'rgba(72,72,68,0.72)', 'rgba(130,126,116,0.85)', 0, 0.96);
+      html += miniRect(0, 17.8, 60, 3.6, 'rgba(72,72,68,0.72)', 'rgba(130,126,116,0.85)', 0, 0.96);
+      html += miniRect(-23, 0, 12, 18, 'rgba(221,17,17,0.20)', '#dd3333', 0, 0.98);
+      html += miniRect(23, 0, 12, 18, 'rgba(17,85,238,0.20)', '#336dff', 0, 0.98);
+      [[-29,-9],[-29,9],[-17,-9],[-17,9],[17,-9],[17,9],[29,-9],[29,9]].forEach((t) => { html += miniCircle(t[0], t[1], 3.8, '#5f5f5a', '#b2aa98', 0.96); });
+      html += miniRect(-17, 0, 0.7, 4.0, '#151318', 'rgba(255,170,90,0.7)', 0, 0.92);
+      html += miniRect(17, 0, 0.7, 4.0, '#151318', 'rgba(255,170,90,0.7)', 0, 0.92);
+      [[-10,-5.8,5.6,0.8,0.18],[10,5.8,5.6,0.8,0.18],[-9.5,7.2,4.8,0.8,-0.28],[9.5,-7.2,4.8,0.8,-0.28],[0,-12.2,5.8,0.8,0],[0,12.2,5.8,0.8,0]].forEach((w) => { html += miniRect(w[0], w[1], w[2], w[3], '#77736a', '#2a2925', w[4], 0.95); });
+      [[-15,-2.5,3.5,0.8,0.18],[15,2.5,3.5,0.8,0.18],[-4,10.7,3.5,0.8,-0.45],[4,-10.7,3.5,0.8,-0.45]].forEach((b) => { html += miniRect(b[0], b[1], b[2], b[3], '#5a351b', '#d09a4a', b[4], 0.94); });
+      [[-16,6,2.4,1.5,0.08],[-6,-9,2.4,1.2,-0.2],[-2,6,3.5,1.2,0.15],[6,9,2.4,1.5,-0.12],[14,-6,2.4,1.2,0.25],[18,8,1.2,1.5,-0.32]].forEach((c) => { html += miniRect(c[0], c[1], c[2], c[3], '#6d4a27', '#22150a', c[4], 0.95); });
+      html += miniCircle(0, 0, 5.2, '#4f5153', '#c0b9a8', 0.98);
+      html += miniCircle(0, 0, 3.2, 'rgba(0,68,136,0.82)', '#6fa6d6', 0.95);
+      html += miniCircle(-4.2, 15.1, 3.0, '#5f5f5a', '#b2aa98', 0.96);
+      return html;
+    }
+
     function updateMiniMapLayout() {
       if (!ui.miniLayout) return;
       const mapName = state.selectedMap || 'speedball';
       if (ui.miniLayout.dataset.map === mapName) return;
       ui.miniLayout.dataset.map = mapName;
-      ui.miniLayout.innerHTML = mapName === 'rooftop' ? buildRooftopMiniMap() : mapName === 'ghosttown' ? buildGhostTownMiniMap() : mapName === 'funland' ? buildFunlandMiniMap() : buildSpeedballMiniMap();
+      ui.miniLayout.innerHTML = mapName === 'castle' ? buildCastleMiniMap() : mapName === 'rooftop' ? buildRooftopMiniMap() : mapName === 'ghosttown' ? buildGhostTownMiniMap() : mapName === 'funland' ? buildFunlandMiniMap() : buildSpeedballMiniMap();
       if (ui.miniMapName) ui.miniMapName.textContent = formatMapName(mapName);
     }
 
@@ -10954,6 +11356,31 @@
       restoreBaseLighting();
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 0.55;
+      if (active && active.ambient === 'castle') {
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        scene.background = new THREE.Color(0x0a0810);
+        scene.fog = new THREE.Fog(0x0a0810, 30, 80);
+        skyStatus = 'castle-night';
+        renderer.toneMappingExposure = 1.05;
+        ambientLight.color.setHex(0x1a1208);
+        ambientLight.intensity = 0.3;
+        keyLight.color.setHex(0x334422);
+        keyLight.intensity = 0.4;
+        keyLight.position.set(0, 100, 0);
+        keyLight.castShadow = true;
+        keyLight.shadow.mapSize.set(2048, 2048);
+        keyLight.shadow.camera.left = -60;
+        keyLight.shadow.camera.right = 60;
+        keyLight.shadow.camera.top = 60;
+        keyLight.shadow.camera.bottom = -60;
+        keyLight.shadow.camera.far = 200;
+        keyLight.shadow.bias = -0.0001;
+        keyLight.target.position.set(0, 0, 0);
+        keyLight.target.updateMatrixWorld();
+        hemiLight.intensity = 0;
+        return;
+      }
       if (active && active.ambient === 'funland') {
         renderer.shadowMap.enabled = true;
         scene.background = null;

@@ -492,8 +492,7 @@
     /* ─── MAP GRID ─── */
     .mapGrid {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      grid-template-rows: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 8px;
       height: 100%;
       min-height: 0;
@@ -1345,6 +1344,12 @@
               <span class="cardName">Rooftop City</span>
               <span class="cardSub">Grass roof / huge city drop</span>
             </button>
+            <button class="mapCard choice" data-value="castle" type="button">
+              <iframe class="mapPreviewFrame" data-map-preview="castle" title="Castle Siege drone preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+              <span class="cardTag">Fortress</span>
+              <span class="cardName">Castle Siege</span>
+              <span class="cardSub">Medieval fortress siege</span>
+            </button>
           </div>
 
           <!-- Deploy buttons — inside left col, below maps -->
@@ -1547,6 +1552,12 @@
               <span class="cardTag">Skyline</span>
               <span class="cardName">Rooftop City</span>
               <span class="cardSub">Grass roof / huge city drop</span>
+            </button>
+            <button class="mapCard choice" data-value="castle" type="button">
+              <iframe class="mapPreviewFrame" data-map-preview="castle" title="Castle Siege drone preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+              <span class="cardTag">Fortress</span>
+              <span class="cardName">Castle Siege</span>
+              <span class="cardSub">Medieval fortress siege</span>
             </button>
           </div>
           <div class="optionGrid roomSettingsOptions">
@@ -2358,6 +2369,7 @@
     }
 
     function formatMap(map) {
+      if (map === 'castle') return 'Castle Siege';
       if (map === 'rooftop')  return 'Rooftop City';
       if (map === 'ghosttown') return 'Ghost Town';
       return map === 'funland' ? 'Abandoned Funland' : 'Speedball';
@@ -2392,6 +2404,7 @@
 
     init();
   })();
+
   </script>
 </body>
 </html>
