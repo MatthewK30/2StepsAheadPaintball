@@ -4168,6 +4168,7 @@
       addCastleFortress(group, colliders, coverPoints, castle, 1);
       addCastleCourtyardCover(group, colliders, coverPoints, castle);
       addCastleForest(group, castle);
+      addCastleOutdoorSurround(group, castle);
 
       finalizeMapShadows(group);
       group.traverse((child) => {
@@ -4476,6 +4477,143 @@
       canopies.castShadow = false;
       canopies.receiveShadow = true;
       group.add(trunks, canopies);
+    }
+
+    function addCastleOutdoorSurround(group, castle) {
+      // ── a) Rolling hills ground plane ───────────────────────────────────────
+      const hillGeo = new THREE.PlaneGeometry(900, 900, 80, 80);
+      hillGeo.rotateX(-Math.PI / 2);
+      const posAttr = hillGeo.attributes.position;
+      const colorArr = new Float32Array(posAttr.count * 3);
+      const baseColor = new THREE.Color(0x5a6e3a);
+      const darkColor = new THREE.Color(0x4a5a28);
+      for (let i = 0; i < posAttr.count; i++) {
+        const x = posAttr.getX(i);
+        const z = posAttr.getZ(i);
+        const insideArena = Math.abs(x) < 40 && Math.abs(z) < 28;
+        if (!insideArena) {
+          const h = Math.sin(x * 0.025) * Math.cos(z * 0.02) * 4.0
+                  + Math.sin(x * 0.055 + 1.2) * Math.sin(z * 0.045 + 0.8) * 2.5
+                  + Math.cos(x * 0.012 + z * 0.018) * 3.0;
+          posAttr.setY(i, h);
+        } else {
+          posAttr.setY(i, 0);
+        }
+        const t = Math.random();
+        colorArr[i * 3]     = baseColor.r * (1 - t) + darkColor.r * t;
+        colorArr[i * 3 + 1] = baseColor.g * (1 - t) + darkColor.g * t;
+        colorArr[i * 3 + 2] = baseColor.b * (1 - t) + darkColor.b * t;
+      }
+      hillGeo.setAttribute('color', new THREE.BufferAttribute(colorArr, 3));
+      hillGeo.computeVertexNormals();
+      const hillMat = new THREE.MeshStandardMaterial({
+        vertexColors: true,
+        roughness: 0.95,
+        metalness: 0.0
+      });
+      const hillMesh = new THREE.Mesh(hillGeo, hillMat);
+      hillMesh.receiveShadow = true;
+      group.add(hillMesh);
+
+      // ── b) Distant rocky mountains ──────────────────────────────────────────
+      const mountainRings = [
+        { radius: 160, count: 18, minH: 25, maxH: 45, color: 0x6a7060, opacity: 1.0 },
+        { radius: 220, count: 24, minH: 40, maxH: 70, color: 0x585e50, opacity: 0.9 },
+        { radius: 300, count: 30, minH: 60, maxH: 100, color: 0x48504a, opacity: 0.75 }
+      ];
+      mountainRings.forEach(ring => {
+        const mtMat = new THREE.MeshStandardMaterial({
+          color: ring.color,
+          flatShading: true,
+          roughness: 1.0,
+          metalness: 0.0,
+          transparent: ring.opacity < 1.0,
+          opacity: ring.opacity
+        });
+        for (let i = 0; i < ring.count; i++) {
+          const angle = (i / ring.count) * Math.PI * 2;
+          const radiusJitter = ring.radius + (Math.random() - 0.5) * ring.radius * 0.15;
+          const mx = Math.cos(angle) * radiusJitter;
+          const mz = Math.sin(angle) * radiusJitter;
+          const h = ring.minH + Math.random() * (ring.maxH - ring.minH);
+          const r = h * 0.38 + Math.random() * h * 0.12;
+          const mtGeo = new THREE.ConeGeometry(r, h, 7 + Math.floor(Math.random() * 4), 1);
+          // Jagged vertices
+          const mPos = mtGeo.attributes.position;
+          for (let v = 0; v < mPos.count; v++) {
+            const vx = mPos.getX(v);
+            const vy = mPos.getY(v);
+            const vz = mPos.getZ(v);
+            if (Math.abs(vy - h / 2) > 0.01) {
+              mPos.setXYZ(v,
+                vx * (1 + (Math.random() - 0.5) * 0.25),
+                vy + (Math.random() - 0.5) * h * 0.08,
+                vz * (1 + (Math.random() - 0.5) * 0.25)
+              );
+            }
+          }
+          mPos.needsUpdate = true;
+          mtGeo.computeVertexNormals();
+          const mt = new THREE.Mesh(mtGeo, mtMat);
+          mt.position.set(mx, h / 2 - 2, mz);
+          group.add(mt);
+        }
+      });
+
+      // ── c) Dark conifer forest ring ─────────────────────────────────────────
+      const coniferCount = 120;
+      const trunkGeo = new THREE.CylinderGeometry(0.3, 0.3, 6, 6, 1);
+      const canopyGeo = new THREE.ConeGeometry(2.5, 5, 7, 1);
+      const trunkMat = new THREE.MeshStandardMaterial({ color: 0x3a2a18, roughness: 1.0 });
+      const canopyMat = new THREE.MeshStandardMaterial({ color: 0x1e3012, roughness: 0.9, flatShading: true });
+      const coniferTrunks = new THREE.InstancedMesh(trunkGeo, trunkMat, coniferCount);
+      const coniferCanopies = new THREE.InstancedMesh(canopyGeo, canopyMat, coniferCount);
+      const dummy = new THREE.Object3D();
+      for (let i = 0; i < coniferCount; i++) {
+        const angle = (i / coniferCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.3;
+        const r = 55 + Math.random() * 25;
+        const cx = Math.cos(angle) * r + (Math.random() - 0.5) * 8;
+        const cz = Math.sin(angle) * r + (Math.random() - 0.5) * 8;
+        const scale = 0.75 + Math.random() * 0.5;
+        dummy.position.set(cx, 3, cz);
+        dummy.rotation.set(0, Math.random() * Math.PI * 2, 0);
+        dummy.scale.setScalar(scale);
+        dummy.updateMatrix();
+        coniferTrunks.setMatrixAt(i, dummy.matrix);
+        dummy.position.set(cx, 6 + scale * 2.0, cz);
+        dummy.scale.setScalar(scale);
+        dummy.updateMatrix();
+        coniferCanopies.setMatrixAt(i, dummy.matrix);
+      }
+      coniferTrunks.receiveShadow = true;
+      coniferCanopies.receiveShadow = true;
+      group.add(coniferTrunks, coniferCanopies);
+
+      // ── d) Distant village silhouette ───────────────────────────────────────
+      const buildingCount = 10;
+      const buildingMat = new THREE.MeshStandardMaterial({ color: 0x3a3830, roughness: 1.0 });
+      const roofMat = new THREE.MeshStandardMaterial({ color: 0x2a2820, roughness: 1.0, flatShading: true });
+      const rng = (a, b) => a + Math.random() * (b - a);
+      for (let i = 0; i < buildingCount; i++) {
+        const angle = (i / buildingCount) * Math.PI * 2 + rng(-0.4, 0.4);
+        const dist = rng(90, 120);
+        const bx = Math.cos(angle) * dist;
+        const bz = Math.sin(angle) * dist;
+        const bw = rng(3, 6);
+        const bd = rng(3, 6);
+        const bh = rng(4, 10);
+        const bodyGeo = new THREE.BoxGeometry(bw, bh, bd);
+        const body = new THREE.Mesh(bodyGeo, buildingMat);
+        body.position.set(bx, bh / 2, bz);
+        group.add(body);
+        // Triangular roof
+        const roofH = bh * 0.35 + rng(0, 1.5);
+        const roofGeo = new THREE.ConeGeometry(Math.max(bw, bd) * 0.72, roofH, 4, 1);
+        const roof = new THREE.Mesh(roofGeo, roofMat);
+        roof.position.set(bx, bh + roofH / 2, bz);
+        roof.rotation.y = Math.PI / 4;
+        group.add(roof);
+      }
     }
 
     function createRooftopMaterials() {
@@ -11178,15 +11316,13 @@
           varying vec3 vWorldPos;
           void main() {
             float t = clamp((normalize(vWorldPos).y + 0.08) / 1.08, 0.0, 1.0);
-            // horizon=orange, low-mid=pink/magenta, mid=purple, top=dark blue
-            vec3 horizon = vec3(1.0,  0.45, 0.1);
-            vec3 lowMid  = vec3(0.85, 0.25, 0.5);
-            vec3 midCol  = vec3(0.45, 0.15, 0.65);
-            vec3 top     = vec3(0.06, 0.08, 0.32);
+            // Overcast medieval daytime sky: grey-blue zenith fading to pale grey-white horizon
+            vec3 horizon = vec3(0.88, 0.88, 0.86);
+            vec3 mid     = vec3(0.72, 0.78, 0.88);
+            vec3 top     = vec3(0.55, 0.65, 0.80);
             vec3 col;
-            if (t < 0.28)      col = mix(horizon, lowMid, t / 0.28);
-            else if (t < 0.55) col = mix(lowMid,  midCol, (t - 0.28) / 0.27);
-            else               col = mix(midCol,  top,    (t - 0.55) / 0.45);
+            if (t < 0.45) col = mix(horizon, mid, t / 0.45);
+            else          col = mix(mid,     top,  (t - 0.45) / 0.55);
             gl_FragColor = vec4(col, 1.0);
           }
         `
@@ -11397,18 +11533,18 @@
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         scene.background = null;
-        scene.fog = new THREE.Fog(0x200830, 80, 200);
+        scene.fog = new THREE.Fog(0xd0d8e8, 100, 250);
         if (!castleSkyDome) castleSkyDome = createCastleSkyDome();
         if (!castleSkyDome.parent) scene.add(castleSkyDome);
-        skyStatus = 'castle-sunset';
-        renderer.toneMappingExposure = 2.8;
-        // Warm pinkish ambient from sunset sky
-        ambientLight.color.setHex(0xffd8c0);
+        skyStatus = 'castle-overcast';
+        renderer.toneMappingExposure = 1.0;
+        // Bright overcast daylight ambient
+        ambientLight.color.setHex(0xd8e4f0);
         ambientLight.intensity = 5.5;
-        // Low orange sun on horizon
-        keyLight.color.setHex(0xff9944);
-        keyLight.intensity = 6.0;
-        keyLight.position.set(80, 30, 20);
+        // Soft diffuse overhead key light
+        keyLight.color.setHex(0xfff8f0);
+        keyLight.intensity = 5.0;
+        keyLight.position.set(40, 80, 30);
         keyLight.castShadow = true;
         keyLight.shadow.mapSize.set(2048, 2048);
         keyLight.shadow.camera.left = -80;
@@ -11419,9 +11555,9 @@
         keyLight.shadow.bias = -0.0001;
         keyLight.target.position.set(0, 0, 0);
         keyLight.target.updateMatrixWorld();
-        // Purple-pink sky fill
-        hemiLight.color.setHex(0xb060c0);
-        hemiLight.groundColor.setHex(0x5a3a20);
+        // Cool sky fill with earthy ground
+        hemiLight.color.setHex(0x88aacc);
+        hemiLight.groundColor.setHex(0x4a5a30);
         hemiLight.intensity = 2.0;
         return;
       }
