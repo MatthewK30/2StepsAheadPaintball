@@ -2793,6 +2793,7 @@
     scene.add(ambientLight, keyLight, keyLight.target, hemiLight);
     let ghostTownLights = [];
     let funlandSkyDome = null;
+    let castleSkyDome = null;
 
     player.root.add(camera);
     scene.add(player.root);
@@ -4180,8 +4181,8 @@
 
     function createCastleSiegeMaterials() {
       const standard = (color, opts = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.9, metalness: 0.02, envMap: environmentMap, envMapIntensity: 0.4, ...opts });
-      const stone = standard(0xaaa898, { roughness: 0.88, metalness: 0.05, envMapIntensity: 0.35 });
-      const cobble = standard(0x888880, { roughness: 0.9, metalness: 0.02, vertexColors: true, envMapIntensity: 0.3 });
+      const stone = standard(0x9a9a96, { roughness: 0.88, metalness: 0.05, envMapIntensity: 0.35 });
+      const cobble = standard(0x808078, { roughness: 0.9, metalness: 0.02, vertexColors: true, envMapIntensity: 0.3 });
       textureLibrary.apply(stone, 'concrete', 2.4, 1.8);
       textureLibrary.apply(cobble, 'concrete', 15, 8);
       return {
@@ -4217,7 +4218,7 @@
         const z = pos.getZ(i);
         const tile = ((Math.floor((x + ARENA_HALF_X) / 2) + Math.floor((z + ARENA_HALF_Z) / 2)) & 1) ? 0.02 : -0.015;
         const wear = Math.sin(x * 0.7) * 0.018 + Math.cos(z * 0.9) * 0.018 + (((i * 17) % 11) - 5) * 0.003;
-        color.setHex(0x888880).offsetHSL(0, -0.03, tile + wear);
+        color.setHex(0x808078).offsetHSL(0, -0.03, tile + wear);
         colors.push(color.r, color.g, color.b);
       }
       geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
@@ -11160,6 +11161,41 @@
       if (!hemiLight.parent) scene.add(hemiLight);
     }
 
+    function createCastleSkyDome() {
+      const geo = new THREE.SphereGeometry(900, 32, 16);
+      const mat = new THREE.ShaderMaterial({
+        side: THREE.BackSide,
+        depthWrite: false,
+        uniforms: {},
+        vertexShader: `
+          varying vec3 vWorldPos;
+          void main() {
+            vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          varying vec3 vWorldPos;
+          void main() {
+            float t = clamp((normalize(vWorldPos).y + 0.08) / 1.08, 0.0, 1.0);
+            // horizon=orange, low-mid=pink/magenta, mid=purple, top=dark blue
+            vec3 horizon = vec3(1.0,  0.45, 0.1);
+            vec3 lowMid  = vec3(0.85, 0.25, 0.5);
+            vec3 midCol  = vec3(0.45, 0.15, 0.65);
+            vec3 top     = vec3(0.06, 0.08, 0.32);
+            vec3 col;
+            if (t < 0.28)      col = mix(horizon, lowMid, t / 0.28);
+            else if (t < 0.55) col = mix(lowMid,  midCol, (t - 0.28) / 0.27);
+            else               col = mix(midCol,  top,    (t - 0.55) / 0.45);
+            gl_FragColor = vec4(col, 1.0);
+          }
+        `
+      });
+      const dome = new THREE.Mesh(geo, mat);
+      dome.renderOrder = -1;
+      return dome;
+    }
+
     function createFunlandSkyDome() {
       const geo = new THREE.SphereGeometry(900, 32, 16);
       const mat = new THREE.ShaderMaterial({
@@ -11356,21 +11392,23 @@
       restoreBaseLighting();
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 0.55;
+      if (castleSkyDome && castleSkyDome.parent) scene.remove(castleSkyDome);
       if (active && active.ambient === 'castle') {
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        // Medieval dusk — deep slate-blue sky
-        scene.background = new THREE.Color(0x7090c0);
-        scene.fog = new THREE.Fog(0x7090c0, 80, 200);
-        skyStatus = 'castle-night';
+        scene.background = null;
+        scene.fog = new THREE.Fog(0x200830, 80, 200);
+        if (!castleSkyDome) castleSkyDome = createCastleSkyDome();
+        if (!castleSkyDome.parent) scene.add(castleSkyDome);
+        skyStatus = 'castle-sunset';
         renderer.toneMappingExposure = 2.8;
-        // Very bright ambient
-        ambientLight.color.setHex(0xdce8ff);
-        ambientLight.intensity = 6.0;
-        // Bright sun
-        keyLight.color.setHex(0xfff0cc);
+        // Warm pinkish ambient from sunset sky
+        ambientLight.color.setHex(0xffd8c0);
+        ambientLight.intensity = 5.5;
+        // Low orange sun on horizon
+        keyLight.color.setHex(0xff9944);
         keyLight.intensity = 6.0;
-        keyLight.position.set(40, 80, 30);
+        keyLight.position.set(80, 30, 20);
         keyLight.castShadow = true;
         keyLight.shadow.mapSize.set(2048, 2048);
         keyLight.shadow.camera.left = -80;
@@ -11381,10 +11419,10 @@
         keyLight.shadow.bias = -0.0001;
         keyLight.target.position.set(0, 0, 0);
         keyLight.target.updateMatrixWorld();
-        // Strong sky fill
-        hemiLight.color.setHex(0x9ab0e0);
-        hemiLight.groundColor.setHex(0x6a5a3a);
-        hemiLight.intensity = 1.8;
+        // Purple-pink sky fill
+        hemiLight.color.setHex(0xb060c0);
+        hemiLight.groundColor.setHex(0x5a3a20);
+        hemiLight.intensity = 2.0;
         return;
       }
       if (active && active.ambient === 'funland') {
