@@ -4490,7 +4490,7 @@
       for (let i = 0; i < posAttr.count; i++) {
         const x = posAttr.getX(i);
         const z = posAttr.getZ(i);
-        const insideArena = Math.abs(x) < 40 && Math.abs(z) < 28;
+        const insideArena = Math.abs(x) < 58 && Math.abs(z) < 38;
         if (!insideArena) {
           const h = Math.sin(x * 0.025) * Math.cos(z * 0.02) * 4.0
                   + Math.sin(x * 0.055 + 1.2) * Math.sin(z * 0.045 + 0.8) * 2.5
@@ -4512,6 +4512,7 @@
         metalness: 0.0
       });
       const hillMesh = new THREE.Mesh(hillGeo, hillMat);
+      hillMesh.position.y = -0.6;
       hillMesh.receiveShadow = true;
       group.add(hillMesh);
 
