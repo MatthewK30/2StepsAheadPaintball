@@ -803,6 +803,36 @@
     .mapCard > * { position: relative; z-index: 3; }
     .mapCard > .mapPreviewFrame { position: absolute; z-index: 0; }
 
+    .sdSiteOverlay {
+      position: absolute;
+      inset: 0;
+      z-index: 4;
+      display: none;
+      pointer-events: none;
+    }
+
+    body.searchDestroySelected .sdSiteOverlay { display: block; }
+
+    .sdSiteLabel {
+      position: absolute;
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 224, 72, 0.96);
+      background: rgba(6, 8, 10, 0.7);
+      color: #ffe048;
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: 23px;
+      line-height: 1;
+      box-shadow: 0 0 18px rgba(255, 194, 40, 0.6);
+      text-shadow: 0 0 10px rgba(255, 194, 40, 0.9);
+    }
+
+    .sdSiteLabel.alpha { left: 12%; top: 30%; }
+    .sdSiteLabel.bravo { right: 12%; bottom: 28%; }
+
     .cardTag {
       width: fit-content;
       padding: 3px 8px;
@@ -1581,6 +1611,7 @@
           <button class="mapCard choice selected" data-value="speedball" type="button">
             <iframe class="mapPreviewFrame" data-map-preview="speedball" title="Speedball preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
             <div class="mapSelBadge"><svg viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <div class="sdSiteOverlay"><span class="sdSiteLabel alpha">A</span><span class="sdSiteLabel bravo">B</span></div>
             <span class="cardTag">Tournament</span>
             <span class="cardName">Speedball</span>
             <span class="cardSub">Clean lanes / fast breakouts</span>
@@ -1588,6 +1619,7 @@
           <button class="mapCard choice" data-value="funland" type="button">
             <iframe class="mapPreviewFrame" data-map-preview="funland" title="Funland preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
             <div class="mapSelBadge"><svg viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <div class="sdSiteOverlay"><span class="sdSiteLabel alpha">A</span><span class="sdSiteLabel bravo">B</span></div>
             <span class="cardTag">Scenario</span>
             <span class="cardName">Abandoned Funland</span>
             <span class="cardSub">Theme park / eerie lanes</span>
@@ -1595,6 +1627,7 @@
           <button class="mapCard choice" data-value="ghosttown" type="button">
             <iframe class="mapPreviewFrame" data-map-preview="ghosttown" title="Ghost Town preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
             <div class="mapSelBadge"><svg viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <div class="sdSiteOverlay"><span class="sdSiteLabel alpha">A</span><span class="sdSiteLabel bravo">B</span></div>
             <span class="cardTag">Scenario</span>
             <span class="cardName">Ghost Town</span>
             <span class="cardSub">Desert streets / western cover</span>
@@ -1602,18 +1635,21 @@
           <button class="mapCard choice" data-value="rooftop" type="button">
             <iframe class="mapPreviewFrame" data-map-preview="rooftop" title="Rooftop preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
             <div class="mapSelBadge"><svg viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <div class="sdSiteOverlay"><span class="sdSiteLabel alpha">A</span><span class="sdSiteLabel bravo">B</span></div>
             <span class="cardTag">Skyline</span>
             <span class="cardName">Rooftop City</span>
             <span class="cardSub">Grass roof / huge city drop</span>
           </button>
           <button class="mapCard choice" data-value="castle" type="button">
             <iframe class="mapPreviewFrame" data-map-preview="castle" title="Castle Siege preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+            <div class="sdSiteOverlay"><span class="sdSiteLabel alpha">A</span><span class="sdSiteLabel bravo">B</span></div>
             <span class="cardTag">Fortress</span>
             <span class="cardName">Castle Siege</span>
             <span class="cardSub">Medieval fortress siege</span>
           </button>
           <button class="mapCard choice" data-value="beachmansion" type="button">
             <iframe class="mapPreviewFrame" data-map-preview="beachmansion" title="Beach Mansion preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+            <div class="sdSiteOverlay"><span class="sdSiteLabel alpha">A</span><span class="sdSiteLabel bravo">B</span></div>
             <span class="cardTag">Estate</span>
             <span class="cardName">Beach Mansion</span>
             <span class="cardSub">Mediterranean cliff-side villa</span>
@@ -1633,6 +1669,21 @@
             <div class="choiceSet">
               <button class="choice selected" data-value="5" type="button">First to 5</button>
               <button class="choice" data-value="10" type="button">First to 10</button>
+            </div>
+          </div>
+          <div class="optionGroup" data-option-group="matchType">
+            <label>Game Mode</label>
+            <div class="choiceSet">
+              <button class="choice selected" data-value="standard" type="button">Standard</button>
+              <button class="choice" data-value="search_destroy" type="button">Search &amp; Destroy</button>
+            </div>
+          </div>
+          <div class="optionGroup hidden" data-sd-only data-option-group="attackingTeam">
+            <label>Attackers First</label>
+            <div class="choiceSet threeChoices">
+              <button class="choice selected" data-value="red" type="button">Red</button>
+              <button class="choice" data-value="blue" type="button">Blue</button>
+              <button class="choice" data-value="random" type="button">Random</button>
             </div>
           </div>
           <div class="optionGroup" data-option-group="gameMode">
@@ -1757,6 +1808,7 @@
             <div id="modeDisplay">Mode: --</div>
             <div id="mapDisplay">Map: --</div>
             <div id="firstToDisplay">FIRST TO --</div>
+            <div id="rulesDisplay">Rules: Standard</div>
           </div>
           <button id="switchTeamBtn" class="teamBtn">Switch Team</button>
           <button id="readyBtn" class="teamBtn">Ready</button>
@@ -1778,6 +1830,7 @@
             <button class="mapCard choice selected" data-value="speedball" type="button">
               <iframe class="mapPreviewFrame" data-map-preview="speedball" title="Speedball drone preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
               <div class="mapSelBadge"><svg viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <div class="sdSiteOverlay"><span class="sdSiteLabel alpha">A</span><span class="sdSiteLabel bravo">B</span></div>
               <span class="cardTag">Tournament</span>
               <span class="cardName">Speedball</span>
               <span class="cardSub">Clean lanes / fast breakouts</span>
@@ -1785,6 +1838,7 @@
             <button class="mapCard choice" data-value="funland" type="button">
               <iframe class="mapPreviewFrame" data-map-preview="funland" title="Abandoned Funland drone preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
               <div class="mapSelBadge"><svg viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <div class="sdSiteOverlay"><span class="sdSiteLabel alpha">A</span><span class="sdSiteLabel bravo">B</span></div>
               <span class="cardTag">Scenario</span>
               <span class="cardName">Abandoned Funland</span>
               <span class="cardSub">Theme park / eerie lanes</span>
@@ -1792,6 +1846,7 @@
             <button class="mapCard choice" data-value="ghosttown" type="button">
               <iframe class="mapPreviewFrame" data-map-preview="ghosttown" title="Ghost Town drone preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
               <div class="mapSelBadge"><svg viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <div class="sdSiteOverlay"><span class="sdSiteLabel alpha">A</span><span class="sdSiteLabel bravo">B</span></div>
               <span class="cardTag">Scenario</span>
               <span class="cardName">Ghost Town</span>
               <span class="cardSub">Desert streets / western cover</span>
@@ -1799,18 +1854,21 @@
             <button class="mapCard choice" data-value="rooftop" type="button">
               <iframe class="mapPreviewFrame" data-map-preview="rooftop" title="Rooftop City drone preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
               <div class="mapSelBadge"><svg viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <div class="sdSiteOverlay"><span class="sdSiteLabel alpha">A</span><span class="sdSiteLabel bravo">B</span></div>
               <span class="cardTag">Skyline</span>
               <span class="cardName">Rooftop City</span>
               <span class="cardSub">Grass roof / huge city drop</span>
             </button>
             <button class="mapCard choice" data-value="castle" type="button">
               <iframe class="mapPreviewFrame" data-map-preview="castle" title="Castle Siege drone preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+              <div class="sdSiteOverlay"><span class="sdSiteLabel alpha">A</span><span class="sdSiteLabel bravo">B</span></div>
               <span class="cardTag">Fortress</span>
               <span class="cardName">Castle Siege</span>
               <span class="cardSub">Medieval fortress siege</span>
             </button>
             <button class="mapCard choice" data-value="beachmansion" type="button">
               <iframe class="mapPreviewFrame" data-map-preview="beachmansion" title="Beach Mansion drone preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+              <div class="sdSiteOverlay"><span class="sdSiteLabel alpha">A</span><span class="sdSiteLabel bravo">B</span></div>
               <span class="cardTag">Estate</span>
               <span class="cardName">Beach Mansion</span>
               <span class="cardSub">Mediterranean cliff-side villa</span>
@@ -1829,6 +1887,21 @@
               <div class="choiceSet">
                 <button class="choice selected" data-value="5" type="button">First to 5</button>
                 <button class="choice" data-value="10" type="button">First to 10</button>
+              </div>
+            </div>
+            <div class="optionGroup roomSettingGroup" data-room-setting="matchType">
+              <label>Game Mode</label>
+              <div class="choiceSet">
+                <button class="choice selected" data-value="standard" type="button">Standard</button>
+                <button class="choice" data-value="search_destroy" type="button">Search &amp; Destroy</button>
+              </div>
+            </div>
+            <div class="optionGroup roomSettingGroup hidden" data-sd-only data-room-setting="attackingTeam">
+              <label>Attackers First</label>
+              <div class="choiceSet threeChoices">
+                <button class="choice selected" data-value="red" type="button">Red</button>
+                <button class="choice" data-value="blue" type="button">Blue</button>
+                <button class="choice" data-value="random" type="button">Random</button>
               </div>
             </div>
           </div>
@@ -2178,7 +2251,7 @@
       code: '',
       room: null,
       pendingRoom: LOBBY_ROOM_CODE,
-      createOptions: { gameMode: '1v1', map: 'speedball', firstTo: 5, difficulty: 'pro' }
+      createOptions: { gameMode: '1v1', map: 'speedball', firstTo: 5, matchType: 'standard', attackingTeam: 'red', difficulty: 'pro' }
     };
 
     const views = { hero: $('#heroView'), lobby: $('#lobbyView') };
@@ -2203,6 +2276,7 @@
       modeDisplay:      $('#modeDisplay'),
       mapDisplay:       $('#mapDisplay'),
       firstToDisplay:   $('#firstToDisplay'),
+      rulesDisplay:     $('#rulesDisplay'),
       roomSettingsPanel:$('#roomSettingsPanel'),
       redSlots:         $('#redSlots'),
       blueSlots:        $('#blueSlots'),
@@ -2252,8 +2326,9 @@
       const mode = state.createOptions.gameMode || '1v1';
       const ft = state.createOptions.firstTo || 5;
       const diff = state.createOptions.difficulty || 'pro';
-      $('#configSettingsValue').textContent = mode + ' · First to ' + ft;
-      $('#configDifficultyValue').textContent = 'AI: ' + diff.charAt(0).toUpperCase() + diff.slice(1);
+      const sd = state.createOptions.matchType === 'search_destroy';
+      $('#configSettingsValue').textContent = mode + ' · ' + (sd ? 'Search & Destroy' : 'First to ' + ft);
+      $('#configDifficultyValue').textContent = sd ? 'S&D · Attackers: ' + formatTeamName(state.createOptions.attackingTeam || 'red') : 'AI: ' + diff.charAt(0).toUpperCase() + diff.slice(1);
 
       const skin = getSelectedSkin();
       const facePos = skin.facePos || 'center 30%';
@@ -2267,6 +2342,8 @@
       if (state.username) ui.usernameInput.value = state.username;
       if (state.pendingRoom) showView('lobby');
       bindUi();
+      syncSearchDestroyOptionVisibility();
+      setupLiveMapPreviews();
       connectSocket();
       updateConfigCards();
     }
@@ -2427,9 +2504,20 @@
     function selectOption(groupName, choice) {
       const value = choice.dataset.value;
       state.createOptions[groupName] = groupName === 'firstTo' ? Number(value) : value;
+      if (groupName === 'matchType' && value === 'search_destroy') state.createOptions.firstTo = 5;
       document.querySelectorAll('[data-option-group="' + groupName + '"]').forEach(group => {
         group.querySelectorAll('.choice').forEach(item => item.classList.toggle('selected', item.dataset.value === value));
       });
+      if (groupName === 'matchType') {
+        document.querySelectorAll('[data-option-group="firstTo"] .choice').forEach(item => item.classList.toggle('selected', item.dataset.value === String(state.createOptions.firstTo)));
+      }
+      syncSearchDestroyOptionVisibility();
+    }
+
+    function syncSearchDestroyOptionVisibility(room) {
+      const enabled = room ? room.matchType === 'search_destroy' : state.createOptions.matchType === 'search_destroy';
+      document.body.classList.toggle('searchDestroySelected', enabled);
+      document.querySelectorAll('[data-sd-only]').forEach(el => el.classList.toggle('hidden', !enabled));
     }
 
     function setupLiveMapPreviews() {
@@ -2459,6 +2547,8 @@
         map: state.createOptions.map,
         gameMode: state.createOptions.gameMode,
         firstTo: state.createOptions.firstTo,
+        matchType: state.createOptions.matchType,
+        attackingTeam: state.createOptions.attackingTeam,
         ...selectedSkinPayload()
       });
     }
@@ -2476,6 +2566,9 @@
       const params = new URLSearchParams({
         practice: '1',
         map: state.createOptions.map,
+        mode: state.createOptions.gameMode,
+        match: state.createOptions.matchType,
+        attacking: state.createOptions.attackingTeam,
         difficulty: state.createOptions.difficulty,
         firstto: String(state.createOptions.firstTo),
         skin: skin.id, skinFile: skin.file, skinName: skin.name
@@ -2500,6 +2593,9 @@
       ui.modeDisplay.textContent = 'Mode: ' + room.gameMode;
       ui.mapDisplay.textContent = 'Map: ' + formatMap(room.map);
       ui.firstToDisplay.textContent = 'FIRST TO ' + (room.firstTo || 5);
+      const sd = room.matchType === 'search_destroy';
+      if (ui.rulesDisplay) ui.rulesDisplay.textContent = sd ? 'Rules: Search & Destroy / Attackers: ' + formatTeamName(room.attackingTeam || 'red') : 'Rules: Standard';
+      syncSearchDestroyOptionVisibility(room);
       renderRoomSettingsControls(room);
       renderTeam('red',  ui.redSlots,  room);
       renderTeam('blue', ui.blueSlots, room);
@@ -2605,7 +2701,8 @@
       setupLiveMapPreviews();
       document.querySelectorAll('[data-room-setting]').forEach(group => {
         const setting = group.dataset.roomSetting;
-        const value = setting === 'firstTo' ? String(room.firstTo || 5) : String(room[setting] || '');
+        const fallback = setting === 'matchType' ? 'standard' : setting === 'attackingTeam' ? 'red' : '';
+        const value = setting === 'firstTo' ? String(room.firstTo || 5) : String(room[setting] || fallback);
         group.querySelectorAll('.choice').forEach(choice => {
           const selected = choice.dataset.value === value;
           choice.classList.toggle('selected', selected);
@@ -2650,9 +2747,11 @@
       const team = me ? me.team : 'red';
       const skin = normalizeSkin(me?.skinId, me?.skinFile, me?.skinName) || getSelectedSkin();
       sessionStorage.setItem('paintballBots', JSON.stringify(Array.isArray(bots) ? bots : []));
+      sessionStorage.setItem('paintballRoomInfo', JSON.stringify(room));
       const params = new URLSearchParams({
         room: room.code, team, username: state.username,
         mode: room.gameMode, map: room.map, firstto: String(room.firstTo || 5),
+        match: room.matchType || 'standard', attacking: room.attackingTeam || 'red',
         skin: skin.id, skinFile: skin.file, skinName: skin.name
       });
       window.location.href = '/game.html?' + params.toString();
@@ -2709,6 +2808,11 @@
       if (map === 'rooftop')  return 'Rooftop City';
       if (map === 'ghosttown') return 'Ghost Town';
       return map === 'funland' ? 'Abandoned Funland' : 'Speedball';
+    }
+
+    function formatTeamName(team) {
+      if (team === 'random') return 'Random';
+      return team === 'blue' ? 'Blue' : 'Red';
     }
 
     function normalizeSkin(id, file, name) {

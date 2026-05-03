@@ -57,6 +57,14 @@ function normalizeFirstTo(firstTo) {
   return Number(firstTo) === 10 ? 10 : 5
 }
 
+function normalizeMatchType(matchType) {
+  return matchType === 'search_destroy' ? 'search_destroy' : 'standard'
+}
+
+function normalizeAttackingTeam(team) {
+  return team === 'blue' || team === 'random' ? team : 'red'
+}
+
 function normalizeBotDifficulty(difficulty) {
   return difficulty === 'basic' || difficulty === 'elite' ? difficulty : 'pro'
 }
@@ -168,6 +176,109 @@ function isValidFirstTo(firstTo) {
   return Number(firstTo) === 5 || Number(firstTo) === 10
 }
 
+function isValidMatchType(matchType) {
+  return matchType === 'standard' || matchType === 'search_destroy'
+}
+
+function isValidAttackingTeam(team) {
+  return team === 'red' || team === 'blue' || team === 'random'
+}
+
+function searchDestroyParticipants(room, team) {
+  const players = room.players
+    .filter(player => player.team === team)
+    .map(player => ({ id: player.id, name: player.skinName || player.username || 'Player', type: 'player' }))
+  const bots = ensureRoomBots(room)
+    .filter(bot => bot.team === team)
+    .map(bot => ({ id: 'bot-' + normalizeSlotIndex(bot.slotIndex), name: bot.skinName || 'Bot', type: 'bot' }))
+  return players.concat(bots)
+}
+
+function createSearchDestroyState(room) {
+  const attackingTeam = room.attackingTeam === 'random'
+    ? (Math.random() < 0.5 ? 'red' : 'blue')
+    : normalizeTeam(room.attackingTeam)
+  const carrierStarts = { red: '', blue: '' }
+  ;['red', 'blue'].forEach(team => {
+    const participants = searchDestroyParticipants(room, team)
+    if (participants.length > 0) carrierStarts[team] = participants[Math.floor(Math.random() * participants.length)].id
+  })
+  const carrierId = carrierStarts[attackingTeam] || ''
+  return {
+    bombState: carrierId ? 'carried' : 'dropped',
+    bombCarrierId: carrierId,
+    bombPosition: null,
+    plantedSiteId: null,
+    plantProgress: 0,
+    defuseProgress: 0,
+    detonationTimer: 15,
+    attackingTeam,
+    defendingTeam: attackingTeam === 'red' ? 'blue' : 'red',
+    round: 1,
+    carrierStarts
+  }
+}
+
+function updateSearchDestroyState(room, eventName, payload, socketId) {
+  if (!room || room.matchType !== 'search_destroy') return null
+  if (!room.sd) room.sd = createSearchDestroyState(room)
+  const sd = room.sd
+  if (payload && Number.isFinite(Number(payload.round))) sd.round = Number(payload.round)
+  if (payload && (payload.attackingTeam === 'red' || payload.attackingTeam === 'blue')) {
+    sd.attackingTeam = payload.attackingTeam
+    sd.defendingTeam = payload.attackingTeam === 'red' ? 'blue' : 'red'
+  }
+  if (payload && payload.bombPosition) sd.bombPosition = payload.bombPosition
+  if (payload && payload.plantedSiteId) sd.plantedSiteId = payload.plantedSiteId
+  if (payload && Number.isFinite(Number(payload.plantProgress))) sd.plantProgress = Number(payload.plantProgress)
+  if (payload && Number.isFinite(Number(payload.defuseProgress))) sd.defuseProgress = Number(payload.defuseProgress)
+  if (payload && Number.isFinite(Number(payload.detonationTimer))) sd.detonationTimer = Number(payload.detonationTimer)
+  if (eventName === 'bomb_carrier_assigned' || eventName === 'bomb_picked_up') {
+    sd.bombState = 'carried'
+    sd.bombCarrierId = String(payload?.bombCarrierId || payload?.carrierId || socketId || '')
+    sd.bombPosition = null
+    sd.plantedSiteId = null
+    sd.plantProgress = 0
+    sd.defuseProgress = 0
+  } else if (eventName === 'bomb_dropped') {
+    sd.bombState = 'dropped'
+    sd.bombCarrierId = ''
+    sd.plantedSiteId = null
+    sd.plantProgress = 0
+    sd.defuseProgress = 0
+  } else if (eventName === 'bomb_plant_start') {
+    sd.plantProgress = Number(payload?.plantProgress) || 0
+  } else if (eventName === 'bomb_plant_cancel') {
+    sd.plantProgress = 0
+  } else if (eventName === 'bomb_planted') {
+    sd.bombState = 'planted'
+    sd.bombCarrierId = ''
+    sd.plantProgress = 1
+    sd.defuseProgress = 0
+    sd.detonationTimer = 15
+  } else if (eventName === 'bomb_defuse_start') {
+    sd.defuseProgress = Number(payload?.defuseProgress) || 0
+  } else if (eventName === 'bomb_defuse_cancel') {
+    sd.defuseProgress = 0
+  } else if (eventName === 'bomb_defused') {
+    sd.bombState = 'defused'
+    sd.defuseProgress = 1
+    sd.detonationTimer = 0
+  } else if (eventName === 'bomb_exploded') {
+    sd.bombState = 'exploded'
+    sd.detonationTimer = 0
+  } else if (eventName === 'side_switch') {
+    sd.bombState = 'carried'
+    sd.bombCarrierId = String(payload?.bombCarrierId || '')
+    sd.bombPosition = null
+    sd.plantedSiteId = null
+    sd.plantProgress = 0
+    sd.defuseProgress = 0
+    sd.detonationTimer = 15
+  }
+  return { ...payload, playerId: socketId, bombState: sd.bombState, bombCarrierId: sd.bombCarrierId, bombPosition: sd.bombPosition, plantedSiteId: sd.plantedSiteId, plantProgress: sd.plantProgress, defuseProgress: sd.defuseProgress, detonationTimer: sd.detonationTimer, attackingTeam: sd.attackingTeam, defendingTeam: sd.defendingTeam, round: sd.round }
+}
+
 function removePlayerFromRoom(socket, code) {
   const room = rooms[code]
   if (!room) return
@@ -187,12 +298,14 @@ function removePlayerFromRoom(socket, code) {
 io.on('connection', (socket) => {
   console.log('Player connected:', socket.id)
 
-  socket.on('create_room', ({ username, gameMode, map, firstTo, skinId, skinFile, skinName } = {}) => {
+  socket.on('create_room', ({ username, gameMode, map, firstTo, matchType, attackingTeam, skinId, skinFile, skinName } = {}) => {
     const code = generateCode()
     const skin = normalizeSkin({ skinId, skinFile, skinName })
+    const nextMatchType = normalizeMatchType(matchType)
     rooms[code] = {
       code, host: socket.id,
-      gameMode: normalizeGameMode(gameMode), map: normalizeMap(map), firstTo: normalizeFirstTo(firstTo),
+      gameMode: normalizeGameMode(gameMode), map: normalizeMap(map), firstTo: nextMatchType === 'search_destroy' ? 5 : normalizeFirstTo(firstTo),
+      matchType: nextMatchType, attackingTeam: normalizeAttackingTeam(attackingTeam), sd: null,
       players: [{
         id: socket.id, username: String(username || 'Player').slice(0, 16),
         team: 'red', ready: false, connected: true, returningToLobby: false, ...skin
@@ -267,7 +380,7 @@ io.on('connection', (socket) => {
     io.to(code).emit('lobby_update', room)
   })
 
-  socket.on('update_room_settings', ({ code, gameMode, map, firstTo } = {}) => {
+  socket.on('update_room_settings', ({ code, gameMode, map, firstTo, matchType, attackingTeam } = {}) => {
     code = normalizeCode(code)
     const room = rooms[code]
     if (!room) return
@@ -299,6 +412,17 @@ io.on('connection', (socket) => {
       if (!isValidFirstTo(firstTo)) { socket.emit('settings_error', 'Invalid win condition'); return }
       updates.firstTo = Number(firstTo)
     }
+    if (matchType !== undefined) {
+      matchType = String(matchType)
+      if (!isValidMatchType(matchType)) { socket.emit('settings_error', 'Invalid match type'); return }
+      updates.matchType = matchType
+      if (matchType === 'search_destroy') updates.firstTo = 5
+    }
+    if (attackingTeam !== undefined) {
+      attackingTeam = String(attackingTeam)
+      if (!isValidAttackingTeam(attackingTeam)) { socket.emit('settings_error', 'Invalid attacking team'); return }
+      updates.attackingTeam = attackingTeam
+    }
 
     const changed = Object.keys(updates).some(key => room[key] !== updates[key])
     if (!changed) return
@@ -309,6 +433,8 @@ io.on('connection', (socket) => {
       room.players[0].team = 'red'
       room.players[1].team = 'blue'
     }
+    if (room.matchType === 'search_destroy') room.firstTo = 5
+    room.sd = null
     room.players.forEach(player => { player.ready = false })
     io.to(code).emit('lobby_update', room)
   })
@@ -387,6 +513,7 @@ io.on('connection', (socket) => {
       io.to(code).emit('lobby_update', room)
     }
     room.state = 'playing'
+    room.sd = room.matchType === 'search_destroy' ? createSearchDestroyState(room) : null
     io.to(code).emit('game_start', { room, bots: room.bots || [] })
   })
 
@@ -446,6 +573,28 @@ io.on('connection', (socket) => {
     code = normalizeCode(code)
     if (!rooms[code]) return
     io.to(code).emit('round_ended', { winner })
+  })
+
+  ;[
+    'bomb_carrier_assigned',
+    'bomb_dropped',
+    'bomb_picked_up',
+    'bomb_plant_start',
+    'bomb_plant_cancel',
+    'bomb_planted',
+    'bomb_defuse_start',
+    'bomb_defuse_cancel',
+    'bomb_defused',
+    'bomb_exploded',
+    'side_switch'
+  ].forEach(eventName => {
+    socket.on(eventName, (payload = {}) => {
+      const code = normalizeCode(payload.code)
+      const room = rooms[code]
+      if (!room || room.matchType !== 'search_destroy') return
+      const eventPayload = updateSearchDestroyState(room, eventName, payload, socket.id)
+      io.to(code).emit(eventName, eventPayload)
+    })
   })
 
   socket.on('return_to_lobby', ({ code }, ack) => {
