@@ -839,7 +839,12 @@
     }
 
     /* ─── LOBBY VIEW ─── */
-    .lobbyView { align-content: center; }
+    .lobbyView {
+      height: auto;
+      min-height: 100vh;
+      overflow-y: auto;
+      align-content: start;
+    }
 
     .topBar {
       width: min(1240px, 100%);
