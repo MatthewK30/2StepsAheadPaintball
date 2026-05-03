@@ -988,13 +988,67 @@
     }
 
     @keyframes hitImpact {
-      from { transform: scale(1.5); }
-      to { transform: scale(1); }
+      0%   { transform: scale(1.82) rotate(-2deg); filter: blur(2px); }
+      38%  { transform: scale(0.94) rotate(1deg); filter: blur(0); }
+      68%  { transform: scale(1.04); }
+      100% { transform: scale(1); }
     }
 
     @keyframes hitSubtext {
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── IMPACT FLASH ── */
+    #hitFlash {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 11;
+      opacity: 0;
+    }
+    #hitFlash.fire {
+      animation: hitFlashBurst 0.32s ease-out forwards;
+    }
+    @keyframes hitFlashBurst {
+      0%   { opacity: 1; background: rgba(255,255,255,0.55); }
+      40%  { opacity: 0.18; background: rgba(255,100,100,0.22); }
+      100% { opacity: 0; }
+    }
+
+    /* ── CANVAS CHROMATIC ABERRATION ON HIT ── */
+    canvas.chromaHit {
+      animation: chromaAberration 0.42s ease-out forwards;
+    }
+    @keyframes chromaAberration {
+      0%   { filter: saturate(2.8) contrast(1.4) hue-rotate(-8deg) brightness(1.3); }
+      30%  { filter: saturate(1.8) contrast(1.15) hue-rotate(5deg) brightness(1.1); }
+      100% { filter: saturate(1) contrast(1) hue-rotate(0deg) brightness(1); }
+    }
+
+    /* ── IMPACT RING ── */
+    #impactRing {
+      position: fixed;
+      pointer-events: none;
+      z-index: 10;
+      border-radius: 50%;
+      border: 3px solid rgba(var(--ring-rgb, 21,102,204), 0.8);
+      left: 50%; top: 50%;
+      width: 60px; height: 60px;
+      margin: -30px 0 0 -30px;
+      opacity: 0;
+    }
+    #impactRing.pulse {
+      animation: impactRingExpand 0.55s cubic-bezier(.1,.9,.2,1) forwards;
+    }
+    @keyframes impactRingExpand {
+      0%   { transform: scale(0.4); opacity: 0.9; }
+      100% { transform: scale(5); opacity: 0; }
+    }
+
+    /* ── BETTER DRIPS: more of them ── */
+    #eliminatedOverlay .lensDrips span:nth-child(even) {
+      animation-duration: 1.9s;
     }
 
     @keyframes victoryFlash {
@@ -2227,10 +2281,15 @@
     <div class="lensPaint primary" aria-hidden="true"></div>
     <div class="lensPaint secondary" aria-hidden="true"></div>
     <div class="lensDrips" aria-hidden="true">
+      <span style="--left: 25%; --top: 44%; --width: 7px;  --height: 22vh; --delay: 0.26s;"></span>
+      <span style="--left: 33%; --top: 46%; --width: 10px; --height: 28vh; --delay: 0.18s;"></span>
       <span style="--left: 38%; --top: 48%; --width: 13px; --height: 34vh; --delay: 0.12s;"></span>
+      <span style="--left: 44%; --top: 47%; --width: 9px;  --height: 32vh; --delay: 0.08s;"></span>
       <span style="--left: 50%; --top: 49%; --width: 18px; --height: 42vh; --delay: 0.02s;"></span>
+      <span style="--left: 56%; --top: 47%; --width: 10px; --height: 36vh; --delay: 0.06s;"></span>
       <span style="--left: 62%; --top: 46%; --width: 11px; --height: 30vh; --delay: 0.2s;"></span>
-      <span style="--left: 70%; --top: 52%; --width: 8px; --height: 24vh; --delay: 0.34s;"></span>
+      <span style="--left: 70%; --top: 52%; --width: 8px;  --height: 24vh; --delay: 0.34s;"></span>
+      <span style="--left: 78%; --top: 50%; --width: 6px;  --height: 18vh; --delay: 0.42s;"></span>
     </div>
     <svg class="eliminatedSplatSvg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
       <ellipse class="splatShape" cx="50" cy="42" rx="18" ry="12"></ellipse>
@@ -2250,6 +2309,8 @@
       <div id="eliminatedSubtext">Round ends in 2 seconds...</div>
     </div>
   </div>
+  <div id="hitFlash" aria-hidden="true"></div>
+  <div id="impactRing" aria-hidden="true"></div>
   <div id="codVignette"></div>
   <div id="touchControls" style="display:none" aria-hidden="true">
     <div id="touchMoveZone"><div id="touchMoveStick"></div></div>
@@ -2466,7 +2527,9 @@
       touchMoveZone: document.getElementById('touchMoveZone'),
       touchAimZone: document.getElementById('touchAimZone'),
       touchFireBtn: document.getElementById('touchFireBtn'),
-      touchJumpBtn: document.getElementById('touchJumpBtn')
+      touchJumpBtn: document.getElementById('touchJumpBtn'),
+      hitFlash: document.getElementById('hitFlash'),
+      impactRing: document.getElementById('impactRing')
     };
 
     const state = {
@@ -2645,6 +2708,10 @@
     let hitmarkerTimeout = null;
     let pingMs = 0;
     let pingInterval = null;
+    let playerKillCamProxy = null;
+    const playerKillCamProxyAnim = { t: 0 };
+    let chromaHitTimeout = null;
+    let impactRingTimeout = null;
 
     const shotHistory = Array.from({ length: 10 }, () => null);
     let shotHistoryIndex = 0;
@@ -9589,6 +9656,7 @@
       state.playerEliminated = true;
       matchStats.deaths += 1;
       cameraShake.decay = 1;
+      triggerHitVisuals('blue');
       gun.paint.visible = true;
       addKillFeedEntry(aiDifficultyName(), 'blue', selectedSkinName(), 'red');
       playEliminationAudio('victim');
@@ -9658,6 +9726,7 @@
       if (state.playerEliminated || state.phase === 'roundOver' || state.phase === 'matchOver') return;
       matchStats.deaths += 1;
       cameraShake.decay = 1;
+      triggerHitVisuals(remotePlayer.team || OPPONENT_TEAM);
       const winner = remotePlayer.team || OPPONENT_TEAM;
       const message = formatTeam(winner) + ' wins the round';
       gun.paint.material = getTeamMaterials(winner).paint;
@@ -9718,6 +9787,7 @@
     }
 
     function showEliminatedOverlay(team) {
+      triggerHitVisuals(team);
       const color = team === 'red' ? '#cc1515' : '#1566cc';
       const rgb = team === 'red' ? '204, 21, 21' : '21, 102, 204';
       const impactX = 46 + Math.sin(state.elapsed * 5.7) * 7;
@@ -9844,6 +9914,7 @@
       killCamBall.material = killerTeam === 'blue' ? materials.paintBlue : materials.paintRed;
       killCamBall.position.copy(killCam.origin);
       killCamBall.visible = false;
+      if (killCam.localVictim) buildPlayerKillCamProxy();
       renderKillCamFrame(0);
       return true;
     }
@@ -9934,6 +10005,7 @@
         if (killCam.victimType !== 'player') startAiDeathVisual();
       }
       if (killCam.victimType !== 'player') updateAiVisual(dt, false, false);
+      if (killCam.localVictim) updatePlayerKillCamProxy(dt);
       if (t < 0.16) {
         killCamBall.visible = true;
         killCamBall.position.copy(killCam.impactPosition);
@@ -9991,6 +10063,7 @@
       ui.killCamOverlay.classList.remove('visible', 'fading');
       ui.killCamSplat.classList.remove('impact');
       document.body.classList.remove('killCamActive');
+      removePlayerKillCamProxy();
     }
 
     function endRound(winner, message, sync = true) {
@@ -11203,6 +11276,82 @@
     function stopPingMonitor() {
       if (pingInterval) { clearInterval(pingInterval); pingInterval = null; }
       if (ui.pingDisplay) ui.pingDisplay.classList.remove('visible');
+    }
+
+    function triggerHitVisuals(team) {
+      // chromatic aberration on canvas
+      clearTimeout(chromaHitTimeout);
+      renderer.domElement.classList.remove('chromaHit');
+      void renderer.domElement.offsetWidth;
+      renderer.domElement.classList.add('chromaHit');
+      chromaHitTimeout = setTimeout(() => renderer.domElement.classList.remove('chromaHit'), 450);
+      // white flash
+      if (ui.hitFlash) {
+        ui.hitFlash.classList.remove('fire');
+        void ui.hitFlash.offsetWidth;
+        ui.hitFlash.classList.add('fire');
+      }
+      // impact ring
+      if (ui.impactRing) {
+        const rgb = team === 'red' ? '204,21,21' : '21,102,204';
+        ui.impactRing.style.setProperty('--ring-rgb', rgb);
+        clearTimeout(impactRingTimeout);
+        ui.impactRing.classList.remove('pulse');
+        void ui.impactRing.offsetWidth;
+        ui.impactRing.classList.add('pulse');
+        impactRingTimeout = setTimeout(() => ui.impactRing.classList.remove('pulse'), 600);
+      }
+    }
+
+    function buildPlayerKillCamProxy() {
+      removePlayerKillCamProxy();
+      const tm = getTeamMaterials(MY_TEAM);
+      const g = new THREE.Group();
+      const torso = new THREE.Mesh(geometries.cylinderLow, tm.primary);
+      torso.scale.set(0.28, 0.35, 0.22);
+      torso.position.y = 0.86;
+      const head = new THREE.Mesh(geometries.sphere, tm.primary);
+      head.scale.setScalar(0.22);
+      head.position.y = 1.52;
+      [-0.38, 0.38].forEach((x) => {
+        const arm = new THREE.Mesh(geometries.cylinderLow, tm.dark);
+        arm.scale.set(0.07, 0.28, 0.07);
+        arm.position.set(x, 0.88, 0);
+        g.add(arm);
+      });
+      [-0.13, 0.13].forEach((x) => {
+        const leg = new THREE.Mesh(geometries.cylinderLow, tm.dark);
+        leg.scale.set(0.09, 0.3, 0.09);
+        leg.position.set(x, 0.28, 0);
+        g.add(leg);
+      });
+      g.add(torso, head);
+      // paint hit mark on chest
+      const hitMark = new THREE.Mesh(geometries.sphere, getTeamMaterials(MULTIPLAYER ? (MY_TEAM === 'red' ? 'blue' : 'red') : 'blue').paint);
+      hitMark.scale.set(0.19, 0.13, 0.07);
+      hitMark.position.set(0.03, 0.95, 0.23);
+      g.add(hitMark);
+      g.position.copy(player.root.position);
+      g.rotation.y = player.yaw;
+      scene.add(g);
+      playerKillCamProxy = g;
+      playerKillCamProxyAnim.t = 0;
+    }
+
+    function updatePlayerKillCamProxy(dt) {
+      if (!playerKillCamProxy) return;
+      playerKillCamProxyAnim.t = Math.min(1, playerKillCamProxyAnim.t + dt * 1.6);
+      const t = playerKillCamProxyAnim.t;
+      const ease = 1 - Math.pow(1 - t, 3);
+      playerKillCamProxy.rotation.x = ease * Math.PI * 0.48;
+      playerKillCamProxy.position.y = player.root.position.y - ease * 0.55;
+    }
+
+    function removePlayerKillCamProxy() {
+      if (playerKillCamProxy) {
+        if (playerKillCamProxy.parent) scene.remove(playerKillCamProxy);
+        playerKillCamProxy = null;
+      }
     }
 
     window.__paintballDebug = {
