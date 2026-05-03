@@ -139,6 +139,7 @@
       height: 100vh;
       overflow: hidden;
       padding: clamp(14px, 2vw, 28px);
+      padding-top: clamp(90px, 12vh, 120px);
       display: none;
     }
     .view.active {
@@ -160,29 +161,36 @@
        HERO VIEW
     ══════════════════════════════════════════ */
     .heroView {
-      align-items: stretch;
+      align-items: center;
+      justify-content: center;
       height: 100vh;
       overflow: hidden;
     }
 
     .heroStack {
-      width: min(1280px, 100%);
+      width: min(900px, 100%);
       margin: 0 auto;
-      display: grid;
-      grid-template-rows: auto 1fr;
-      gap: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
       height: 100%;
-      min-height: 0;
+      justify-content: center;
     }
 
     /* ─── HERO TOP BAR ─── */
     .heroTopBar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
       display: flex;
-      align-items: flex-end;
+      align-items: center;
       justify-content: space-between;
       gap: 20px;
-      padding-bottom: 4px;
-      border-bottom: 1px solid rgba(204,21,21,0.25);
+      padding: 18px 32px 14px;
+      border-bottom: 1px solid rgba(204,21,21,0.18);
+      background: rgba(6,8,9,0.72);
+      backdrop-filter: blur(12px);
+      z-index: 10;
     }
 
     .heroTitleWrap { flex: 0 0 auto; }
@@ -191,8 +199,7 @@
       display: flex;
       flex-direction: column;
       align-items: flex-end;
-      gap: 8px;
-      padding-bottom: 6px;
+      gap: 6px;
     }
 
     /* ─── HERO AVATAR (top bar) ─── */
@@ -201,19 +208,18 @@
       flex-direction: column;
       align-items: center;
       gap: 5px;
-      padding-bottom: 4px;
       flex: 0 0 auto;
     }
 
     .heroAvatarRing {
       position: relative;
-      width: clamp(80px, 9vw, 118px);
-      height: clamp(80px, 9vw, 118px);
+      width: clamp(52px, 6vw, 72px);
+      height: clamp(52px, 6vw, 72px);
     }
 
     .heroAvatarRingDecor {
       position: absolute;
-      inset: -6px;
+      inset: -5px;
       border-radius: 50%;
       border: 1.5px dashed rgba(204,21,21,0.45);
       animation: spinSlow 14s linear infinite;
@@ -221,7 +227,7 @@
     }
     .heroAvatarRingDecor2 {
       position: absolute;
-      inset: -13px;
+      inset: -11px;
       border-radius: 50%;
       border: 1px solid rgba(204,21,21,0.15);
       animation: spinSlow 22s linear infinite reverse;
@@ -238,23 +244,23 @@
       border-radius: 50%;
       object-fit: cover;
       object-position: center 30%;
-      border: 2.5px solid var(--red);
+      border: 2px solid var(--red);
       box-shadow:
         0 0 0 1px rgba(204,21,21,0.25),
-        0 0 22px rgba(204,21,21,0.55),
-        0 0 50px rgba(204,21,21,0.2);
+        0 0 18px rgba(204,21,21,0.55),
+        0 0 40px rgba(204,21,21,0.2);
       animation: avatarGlow 2.5s ease-in-out infinite alternate;
       display: block;
     }
 
     @keyframes avatarGlow {
-      from { box-shadow: 0 0 0 1px rgba(204,21,21,0.25), 0 0 22px rgba(204,21,21,0.55), 0 0 50px rgba(204,21,21,0.2); }
-      to   { box-shadow: 0 0 0 2px rgba(204,21,21,0.45), 0 0 36px rgba(204,21,21,0.75), 0 0 72px rgba(204,21,21,0.32); }
+      from { box-shadow: 0 0 0 1px rgba(204,21,21,0.25), 0 0 18px rgba(204,21,21,0.55), 0 0 40px rgba(204,21,21,0.2); }
+      to   { box-shadow: 0 0 0 2px rgba(204,21,21,0.45), 0 0 30px rgba(204,21,21,0.75), 0 0 60px rgba(204,21,21,0.32); }
     }
 
     .heroAvatarName {
       font-family: 'Bebas Neue', Impact, sans-serif;
-      font-size: 13px;
+      font-size: 11px;
       letter-spacing: 0.14em;
       color: var(--red);
       text-shadow: 0 0 10px rgba(204,21,21,0.5);
@@ -266,6 +272,201 @@
       display: flex;
       gap: 4px;
       justify-content: center;
+    }
+
+    /* ─── HERO CENTER TITLE ─── */
+    .heroCenterTitle {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    /* ─── CONFIG CARDS ─── */
+    .configCards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      width: 100%;
+      margin-bottom: 20px;
+    }
+
+    .configCard {
+      position: relative;
+      padding: 20px 22px 18px;
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018));
+      box-shadow: 0 22px 70px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04);
+      clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+      text-align: left;
+    }
+    .configCard:hover {
+      border-color: rgba(204,21,21,0.6);
+      box-shadow: 0 0 0 1px rgba(204,21,21,0.18), 0 0 32px rgba(204,21,21,0.22), 0 22px 70px rgba(0,0,0,0.55);
+      transform: translateY(-3px);
+    }
+
+    .configCardLabel {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.28em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .configCardValue {
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: clamp(22px, 2.8vw, 34px);
+      line-height: 0.9;
+      letter-spacing: 0.08em;
+      color: #fff;
+    }
+
+    .configCardSub {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+    }
+
+    .configCardArrow {
+      position: absolute;
+      right: 14px; top: 50%;
+      transform: translateY(-50%);
+      font-size: 18px;
+      color: rgba(204,21,21,0.5);
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      letter-spacing: 0;
+    }
+
+    .configCardAvatar {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      object-fit: cover;
+      object-position: center 30%;
+      border: 2px solid var(--red);
+      box-shadow: 0 0 14px rgba(204,21,21,0.4);
+      display: block;
+    }
+
+    .configCardCharRow {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* ─── SUB VIEWS (map / options / character) ─── */
+    .subView {
+      display: none;
+      position: relative;
+      z-index: 5;
+      height: 100vh;
+      overflow-y: auto;
+      padding: clamp(14px, 2vw, 28px);
+      padding-top: 80px;
+    }
+    .subView.active { display: block; }
+    .subView.animateIn { animation: viewIn 300ms ease forwards; }
+
+    .subViewInner {
+      width: min(1100px, 100%);
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+      padding-bottom: 32px;
+    }
+
+    .subViewTitle {
+      margin: 0;
+      font-size: clamp(48px, 7vw, 88px);
+      line-height: 0.88;
+      letter-spacing: 0.08em;
+      text-align: center;
+    }
+
+    .subViewConfirmBtn {
+      align-self: center;
+      min-width: 260px;
+      padding: 14px 32px 12px;
+      border: 1px solid rgba(255,255,255,0.18);
+      color: #fff;
+      background: linear-gradient(135deg, var(--red-dark), var(--red) 52%, #f43a3a);
+      clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: 30px;
+      letter-spacing: 0.18em;
+      box-shadow: 0 0 28px rgba(204,21,21,0.32);
+      transition: transform 160ms ease, filter 160ms ease;
+    }
+    .subViewConfirmBtn:hover { transform: translateY(-2px); filter: brightness(1.1); }
+
+    /* Map select: bigger grid */
+    #mapSelectView .mapGrid {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      height: clamp(220px, 35vh, 380px);
+    }
+
+    /* Options view: two-col layout */
+    .optionsGrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .optionsGrid .optionGroup { padding: 18px 20px; gap: 12px; }
+    .optionsGrid .choice { min-height: 44px; font-size: 16px; }
+    .crosshairFull .chStyleRow { gap: 8px; }
+    .crosshairFull .chStyleBtn { width: 50px; height: 50px; }
+    .crosshairFull .chColorBtn { width: 32px; height: 32px; }
+
+    /* Character view: bigger skin grid */
+    #characterView .skinGrid {
+      grid-template-columns: repeat(5, 1fr);
+      gap: 14px;
+    }
+    #characterView .skinThumb { border-radius: 50%; }
+    #characterView .skinThumb img { object-fit: cover; }
+
+    .charPreview {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 24px;
+      border: 1px solid rgba(204,21,21,0.3);
+      background: rgba(204,21,21,0.06);
+      clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
+    }
+
+    .charPreviewImg {
+      width: clamp(100px, 14vw, 160px);
+      height: clamp(100px, 14vw, 160px);
+      border-radius: 50%;
+      object-fit: cover;
+      object-position: center 30%;
+      border: 3px solid var(--red);
+      box-shadow: 0 0 32px rgba(204,21,21,0.5), 0 0 64px rgba(204,21,21,0.2);
+      animation: avatarGlow 2.5s ease-in-out infinite alternate;
+      display: block;
+    }
+
+    .charPreviewName {
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: 28px;
+      letter-spacing: 0.14em;
+      color: var(--red);
+      text-shadow: 0 0 14px rgba(204,21,21,0.5);
+    }
+
+    .charSelectLayout {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 22px;
+      align-items: start;
     }
 
     .livePill {
@@ -1280,188 +1481,214 @@
     <div class="cornerBracket br"></div>
     <button id="menuBackBtn" class="navBackBtn hidden" type="button">◀ BACK</button>
 
+    <!-- ══════ PERSISTENT TOP BAR ══════ -->
+    <div class="heroTopBar" id="heroTopBar">
+      <div class="heroTitleWrap">
+        <div class="titleEyebrow">// COMPETITIVE PAINTBALL //</div>
+        <h1 class="title" aria-label="2 Steps Ahead" style="line-height:0.85">
+          <span class="titleLine" style="font-size:clamp(28px,4vw,52px)">2 STEPS</span>
+          <span class="titleLine titleAhead" style="font-size:clamp(28px,4vw,52px)">AHEAD</span>
+        </h1>
+      </div>
+
+      <div class="heroAvatarWrap">
+        <div class="heroAvatarRing">
+          <div class="heroAvatarRingDecor"></div>
+          <div class="heroAvatarRingDecor2"></div>
+          <img id="carouselImg" class="heroAvatarImg" src="skins/IMG_3472.PNG" alt="Selected skin" draggable="false">
+        </div>
+        <div class="heroAvatarName" id="carouselName">D Ohmie</div>
+      </div>
+
+      <div class="heroMeta">
+        <div class="livePill">
+          <div class="liveDot"></div>
+          ONLINE
+        </div>
+        <div class="statRow">
+          <div class="statItem">
+            <span class="statNum"><span class="countup" data-target="6">0</span></span>
+            <span class="statLabel">Maps</span>
+          </div>
+          <div class="statItem">
+            <span class="statNum"><span class="countup" data-target="10">0</span></span>
+            <span class="statLabel">Skins</span>
+          </div>
+          <div class="statItem">
+            <span class="statNum"><span class="countup" data-target="3">0</span></span>
+            <span class="statLabel">AI Levels</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ══════ HERO VIEW ══════ -->
     <section id="heroView" class="view heroView active">
       <div class="heroStack">
 
-        <!-- COMPACT TOP BAR: title left, avatar center, stats+pill right -->
-        <div class="heroTopBar">
-          <div class="heroTitleWrap">
-            <div class="titleEyebrow">// COMPETITIVE PAINTBALL //</div>
-            <h1 class="title" aria-label="2 Steps Ahead">
-              <span class="titleLine">2 STEPS</span>
-              <span class="titleLine titleAhead">AHEAD</span>
-            </h1>
-          </div>
+        <div class="heroCenterTitle">
+          <div class="redDivider" style="margin-bottom:8px"></div>
+          <div class="subtitle">Select your loadout, then deploy</div>
+        </div>
 
-          <!-- Selected skin avatar -->
-          <div class="heroAvatarWrap">
-            <div class="heroAvatarRing">
-              <div class="heroAvatarRingDecor"></div>
-              <div class="heroAvatarRingDecor2"></div>
-              <img id="carouselImg" class="heroAvatarImg" src="skins/IMG_3472.PNG" alt="Selected skin" draggable="false">
+        <!-- Config cards -->
+        <div class="configCards">
+          <button class="configCard" id="configMapCard" type="button" aria-label="Select Map">
+            <div class="configCardLabel">Map</div>
+            <div class="configCardValue" id="configMapName">Speedball</div>
+            <div class="configCardSub" id="configMapTag">Tournament</div>
+            <span class="configCardArrow">›</span>
+          </button>
+          <button class="configCard" id="configOptionsCard" type="button" aria-label="Game Options">
+            <div class="configCardLabel">Settings</div>
+            <div class="configCardValue" id="configSettingsValue">1v1 · First to 5</div>
+            <div class="configCardSub" id="configDifficultyValue">AI: Pro</div>
+            <span class="configCardArrow">›</span>
+          </button>
+          <button class="configCard" id="configCharCard" type="button" aria-label="Select Character">
+            <div class="configCardLabel">Character</div>
+            <div class="configCardCharRow">
+              <img id="configCharAvatar" class="configCardAvatar" src="skins/IMG_3472.PNG" alt="Character">
+              <div>
+                <div class="configCardValue" id="configCharName">D Ohmie</div>
+                <div class="configCardSub">Tap to change</div>
+              </div>
             </div>
-            <div class="heroAvatarName" id="carouselName">D Ohmie</div>
-            <div class="skinDots" id="carouselDots"></div>
-          </div>
+            <span class="configCardArrow">›</span>
+          </button>
+        </div>
 
-          <div class="heroMeta">
-            <div class="livePill">
-              <div class="liveDot"></div>
-              ONLINE
+        <!-- Deploy buttons -->
+        <div class="deployDock">
+          <button id="playMultiplayerBtn" class="deployBtn primary" type="button">
+            Deploy
+            <span class="deployBtnSub">Multiplayer Lobby</span>
+          </button>
+          <button id="playPracticeBtn" class="deployBtn practice" type="button">
+            Practice
+            <span class="deployBtnSub">Solo vs AI</span>
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ══════ MAP SELECT VIEW ══════ -->
+    <section id="mapSelectView" class="subView">
+      <div class="subViewInner">
+        <h2 class="subViewTitle">Select Map</h2>
+        <div class="mapGrid" data-option-group="map" aria-label="Map selection">
+          <button class="mapCard choice selected" data-value="speedball" type="button">
+            <iframe class="mapPreviewFrame" data-map-preview="speedball" title="Speedball preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+            <div class="mapSelBadge"><svg viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <span class="cardTag">Tournament</span>
+            <span class="cardName">Speedball</span>
+            <span class="cardSub">Clean lanes / fast breakouts</span>
+          </button>
+          <button class="mapCard choice" data-value="funland" type="button">
+            <iframe class="mapPreviewFrame" data-map-preview="funland" title="Funland preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+            <div class="mapSelBadge"><svg viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <span class="cardTag">Scenario</span>
+            <span class="cardName">Abandoned Funland</span>
+            <span class="cardSub">Theme park / eerie lanes</span>
+          </button>
+          <button class="mapCard choice" data-value="ghosttown" type="button">
+            <iframe class="mapPreviewFrame" data-map-preview="ghosttown" title="Ghost Town preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+            <div class="mapSelBadge"><svg viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <span class="cardTag">Scenario</span>
+            <span class="cardName">Ghost Town</span>
+            <span class="cardSub">Desert streets / western cover</span>
+          </button>
+          <button class="mapCard choice" data-value="rooftop" type="button">
+            <iframe class="mapPreviewFrame" data-map-preview="rooftop" title="Rooftop preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+            <div class="mapSelBadge"><svg viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <span class="cardTag">Skyline</span>
+            <span class="cardName">Rooftop City</span>
+            <span class="cardSub">Grass roof / huge city drop</span>
+          </button>
+          <button class="mapCard choice" data-value="castle" type="button">
+            <iframe class="mapPreviewFrame" data-map-preview="castle" title="Castle Siege preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+            <span class="cardTag">Fortress</span>
+            <span class="cardName">Castle Siege</span>
+            <span class="cardSub">Medieval fortress siege</span>
+          </button>
+          <button class="mapCard choice" data-value="beachmansion" type="button">
+            <iframe class="mapPreviewFrame" data-map-preview="beachmansion" title="Beach Mansion preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
+            <span class="cardTag">Estate</span>
+            <span class="cardName">Beach Mansion</span>
+            <span class="cardSub">Mediterranean cliff-side villa</span>
+          </button>
+        </div>
+        <button class="subViewConfirmBtn" id="confirmMapBtn" type="button">Confirm Map</button>
+      </div>
+    </section>
+
+    <!-- ══════ OPTIONS VIEW ══════ -->
+    <section id="optionsView" class="subView">
+      <div class="subViewInner">
+        <h2 class="subViewTitle">Game Options</h2>
+        <div class="optionsGrid">
+          <div class="optionGroup" data-option-group="firstTo">
+            <label>Win Condition</label>
+            <div class="choiceSet">
+              <button class="choice selected" data-value="5" type="button">First to 5</button>
+              <button class="choice" data-value="10" type="button">First to 10</button>
             </div>
-            <div class="statRow">
-              <div class="statItem">
-                <span class="statNum"><span class="countup" data-target="6">0</span></span>
-                <span class="statLabel">Maps</span>
+          </div>
+          <div class="optionGroup" data-option-group="gameMode">
+            <label>Squad Size</label>
+            <div class="choiceSet">
+              <button class="choice selected" data-value="1v1" type="button">1v1</button>
+              <button class="choice" data-value="2v2" type="button">2v2</button>
+            </div>
+          </div>
+          <div class="optionGroup" data-option-group="difficulty">
+            <label>AI Difficulty</label>
+            <div class="choiceSet threeChoices">
+              <button class="choice" data-value="basic" type="button">Basic</button>
+              <button class="choice selected" data-value="pro" type="button">Pro</button>
+              <button class="choice" data-value="elite" type="button">Elite</button>
+            </div>
+          </div>
+          <div class="optionGroup crosshairFull" id="crosshairGroup">
+            <label>Crosshair</label>
+            <div class="crosshairPicker">
+              <div class="chStyleRow">
+                <button class="chStyleBtn selected" data-ch-style="cross" type="button" title="Cross"><svg viewBox="0 0 24 24" width="20" height="20"><line x1="12" y1="2" x2="12" y2="8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="12" y1="16" x2="12" y2="22" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="2" y1="12" x2="8" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="16" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></button>
+                <button class="chStyleBtn" data-ch-style="dot" type="button" title="Dot"><svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="3.5" fill="currentColor"/></svg></button>
+                <button class="chStyleBtn" data-ch-style="circle" type="button" title="Circle"><svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg></button>
+                <button class="chStyleBtn" data-ch-style="crossdot" type="button" title="Cross+Dot"><svg viewBox="0 0 24 24" width="20" height="20"><line x1="12" y1="2" x2="12" y2="8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="12" y1="16" x2="12" y2="22" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="2" y1="12" x2="8" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="16" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg></button>
+                <button class="chStyleBtn" data-ch-style="x" type="button" title="X"><svg viewBox="0 0 24 24" width="20" height="20"><line x1="5" y1="5" x2="10" y2="10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="14" y1="14" x2="19" y2="19" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="19" y1="5" x2="14" y2="10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="10" y1="14" x2="5" y2="19" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></button>
+                <button class="chStyleBtn" data-ch-style="t" type="button" title="T-Shape"><svg viewBox="0 0 24 24" width="20" height="20"><line x1="12" y1="16" x2="12" y2="22" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="2" y1="12" x2="8" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="16" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></button>
               </div>
-              <div class="statItem">
-                <span class="statNum"><span class="countup" data-target="10">0</span></span>
-                <span class="statLabel">Skins</span>
-              </div>
-              <div class="statItem">
-                <span class="statNum"><span class="countup" data-target="3">0</span></span>
-                <span class="statLabel">AI Levels</span>
+              <div class="chColorRow">
+                <button class="chColorBtn selected" data-ch-color="white"  style="background:#ffffff" type="button" title="White"></button>
+                <button class="chColorBtn" data-ch-color="red"    style="background:#ff3333" type="button" title="Red"></button>
+                <button class="chColorBtn" data-ch-color="green"  style="background:#00ff88" type="button" title="Green"></button>
+                <button class="chColorBtn" data-ch-color="cyan"   style="background:#00e5ff" type="button" title="Cyan"></button>
+                <button class="chColorBtn" data-ch-color="yellow" style="background:#ffe600" type="button" title="Yellow"></button>
+                <button class="chColorBtn" data-ch-color="orange" style="background:#ff8800" type="button" title="Orange"></button>
+                <button class="chColorBtn" data-ch-color="pink"   style="background:#ff44cc" type="button" title="Pink"></button>
               </div>
             </div>
           </div>
         </div>
+        <button class="subViewConfirmBtn" id="confirmOptionsBtn" type="button">Confirm Settings</button>
+      </div>
+    </section>
 
-        <!-- MAIN CONTENT GRID: maps+deploy left, options right -->
-        <div class="mainGrid">
-          <!-- Left col: maps + deploy -->
-          <div class="leftCol">
-          <!-- Map cards -->
-          <div class="mapGrid" data-option-group="map" aria-label="Map selection">
-            <button class="mapCard choice selected" data-value="speedball" type="button">
-              <iframe class="mapPreviewFrame" data-map-preview="speedball" title="Speedball preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
-              <div class="mapSelBadge"><svg viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-              <span class="cardTag">Tournament</span>
-              <span class="cardName">Speedball</span>
-              <span class="cardSub">Clean lanes / fast breakouts</span>
-            </button>
-            <button class="mapCard choice" data-value="funland" type="button">
-              <iframe class="mapPreviewFrame" data-map-preview="funland" title="Funland preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
-              <div class="mapSelBadge"><svg viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-              <span class="cardTag">Scenario</span>
-              <span class="cardName">Abandoned Funland</span>
-              <span class="cardSub">Theme park / eerie lanes</span>
-            </button>
-            <button class="mapCard choice" data-value="ghosttown" type="button">
-              <iframe class="mapPreviewFrame" data-map-preview="ghosttown" title="Ghost Town preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
-              <div class="mapSelBadge"><svg viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-              <span class="cardTag">Scenario</span>
-              <span class="cardName">Ghost Town</span>
-              <span class="cardSub">Desert streets / western cover</span>
-            </button>
-            <button class="mapCard choice" data-value="rooftop" type="button">
-              <iframe class="mapPreviewFrame" data-map-preview="rooftop" title="Rooftop preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
-              <div class="mapSelBadge"><svg viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-              <span class="cardTag">Skyline</span>
-              <span class="cardName">Rooftop City</span>
-              <span class="cardSub">Grass roof / huge city drop</span>
-            </button>
-            <button class="mapCard choice" data-value="castle" type="button">
-              <iframe class="mapPreviewFrame" data-map-preview="castle" title="Castle Siege drone preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
-              <span class="cardTag">Fortress</span>
-              <span class="cardName">Castle Siege</span>
-              <span class="cardSub">Medieval fortress siege</span>
-            </button>
-            <button class="mapCard choice" data-value="beachmansion" type="button">
-              <iframe class="mapPreviewFrame" data-map-preview="beachmansion" title="Beach Mansion drone preview" aria-hidden="true" tabindex="-1" loading="lazy"></iframe>
-              <span class="cardTag">Estate</span>
-              <span class="cardName">Beach Mansion</span>
-              <span class="cardSub">Mediterranean cliff-side villa</span>
-            </button>
+    <!-- ══════ CHARACTER VIEW ══════ -->
+    <section id="characterView" class="subView">
+      <div class="subViewInner">
+        <h2 class="subViewTitle">Select Character</h2>
+        <div class="charSelectLayout">
+          <div class="charPreview">
+            <img id="charPreviewImg" class="charPreviewImg" src="skins/IMG_3472.PNG" alt="Selected character">
+            <div class="charPreviewName" id="charPreviewName">D Ohmie</div>
           </div>
-
-          <!-- Deploy buttons — inside left col, below maps -->
-          <div class="deployDock">
-            <button id="playMultiplayerBtn" class="deployBtn primary" type="button">
-              Deploy
-              <span class="deployBtnSub">Multiplayer Lobby</span>
-            </button>
-            <button id="playPracticeBtn" class="deployBtn practice" type="button">
-              Practice
-              <span class="deployBtnSub">Solo vs AI</span>
-            </button>
-          </div>
-          </div><!-- /leftCol -->
-
-          <!-- Right panel: options + skin picker -->
-          <div class="sidePanel">
-            <!-- Win Condition -->
-            <div class="optionGroup" data-option-group="firstTo">
-              <label>Win Condition</label>
-              <div class="choiceSet">
-                <button class="choice selected" data-value="5" type="button">First to 5</button>
-                <button class="choice" data-value="10" type="button">First to 10</button>
-              </div>
-            </div>
-
-            <!-- Squad Size -->
-            <div class="optionGroup" data-option-group="gameMode">
-              <label>Squad Size</label>
-              <div class="choiceSet">
-                <button class="choice selected" data-value="1v1" type="button">1v1</button>
-                <button class="choice" data-value="2v2" type="button">2v2</button>
-              </div>
-            </div>
-
-            <!-- AI Difficulty -->
-            <div class="optionGroup" data-option-group="difficulty">
-              <label>AI Difficulty</label>
-              <div class="choiceSet threeChoices">
-                <button class="choice" data-value="basic" type="button">Basic</button>
-                <button class="choice selected" data-value="pro" type="button">Pro</button>
-                <button class="choice" data-value="elite" type="button">Elite</button>
-              </div>
-            </div>
-
-            <!-- Crosshair -->
-            <div class="optionGroup" id="crosshairGroup">
-              <label>Crosshair</label>
-              <div class="crosshairPicker">
-                <div class="chStyleRow">
-                  <button class="chStyleBtn selected" data-ch-style="cross" type="button" title="Cross">
-                    <svg viewBox="0 0 24 24" width="20" height="20"><line x1="12" y1="2" x2="12" y2="8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="12" y1="16" x2="12" y2="22" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="2" y1="12" x2="8" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="16" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
-                  </button>
-                  <button class="chStyleBtn" data-ch-style="dot" type="button" title="Dot">
-                    <svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="3.5" fill="currentColor"/></svg>
-                  </button>
-                  <button class="chStyleBtn" data-ch-style="circle" type="button" title="Circle">
-                    <svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>
-                  </button>
-                  <button class="chStyleBtn" data-ch-style="crossdot" type="button" title="Cross+Dot">
-                    <svg viewBox="0 0 24 24" width="20" height="20"><line x1="12" y1="2" x2="12" y2="8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="12" y1="16" x2="12" y2="22" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="2" y1="12" x2="8" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="16" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>
-                  </button>
-                  <button class="chStyleBtn" data-ch-style="x" type="button" title="X">
-                    <svg viewBox="0 0 24 24" width="20" height="20"><line x1="5" y1="5" x2="10" y2="10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="14" y1="14" x2="19" y2="19" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="19" y1="5" x2="14" y2="10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="10" y1="14" x2="5" y2="19" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
-                  </button>
-                  <button class="chStyleBtn" data-ch-style="t" type="button" title="T-Shape">
-                    <svg viewBox="0 0 24 24" width="20" height="20"><line x1="12" y1="16" x2="12" y2="22" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="2" y1="12" x2="8" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="16" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
-                  </button>
-                </div>
-                <div class="chColorRow">
-                  <button class="chColorBtn selected" data-ch-color="white"  style="background:#ffffff" type="button" title="White"></button>
-                  <button class="chColorBtn" data-ch-color="red"    style="background:#ff3333" type="button" title="Red"></button>
-                  <button class="chColorBtn" data-ch-color="green"  style="background:#00ff88" type="button" title="Green"></button>
-                  <button class="chColorBtn" data-ch-color="cyan"   style="background:#00e5ff" type="button" title="Cyan"></button>
-                  <button class="chColorBtn" data-ch-color="yellow" style="background:#ffe600" type="button" title="Yellow"></button>
-                  <button class="chColorBtn" data-ch-color="orange" style="background:#ff8800" type="button" title="Orange"></button>
-                  <button class="chColorBtn" data-ch-color="pink"   style="background:#ff44cc" type="button" title="Pink"></button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Skin Picker -->
-            <div class="skinPickerGroup">
-              <label>Select Skin</label>
-              <div class="skinGrid" id="skinPickerGrid"></div>
-            </div>
-          </div>
+          <div class="skinGrid" id="skinPickerGrid"></div>
         </div>
-
+        <button class="subViewConfirmBtn" id="confirmCharBtn" type="button">Confirm Character</button>
       </div>
     </section>
 
@@ -1851,6 +2078,12 @@
         });
       }
 
+      // Update character preview panel
+      const previewImg = document.getElementById('charPreviewImg');
+      const previewName = document.getElementById('charPreviewName');
+      if (previewImg) { previewImg.src = 'skins/' + skin.file; previewImg.style.objectPosition = facePos; }
+      if (previewName) previewName.textContent = skin.name;
+
       // Save
       try {
         localStorage.setItem('selectedSkin', skin.id);
@@ -1949,6 +2182,7 @@
     };
 
     const views = { hero: $('#heroView'), lobby: $('#lobbyView') };
+    const subViews = { map: $('#mapSelectView'), options: $('#optionsView'), character: $('#characterView') };
     const panels = {
       entry:  $('#entryPanel'),
       create: $('#createPanel'),
@@ -1979,18 +2213,75 @@
       menuBackBtn:      $('#menuBackBtn')
     };
 
+    let activeSubView = null;
+
+    function showSubView(name) {
+      Object.keys(subViews).forEach(k => {
+        subViews[k].classList.remove('active', 'animateIn');
+      });
+      views.hero.classList.remove('active');
+      views.lobby.classList.remove('active');
+      activeSubView = name;
+      const el = subViews[name];
+      el.classList.add('active');
+      requestAnimationFrame(() => el.classList.add('animateIn'));
+      ui.menuBackBtn.classList.remove('hidden');
+      if (name === 'map') setupLiveMapPreviews();
+    }
+
+    function closeSubView() {
+      Object.keys(subViews).forEach(k => subViews[k].classList.remove('active', 'animateIn'));
+      activeSubView = null;
+      showView('hero');
+    }
+
+    function updateConfigCards() {
+      const mapLabels = {
+        speedball: ['Speedball', 'Tournament'],
+        funland: ['Abandoned Funland', 'Scenario'],
+        ghosttown: ['Ghost Town', 'Scenario'],
+        rooftop: ['Rooftop City', 'Skyline'],
+        castle: ['Castle Siege', 'Fortress'],
+        beachmansion: ['Beach Mansion', 'Estate']
+      };
+      const map = state.createOptions.map || 'speedball';
+      const [mName, mTag] = mapLabels[map] || [map, ''];
+      $('#configMapName').textContent = mName;
+      $('#configMapTag').textContent = mTag;
+
+      const mode = state.createOptions.gameMode || '1v1';
+      const ft = state.createOptions.firstTo || 5;
+      const diff = state.createOptions.difficulty || 'pro';
+      $('#configSettingsValue').textContent = mode + ' · First to ' + ft;
+      $('#configDifficultyValue').textContent = 'AI: ' + diff.charAt(0).toUpperCase() + diff.slice(1);
+
+      const skin = getSelectedSkin();
+      const facePos = skin.facePos || 'center 30%';
+      const avatarEl = $('#configCharAvatar');
+      avatarEl.src = '/skins/' + encodeURIComponent(skin.file);
+      avatarEl.style.objectPosition = facePos;
+      $('#configCharName').textContent = skin.name;
+    }
+
     function init() {
       if (state.username) ui.usernameInput.value = state.username;
       if (state.pendingRoom) showView('lobby');
       bindUi();
-      setupLiveMapPreviews();
       connectSocket();
+      updateConfigCards();
     }
 
     function bindUi() {
       $('#playMultiplayerBtn').addEventListener('click', () => showView('lobby'));
       $('#playPracticeBtn').addEventListener('click', startPractice);
       ui.menuBackBtn.addEventListener('click', navigateBack);
+
+      $('#configMapCard').addEventListener('click', () => showSubView('map'));
+      $('#configOptionsCard').addEventListener('click', () => showSubView('options'));
+      $('#configCharCard').addEventListener('click', () => showSubView('character'));
+      $('#confirmMapBtn').addEventListener('click', () => { updateConfigCards(); closeSubView(); });
+      $('#confirmOptionsBtn').addEventListener('click', () => { updateConfigCards(); closeSubView(); });
+      $('#confirmCharBtn').addEventListener('click', () => { updateConfigCards(); closeSubView(); });
       $('#showCreateBtn').addEventListener('click', () => {
         if (!captureUsername(ui.entryError)) return;
         showPanel('create');
@@ -2081,6 +2372,8 @@
     }
 
     function showView(name) {
+      Object.keys(subViews).forEach(k => subViews[k].classList.remove('active', 'animateIn'));
+      activeSubView = null;
       Object.keys(views).forEach(k => {
         const el = views[k];
         el.classList.toggle('active', k === name);
@@ -2103,6 +2396,7 @@
     }
 
     function navigateBack() {
+      if (activeSubView) { updateConfigCards(); closeSubView(); return true; }
       if (!views.lobby.classList.contains('active')) return false;
       const panel = activePanelName();
       if (panel === 'arena') { leaveLobby(); return true; }
@@ -2112,7 +2406,8 @@
     }
 
     function updateBackButton() {
-      ui.menuBackBtn.classList.toggle('hidden', !views.lobby.classList.contains('active'));
+      const inLobby = views.lobby.classList.contains('active');
+      ui.menuBackBtn.classList.toggle('hidden', !inLobby && !activeSubView);
     }
 
     function isTextEntryTarget(target) {
@@ -2138,7 +2433,9 @@
     }
 
     function setupLiveMapPreviews() {
-      document.querySelectorAll('.mapCard').forEach(card => {
+      document.querySelectorAll('#mapSelectView .mapCard, #roomSettingsPanel .mapCard').forEach(card => {
+        if (card.dataset.previewBound) return;
+        card.dataset.previewBound = '1';
         card.addEventListener('mouseenter', () => loadMapPreview(card));
         card.addEventListener('focus',      () => loadMapPreview(card));
         card.addEventListener('click',      () => loadMapPreview(card));
@@ -2305,6 +2602,7 @@
     }
 
     function renderRoomSettingsControls(room) {
+      setupLiveMapPreviews();
       document.querySelectorAll('[data-room-setting]').forEach(group => {
         const setting = group.dataset.roomSetting;
         const value = setting === 'firstTo' ? String(room.firstTo || 5) : String(room[setting] || '');
