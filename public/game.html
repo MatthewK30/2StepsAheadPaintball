@@ -2841,6 +2841,25 @@
       return [faceMat, faceMat, faceMat, faceMat, faceMat, faceMat];
     }
 
+    function buildSkinFaceCube(skin, size) {
+      const s = size || 0.36;
+      const mats = createSkinPreviewFaceCubeMaterials(skin);
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(s, s, s), mats);
+      mesh.userData.skinFaceCube = true;
+      return mesh;
+    }
+
+    function applySkinToFaceCube(faceCube, skin) {
+      if (!faceCube || !faceCube.material) return;
+      const old = Array.isArray(faceCube.material) ? faceCube.material[0] : faceCube.material;
+      const fresh = createSkinPreviewFaceCubeMaterials(skin);
+      faceCube.material = fresh;
+      if (old && old.userData && old.userData.skinMaterial) {
+        if (old.map) old.map.dispose();
+        old.dispose();
+      }
+    }
+
     function createEnvironmentMap() {
       if (!THREE.PMREMGenerator || !THREE.RoomEnvironment) return null;
       try {
@@ -6231,14 +6250,17 @@
       addBox('rimRightTorso', rim, 0.245, 1.22, 0, 0.018, 0.45, 0.13, root, 0, 0, 0, 'rim');
 
       addCylinder('neck', pad, 0, 1.47, 0, 0.045, 0.04, 0.1, root, 16);
-      aiInst.head = addSphere('helmetShell', helmet, 0, 1.62, -0.005, 0.17, 0.16, 0.15, root, 'helmet');
-      addSphere('maskShell', helmet, 0, 1.57, -0.095, 0.17, 0.135, 0.095, root, 'helmet');
-      aiInst.limbs.visor = addBox('visor', materials.hopperGlass, 0, 1.61, -0.18, 0.145, 0.038, 0.018, root);
-      addBox('maskFrame', rim, 0, 1.61, -0.193, 0.17, 0.058, 0.012, root, 0, 0, 0, 'rim');
-      addBox('chinGuard', pad, 0, 1.495, -0.17, 0.13, 0.055, 0.03, root);
-      for (let i = -2; i <= 2; i++) addBox('ventSlot' + i, materials.darkGrey, i * 0.026, 1.495, -0.193, 0.014, 0.008, 0.01, root);
-      addBox('goggleStrap', pad, 0, 1.61, 0.13, 0.22, 0.045, 0.024, root);
-      addBox('helmetRim', rim, 0, 1.76, -0.02, 0.2, 0.018, 0.13, root, 0, 0, 0, 'rim');
+      const initialSkin = aiInst.skin || (aiInst === ai ? remotePlayer?.skin : null) || DEFAULT_SKIN;
+      const faceCube = buildSkinFaceCube(initialSkin, 0.34);
+      faceCube.name = 'faceCube';
+      faceCube.position.set(0, 1.64, -0.02);
+      shadowMesh(faceCube, true, true);
+      faceCube.frustumCulled = false;
+      faceCube.userData.coverCull = true;
+      root.add(faceCube);
+      aiInst.head = faceCube;
+      aiInst.limbs.faceCube = faceCube;
+      aiInst.limbs.visor = faceCube;
 
       aiInst.limbs.leftShoulderJoint = addSphere('leftShoulderPad', jersey, -0.24, 1.4, 0, 0.06, 0.07, 0.075, root, 'primary');
       aiInst.limbs.rightShoulderJoint = addSphere('rightShoulderPad', jersey, 0.24, 1.4, 0, 0.06, 0.07, 0.075, root, 'primary');
@@ -6938,13 +6960,11 @@
 
       const neck = add(geos.cylinder, mats.joint, 0, 1.5, -0.02, 0.075, 0.06, 0.075);
 
-      const helmet = add(geos.sphere, mats.helmet, 0, 1.66, -0.02, 0.21, 0.22, 0.21);
-      add(geos.sphere, mats.armorDark, 0, 1.74, -0.02, 0.215, 0.13, 0.215);
-      add(geos.plate, mats.trim, 0, 1.78, -0.18, 0.32, 0.022, 0.04);
-      add(geos.sphere, mats.visor, 0, 1.66, -0.18, 0.17, 0.1, 0.06);
-      const facePlate = add(geos.facePlane, mats.photo, 0, 1.66, -0.22, 0.29, 0.32, 1);
-      add(geos.torus, mats.trim, 0, 1.66, -0.21, 0.16, 0.16, 0.6, 0, 0, 0);
-      add(geos.plate, mats.armorDark, 0, 1.55, -0.16, 0.18, 0.06, 0.05);
+      const faceCube = buildSkinFaceCube(skin, 0.42);
+      faceCube.position.set(0, 1.7, -0.02);
+      root.add(faceCube);
+      mats.faceCube = faceCube.material;
+      root.userData.faceCube = faceCube;
 
       for (let side = -1; side <= 1; side += 2) {
         add(geos.sphere, mats.armor, side * 0.36, 1.32, 0, 0.16, 0.14, 0.16);
@@ -7193,12 +7213,10 @@
 
     function applyRemoteSkinToAi(skin, aiInst) {
       if (!aiInst) aiInst = ai;
-      if (!aiInst.limbs || !aiInst.limbs.visor) return;
-      const previous = aiInst.limbs.visor.material;
-      aiInst.limbs.visor.material = createSkinVisorMaterial(skin || DEFAULT_SKIN);
-      if (previous && previous.userData && previous.userData.skinMaterial) {
-        if (previous.map) previous.map.dispose();
-        previous.dispose();
+      if (!aiInst.limbs) return;
+      aiInst.skin = skin || DEFAULT_SKIN;
+      if (aiInst.limbs.faceCube) {
+        applySkinToFaceCube(aiInst.limbs.faceCube, aiInst.skin);
       }
     }
 
@@ -7556,6 +7574,12 @@
 
     function startMatch() {
       state.selectedSkin = persistSelectedSkin(getSelectedSkin());
+      if (!MULTIPLAYER) {
+        const playerSkinId = (getSelectedSkin() || DEFAULT_SKIN).id;
+        const otherSkins = SKINS.filter((s) => s.id !== playerSkinId);
+        const aiSkin = otherSkins.length ? otherSkins[Math.floor(Math.random() * otherSkins.length)] : DEFAULT_SKIN;
+        applyRemoteSkinToAi(aiSkin);
+      }
       disposeSkinPreviews();
       if (ui.skinSelect) ui.skinSelect.classList.remove('visible');
       clearKillFeed();
