@@ -207,16 +207,24 @@
 
     .heroAvatarRing {
       position: relative;
-      width: clamp(72px, 9vw, 110px);
-      height: clamp(72px, 9vw, 110px);
+      width: clamp(80px, 9vw, 118px);
+      height: clamp(80px, 9vw, 118px);
     }
 
     .heroAvatarRingDecor {
       position: absolute;
       inset: -6px;
       border-radius: 50%;
-      border: 1.5px dashed rgba(204,21,21,0.35);
+      border: 1.5px dashed rgba(204,21,21,0.45);
       animation: spinSlow 14s linear infinite;
+      pointer-events: none;
+    }
+    .heroAvatarRingDecor2 {
+      position: absolute;
+      inset: -13px;
+      border-radius: 50%;
+      border: 1px solid rgba(204,21,21,0.15);
+      animation: spinSlow 22s linear infinite reverse;
       pointer-events: none;
     }
 
@@ -229,7 +237,7 @@
       height: 100%;
       border-radius: 50%;
       object-fit: cover;
-      object-position: top center;
+      object-position: center 30%;
       border: 2.5px solid var(--red);
       box-shadow:
         0 0 0 1px rgba(204,21,21,0.25),
@@ -407,7 +415,7 @@
       height: 100%;
       border-radius: 50%;
       object-fit: cover;
-      object-position: top center;
+      object-position: center 30%;
       border: 3px solid var(--red);
       box-shadow:
         0 0 0 1px rgba(204,21,21,0.3),
@@ -736,7 +744,7 @@
       aspect-ratio: 1;
       border-radius: 50%;
       overflow: hidden;
-      border: 2px solid rgba(255,255,255,0.12);
+      border: 2px solid rgba(255,255,255,0.14);
       background: rgba(255,255,255,0.06);
       cursor: pointer;
       transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
@@ -745,17 +753,25 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
-      object-position: top center;
+      object-position: center 30%;
       display: block;
+      transition: transform 0.25s ease;
+    }
+    .skinThumb:hover img {
+      transform: scale(1.08);
     }
     .skinThumb:hover {
-      transform: scale(1.08);
-      border-color: rgba(255,255,255,0.4);
+      border-color: rgba(255,255,255,0.5);
+      box-shadow: 0 0 10px rgba(255,255,255,0.12);
+      transform: scale(1.1);
     }
     .skinThumb.selected {
       border-color: var(--red);
-      box-shadow: 0 0 14px rgba(204,21,21,0.65);
-      transform: scale(1.08);
+      box-shadow: 0 0 16px rgba(204,21,21,0.7), 0 0 0 1px rgba(204,21,21,0.3);
+      transform: scale(1.12);
+    }
+    .skinThumb.selected img {
+      transform: scale(1.05);
     }
 
     /* ─── DEPLOY DOCK ─── */
@@ -1282,6 +1298,7 @@
           <div class="heroAvatarWrap">
             <div class="heroAvatarRing">
               <div class="heroAvatarRingDecor"></div>
+              <div class="heroAvatarRingDecor2"></div>
               <img id="carouselImg" class="heroAvatarImg" src="skins/IMG_3472.PNG" alt="Selected skin" draggable="false">
             </div>
             <div class="heroAvatarName" id="carouselName">D Ohmie</div>
@@ -1739,16 +1756,16 @@
        SKIN CAROUSEL + PICKER
     ══════════════════════════════════════ */
     const SKINS = [
-      { id: 'skin1',  file: 'IMG_3472.PNG', name: 'D Ohmie' },
-      { id: 'skin2',  file: 'IMG_7865.PNG', name: 'Freaky Indian' },
-      { id: 'skin3',  file: 'IMG_7866.PNG', name: 'Yam Guy' },
-      { id: 'skin4',  file: 'IMG_7868.PNG', name: 'Sleepy Ogre' },
-      { id: 'skin5',  file: 'IMG_7869.PNG', name: 'Sexy Ogre' },
-      { id: 'skin6',  file: 'IMG_7870.PNG', name: 'Yam ahh' },
-      { id: 'skin7',  file: 'IMG_7871.PNG', name: 'AD pizza man' },
-      { id: 'skin8',  file: 'IMG_7872.PNG', name: 'Afro Mf' },
-      { id: 'skin9',  file: 'IMG_7873.PNG', name: 'DubC' },
-      { id: 'skin10', file: 'IMG_7874.PNG', name: 'Cool Matt' }
+      { id: 'skin1',  file: 'IMG_3472.PNG', name: 'D Ohmie',        facePos: 'center 28%' },
+      { id: 'skin2',  file: 'IMG_7865.PNG', name: 'Freaky Indian',  facePos: 'center 38%' },
+      { id: 'skin3',  file: 'IMG_7866.PNG', name: 'Yam Guy',        facePos: 'center 52%' },
+      { id: 'skin4',  file: 'IMG_7868.PNG', name: 'Sleepy Ogre',    facePos: 'center 42%' },
+      { id: 'skin5',  file: 'IMG_7869.PNG', name: 'Sexy Ogre',      facePos: 'center 40%' },
+      { id: 'skin6',  file: 'IMG_7870.PNG', name: 'Yam ahh',        facePos: 'center 32%' },
+      { id: 'skin7',  file: 'IMG_7871.PNG', name: 'AD pizza man',   facePos: 'center 30%' },
+      { id: 'skin8',  file: 'IMG_7872.PNG', name: 'Afro Mf',        facePos: 'center 58%' },
+      { id: 'skin9',  file: 'IMG_7873.PNG', name: 'DubC',           facePos: 'center 40%' },
+      { id: 'skin10', file: 'IMG_7874.PNG', name: 'Cool Matt',      facePos: 'center 36%' }
     ];
     const DEFAULT_SKIN = SKINS[0];
 
@@ -1796,6 +1813,7 @@
       img.src = 'skins/' + skin.file;
       img.alt = skin.name;
       img.draggable = false;
+      img.style.objectPosition = skin.facePos || 'center 30%';
       thumb.appendChild(img);
       thumb.addEventListener('click', () => { userPickedSkin = true; clearInterval(carouselAutoTimer); selectSkin(i); });
       skinGrid.appendChild(thumb);
@@ -1804,12 +1822,14 @@
     function selectSkin(i) {
       selectedSkinIndex = i;
       const skin = SKINS[i];
+      const facePos = skin.facePos || 'center 30%';
 
       // Update carousel with fade (only if carousel exists)
       if (carouselImg && carouselName) {
         carouselImg.classList.add('fading');
         setTimeout(() => {
           carouselImg.src = 'skins/' + skin.file;
+          carouselImg.style.objectPosition = facePos;
           carouselName.textContent = skin.name;
           carouselImg.classList.remove('fading');
         }, 200);
@@ -1822,11 +1842,13 @@
         );
       }
 
-      // Update grid
+      // Update grid — also apply per-skin face position to each thumb img
       if (skinGrid) {
-        skinGrid.querySelectorAll('.skinThumb').forEach((t, j) =>
-          t.classList.toggle('selected', j === i)
-        );
+        skinGrid.querySelectorAll('.skinThumb').forEach((t, j) => {
+          t.classList.toggle('selected', j === i);
+          const img = t.querySelector('img');
+          if (img) img.style.objectPosition = SKINS[j].facePos || 'center 30%';
+        });
       }
 
       // Save
@@ -1846,6 +1868,8 @@
     }
 
     if (carouselImg && !userPickedSkin) startCarouselAuto();
+    // Apply initial face position immediately (no fade delay on load)
+    if (carouselImg) carouselImg.style.objectPosition = SKINS[selectedSkinIndex].facePos || 'center 30%';
     selectSkin(selectedSkinIndex); // sync UI on load
 
     /* ══════════════════════════════════════
@@ -2221,6 +2245,7 @@
       const avatar = card.querySelector('.avatar');
       avatar.classList.add('skinAvatar');
       avatar.style.backgroundImage = 'linear-gradient(180deg, rgba(0,0,0,0.04), rgba(0,0,0,0.34)), url("' + skinImageUrl(skin) + '")';
+      avatar.style.backgroundPosition = skin.facePos || 'center 30%';
       return card;
     }
 
