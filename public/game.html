@@ -1822,6 +1822,165 @@
         width: min(260px, calc(100vw - 24px));
       }
     }
+
+    /* ── HITMARKER ── */
+    #hitmarker {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 10;
+      width: 24px;
+      height: 24px;
+      opacity: 0;
+      transition: opacity 0.06s;
+    }
+    #hitmarker.flash { opacity: 1; }
+    #hitmarker::before,
+    #hitmarker::after {
+      content: '';
+      position: absolute;
+      background: rgba(255, 220, 60, 0.95);
+      border-radius: 1px;
+    }
+    #hitmarker::before { left: 50%; top: 0; width: 2px; height: 100%; transform: translateX(-50%); }
+    #hitmarker::after  { top: 50%; left: 0; height: 2px; width: 100%; transform: translateY(-50%); }
+
+    /* ── PING ── */
+    #pingDisplay {
+      position: fixed;
+      right: 14px;
+      top: 14px;
+      font-size: 11px;
+      font-family: 'Share Tech Mono', monospace;
+      color: var(--text-dim);
+      pointer-events: none;
+      z-index: 6;
+      display: none;
+    }
+    #pingDisplay.visible { display: block; }
+
+    /* ── TEAM IMBALANCE ── */
+    #teamImbalanceBanner {
+      position: fixed;
+      top: 90px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(232, 160, 32, 0.92);
+      color: #0d1117;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      padding: 5px 18px;
+      border-radius: 4px;
+      pointer-events: none;
+      z-index: 8;
+      display: none;
+      text-transform: uppercase;
+    }
+    #teamImbalanceBanner.visible { display: block; }
+
+    /* ── RECONNECT ── */
+    #reconnectOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(8,10,12,0.82);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      font-size: 22px;
+      font-family: 'Bebas Neue', sans-serif;
+      letter-spacing: 0.14em;
+      color: var(--text-dim);
+    }
+    #reconnectOverlay.visible { display: flex; }
+
+    /* ── MATCH STATS ── */
+    .matchStats {
+      display: flex;
+      gap: 18px;
+      justify-content: center;
+      margin: 10px 0 0;
+      flex-wrap: wrap;
+    }
+    .matchStatItem {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .matchStatVal {
+      font-size: 28px;
+      font-family: 'Bebas Neue', sans-serif;
+      color: var(--white);
+      line-height: 1;
+    }
+    .matchStatLabel {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+    }
+
+    /* ── TOUCH CONTROLS ── */
+    #touchControls {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 7;
+    }
+    #touchMoveZone, #touchAimZone {
+      position: absolute;
+      bottom: 20px;
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+      border: 2px solid rgba(255,255,255,0.12);
+      pointer-events: auto;
+      touch-action: none;
+    }
+    #touchMoveZone { left: 20px; }
+    #touchAimZone  { right: 20px; }
+    #touchMoveStick, #touchAimStick {
+      position: absolute;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.22);
+      top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      pointer-events: none;
+    }
+    #touchFireBtn {
+      position: absolute;
+      bottom: 80px;
+      right: 180px;
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: rgba(204,21,21,0.72);
+      font-size: 13px;
+      color: #fff;
+      pointer-events: auto;
+      touch-action: none;
+    }
+    #touchJumpBtn {
+      position: absolute;
+      bottom: 20px;
+      right: 180px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.14);
+      font-size: 10px;
+      color: #fff;
+      pointer-events: auto;
+      touch-action: none;
+    }
   </style>
   <script src="/socket.io/socket.io.js"></script>
 </head>
@@ -1987,6 +2146,7 @@
       <h2 id="matchTitle">MATCH COMPLETE</h2>
       <div id="matchWinner">Red Team</div>
       <p id="matchCopy">Final score: Red 0 - Blue 0.</p>
+      <div id="matchStats" class="matchStats"></div>
       <div class="overlayActions">
         <button id="matchAgainBtn">Play Again</button>
         <button id="matchLobbyBtn" class="secondaryAction">Back to Lobby</button>
@@ -2036,6 +2196,10 @@
       <div id="podIcons"></div>
     </div>
     <div id="crosshair"></div>
+    <div id="hitmarker" aria-hidden="true"></div>
+    <div id="pingDisplay" aria-hidden="true"></div>
+    <div id="teamImbalanceBanner" aria-hidden="true"></div>
+    <div id="reconnectOverlay" aria-hidden="true"><span>Reconnecting...</span></div>
     <div id="centerMessage"></div>
     <div id="hint">Pointer lock may release on Esc. Click the field to re-lock. AI uses cover, line-of-sight checks, and a balanced firing cadence.</div>
     <div id="perf">FPS --</div>
@@ -2087,6 +2251,12 @@
     </div>
   </div>
   <div id="codVignette"></div>
+  <div id="touchControls" style="display:none" aria-hidden="true">
+    <div id="touchMoveZone"><div id="touchMoveStick"></div></div>
+    <div id="touchAimZone"><div id="touchAimStick"></div></div>
+    <button id="touchFireBtn" type="button">FIRE</button>
+    <button id="touchJumpBtn" type="button">CROUCH</button>
+  </div>
 
   <script type="importmap">
   {
@@ -2286,7 +2456,17 @@
       killCamVictim: document.getElementById('killCamVictim'),
       killCamKillerName: document.getElementById('killCamKillerName'),
       killCamVictimName: document.getElementById('killCamVictimName'),
-      killCamSplat: document.getElementById('killCamSplat')
+      killCamSplat: document.getElementById('killCamSplat'),
+      hitmarker: document.getElementById('hitmarker'),
+      pingDisplay: document.getElementById('pingDisplay'),
+      teamImbalanceBanner: document.getElementById('teamImbalanceBanner'),
+      reconnectOverlay: document.getElementById('reconnectOverlay'),
+      matchStatsEl: document.getElementById('matchStats'),
+      touchControls: document.getElementById('touchControls'),
+      touchMoveZone: document.getElementById('touchMoveZone'),
+      touchAimZone: document.getElementById('touchAimZone'),
+      touchFireBtn: document.getElementById('touchFireBtn'),
+      touchJumpBtn: document.getElementById('touchJumpBtn')
     };
 
     const state = {
@@ -2460,6 +2640,12 @@
       startRot: new THREE.Euler()
     };
 
+    const cameraShake = { x: 0, y: 0, decay: 0 };
+    const matchStats = { shotsFired: 0, shotsHit: 0, eliminations: 0, deaths: 0 };
+    let hitmarkerTimeout = null;
+    let pingMs = 0;
+    let pingInterval = null;
+
     const shotHistory = Array.from({ length: 10 }, () => null);
     let shotHistoryIndex = 0;
     const killCam = {
@@ -2567,6 +2753,7 @@
     } else {
       setupMenu();
       setupInput();
+      setupTouchControls();
       setupMultiplayerSocket();
       setupPostProcessing();
       loadPostProcessingModules();
@@ -5964,10 +6151,17 @@
 
     function createProjectilePool() {
       const pool = [];
+      const tracerMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.45, depthWrite: false });
       for (let i = 0; i < PROJECTILE_POOL_SIZE; i++) {
         const mesh = new THREE.Mesh(geometries.paintball, materials.paintRed);
         mesh.visible = false;
-        pool.push({ mesh, active: false, team: 'red', life: 0, radius: PAINTBALL_RADIUS, pos: mesh.position, prev: new THREE.Vector3(), vel: new THREE.Vector3(), shotData: null });
+        const tracerGeo = new THREE.BufferGeometry();
+        const tracerPositions = new Float32Array(6);
+        tracerGeo.setAttribute('position', new THREE.BufferAttribute(tracerPositions, 3));
+        const tracer = new THREE.Line(tracerGeo, tracerMat.clone());
+        tracer.visible = false;
+        tracer.frustumCulled = false;
+        pool.push({ mesh, tracer, active: false, team: 'red', life: 0, radius: PAINTBALL_RADIUS, pos: mesh.position, prev: new THREE.Vector3(), vel: new THREE.Vector3(), shotData: null });
       }
       return pool;
     }
@@ -7135,6 +7329,7 @@
       });
       multiplayer.socket.on('connect', () => {
         multiplayer.connected = true;
+        if (ui.reconnectOverlay) ui.reconnectOverlay.classList.remove('visible');
         multiplayer.socket.emit('rejoin_room', {
           code: ROOM_CODE,
           username: MY_USERNAME,
@@ -7143,9 +7338,20 @@
           skinFile: getSelectedSkin().file,
           skinName: getSelectedSkin().name
         });
+        startPingMonitor(multiplayer.socket);
       });
       multiplayer.socket.on('disconnect', () => {
         multiplayer.connected = false;
+        if (ui.reconnectOverlay) ui.reconnectOverlay.classList.add('visible');
+        stopPingMonitor();
+      });
+      multiplayer.socket.on('player_disconnected', ({ id }) => {
+        if (GAME_MODE !== '2v2') return;
+        // give server a moment to update, then check imbalance
+        setTimeout(() => {
+          const myTeamCount = id === remotePlayer.id ? 0 : 1;
+          if (myTeamCount < 1) showTeamImbalance('Player disconnected — teams may be uneven');
+        }, 500);
       });
       multiplayer.socket.on('game_ready', ({ room, myTeam }) => {
         multiplayer.ready = true;
@@ -7449,6 +7655,108 @@
       }
     }
 
+    function setupTouchControls() {
+      if (!('ontouchstart' in window)) return;
+      if (ui.touchControls) ui.touchControls.style.display = 'block';
+      const moveZone = ui.touchMoveZone;
+      const aimZone = ui.touchAimZone;
+      if (!moveZone || !aimZone) return;
+      const moveStick = ui.touchMoveZone.querySelector('#touchMoveStick');
+      const aimStick = ui.touchAimZone.querySelector('#touchAimStick');
+      let moveTouchId = -1, aimTouchId = -1;
+      let moveCenter = { x: 0, y: 0 }, aimLast = { x: 0, y: 0 };
+      const getCenter = (el) => {
+        const r = el.getBoundingClientRect();
+        return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+      };
+      const clampStick = (v, max) => Math.max(-max, Math.min(max, v));
+      const DEAD = 8, MAX_R = 56;
+      moveZone.addEventListener('touchstart', (e) => {
+        unlockAudio();
+        const t = e.changedTouches[0];
+        moveTouchId = t.identifier;
+        moveCenter = getCenter(moveZone);
+      }, { passive: true });
+      moveZone.addEventListener('touchmove', (e) => {
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          const t = e.changedTouches[i];
+          if (t.identifier !== moveTouchId) continue;
+          const dx = clampStick(t.clientX - moveCenter.x, MAX_R);
+          const dy = clampStick(t.clientY - moveCenter.y, MAX_R);
+          input.forward  = dy < -DEAD;
+          input.backward = dy > DEAD;
+          input.left     = dx < -DEAD;
+          input.right    = dx > DEAD;
+          if (moveStick) { moveStick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`; }
+        }
+      }, { passive: true });
+      moveZone.addEventListener('touchend', (e) => {
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          if (e.changedTouches[i].identifier !== moveTouchId) continue;
+          moveTouchId = -1;
+          input.forward = input.backward = input.left = input.right = false;
+          if (moveStick) moveStick.style.transform = 'translate(-50%, -50%)';
+        }
+      }, { passive: true });
+      aimZone.addEventListener('touchstart', (e) => {
+        const t = e.changedTouches[0];
+        aimTouchId = t.identifier;
+        aimLast = { x: t.clientX, y: t.clientY };
+      }, { passive: true });
+      aimZone.addEventListener('touchmove', (e) => {
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          const t = e.changedTouches[i];
+          if (t.identifier !== aimTouchId) continue;
+          const sens = 0.003;
+          player.yaw   -= (t.clientX - aimLast.x) * sens;
+          player.pitch -= (t.clientY - aimLast.y) * sens;
+          player.pitch = clamp(player.pitch, -Math.PI * 0.44, Math.PI * 0.44);
+          aimLast = { x: t.clientX, y: t.clientY };
+          if (aimStick) { aimStick.style.transform = 'translate(-50%, -50%)'; }
+        }
+      }, { passive: true });
+      aimZone.addEventListener('touchend', (e) => {
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          if (e.changedTouches[i].identifier === aimTouchId) aimTouchId = -1;
+        }
+      }, { passive: true });
+      if (ui.touchFireBtn) {
+        ui.touchFireBtn.addEventListener('touchstart', () => {
+          input.shotRequests = Math.min(input.shotRequests + 1, 3);
+          input.pointerLocked = true;
+        }, { passive: true });
+      }
+      if (ui.touchJumpBtn) {
+        ui.touchJumpBtn.addEventListener('touchstart', () => { input.crouch = true; }, { passive: true });
+        ui.touchJumpBtn.addEventListener('touchend', () => { input.crouch = false; }, { passive: true });
+      }
+    }
+
+    // Gamepad: poll axes/buttons each frame and map to input
+    const _gp = { lastFire: false };
+    function pollGamepad() {
+      const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+      const pad = pads[0];
+      if (!pad) return;
+      const ax = pad.axes;
+      const DEAD = 0.18;
+      input.left     = ax[0] < -DEAD;
+      input.right    = ax[0] > DEAD;
+      input.forward  = ax[1] < -DEAD;
+      input.backward = ax[1] > DEAD;
+      if (Math.abs(ax[2]) > DEAD) player.yaw   -= ax[2] * 0.045;
+      if (Math.abs(ax[3]) > DEAD) player.pitch -= ax[3] * 0.032;
+      player.pitch = clamp(player.pitch, -Math.PI * 0.44, Math.PI * 0.44);
+      input.sprint = !!(pad.buttons[10] && pad.buttons[10].pressed);
+      input.crouch = !!(pad.buttons[1] && pad.buttons[1].pressed);
+      const fire = !!(pad.buttons[7] && pad.buttons[7].value > 0.5);
+      if (fire && !_gp.lastFire && state.phase === 'active' && !state.playerEliminated) {
+        input.shotRequests = Math.min(input.shotRequests + 1, 3);
+        input.pointerLocked = true;
+      }
+      _gp.lastFire = fire;
+    }
+
     function setupInput() {
       document.addEventListener('pointerlockchange', () => {
         input.pointerLocked = document.pointerLockElement === renderer.domElement;
@@ -7612,6 +7920,7 @@
       state.scoreBlue = 0;
       state.phase = 'countdown';
       state.running = true;
+      resetMatchStats();
       visualQuality.lastCheck = performance.now() / 1000;
       setGrassDensity('medium');
       setCrowdDensity('medium');
@@ -7803,6 +8112,7 @@
       }
       updateFps(dt);
       updateVisualQuality();
+      pollGamepad();
       updateGame(dt);
       updateEliminatedSplat();
       updateDronePreviews(dt);
@@ -8063,7 +8373,15 @@
       }
       moveWithCollision(player.root.position, player.velocity.x * dt, player.velocity.z * dt, player.radius);
       player.bodyCenter.set(player.root.position.x + player.hitLeanX, player.height * 0.5, player.root.position.z + player.hitLeanZ);
-      camera.position.set(player.peek, player.height + player.bobOffset, 0);
+      // camera shake decay
+      if (cameraShake.decay > 0) {
+        cameraShake.decay = Math.max(0, cameraShake.decay - dt * 8);
+        cameraShake.x = (Math.random() * 2 - 1) * cameraShake.decay * 0.055;
+        cameraShake.y = (Math.random() * 2 - 1) * cameraShake.decay * 0.035;
+      } else {
+        cameraShake.x = 0; cameraShake.y = 0;
+      }
+      camera.position.set(player.peek + cameraShake.x, player.height + player.bobOffset + cameraShake.y, 0);
       audio.updateRattle(player.moving && !input.crouch && !input.crawl, player.sprinting);
     }
 
@@ -8340,6 +8658,7 @@
         });
       }
       ammo.hopper -= 1;
+      matchStats.shotsFired += 1;
       notePlayerShot();
       state.nextShotTime = now + SHOT_COOLDOWN;
       state.shotClock = SHOT_COOLDOWN;
@@ -8363,6 +8682,11 @@
           p.vel.copy(p.mesh.userData.velocity);
           if (!p.mesh.parent) scene.add(p.mesh);
           p.mesh.visible = true;
+          if (p.tracer) {
+            p.tracer.material.color.setHex(team === 'red' ? 0xff4444 : 0x4488ff);
+            if (!p.tracer.parent) scene.add(p.tracer);
+            p.tracer.visible = true;
+          }
           return p;
         }
       }
@@ -8371,10 +8695,12 @@
 
     function clearProjectiles() {
       for (let i = 0; i < projectiles.length; i++) {
-        projectiles[i].active = false;
-        projectiles[i].shotData = null;
-        projectiles[i].mesh.visible = false;
-        if (projectiles[i].mesh.parent) scene.remove(projectiles[i].mesh);
+        const p = projectiles[i];
+        p.active = false;
+        p.shotData = null;
+        p.mesh.visible = false;
+        if (p.mesh.parent) scene.remove(p.mesh);
+        if (p.tracer) { p.tracer.visible = false; if (p.tracer.parent) scene.remove(p.tracer); }
       }
     }
 
@@ -8386,6 +8712,18 @@
         p.vel.y -= PAINTBALL_GRAVITY * dt;
         p.pos.addScaledVector(p.vel, dt);
         p.life -= dt;
+        if (p.tracer && p.tracer.visible) {
+          const attr = p.tracer.geometry.attributes.position;
+          const tailLen = Math.min(p.vel.length() * 0.04, 0.9);
+          const norm = p.vel.clone().normalize();
+          attr.array[0] = p.pos.x - norm.x * tailLen;
+          attr.array[1] = p.pos.y - norm.y * tailLen;
+          attr.array[2] = p.pos.z - norm.z * tailLen;
+          attr.array[3] = p.pos.x;
+          attr.array[4] = p.pos.y;
+          attr.array[5] = p.pos.z;
+          attr.needsUpdate = true;
+        }
         if (p.life <= 0 || outOfBounds(p.pos)) {
           deactivateProjectile(p);
           continue;
@@ -8495,6 +8833,10 @@
       p.shotData = null;
       p.mesh.visible = false;
       if (p.mesh.parent) scene.remove(p.mesh);
+      if (p.tracer) {
+        p.tracer.visible = false;
+        if (p.tracer.parent) scene.remove(p.tracer);
+      }
     }
 
     function projectileCanHitOpponent(p) {
@@ -9218,6 +9560,9 @@
 
     function aiEliminated(hitPos, shotData) {
       state.aiEliminated = true;
+      matchStats.shotsHit += 1;
+      matchStats.eliminations += 1;
+      flashHitmarker();
       ai.splat.visible = true;
       if (ai.limbs && ai.limbs.splat2) ai.limbs.splat2.visible = true;
       startAiDeathVisual();
@@ -9242,6 +9587,8 @@
 
     function playerEliminated(shotData) {
       state.playerEliminated = true;
+      matchStats.deaths += 1;
+      cameraShake.decay = 1;
       gun.paint.visible = true;
       addKillFeedEntry(aiDifficultyName(), 'blue', selectedSkinName(), 'red');
       playEliminationAudio('victim');
@@ -9270,6 +9617,9 @@
 
     function hitOpponent(shotData, shooterId) {
       if (state.aiEliminated || state.phase === 'roundOver' || state.phase === 'matchOver') return;
+      matchStats.shotsHit += 1;
+      matchStats.eliminations += 1;
+      flashHitmarker();
       const localMats = getTeamMaterials(MY_TEAM);
       const winner = MY_TEAM;
       const message = formatTeam(winner) + ' wins the round';
@@ -9306,6 +9656,8 @@
 
     function hitPlayer(shotData, shooterId) {
       if (state.playerEliminated || state.phase === 'roundOver' || state.phase === 'matchOver') return;
+      matchStats.deaths += 1;
+      cameraShake.decay = 1;
       const winner = remotePlayer.team || OPPONENT_TEAM;
       const message = formatTeam(winner) + ' wins the round';
       gun.paint.material = getTeamMaterials(winner).paint;
@@ -9671,7 +10023,8 @@
       ui.victoryBadge.textContent = winner.toUpperCase() + ' TEAM';
       ui.matchWinner.textContent = winner.toUpperCase() + ' TEAM WINS';
       ui.matchWinner.style.color = winner === 'Blue' ? '#1566cc' : '#cc1515';
-      ui.matchCopy.textContent = 'Score ' + state.scoreRed + ' - ' + state.scoreBlue + ' | Average FPS ' + Math.round(state.fpsAverage);
+      ui.matchCopy.textContent = 'Score ' + state.scoreRed + ' – ' + state.scoreBlue;
+      renderMatchStats();
       ui.matchScreen.style.display = 'grid';
       startVictoryCinematic(winner);
       audio.matchWin();
@@ -10796,6 +11149,60 @@
 
     function clamp(v, min, max) {
       return v < min ? min : v > max ? max : v;
+    }
+
+    function flashHitmarker() {
+      if (!ui.hitmarker) return;
+      clearTimeout(hitmarkerTimeout);
+      ui.hitmarker.classList.add('flash');
+      hitmarkerTimeout = setTimeout(() => ui.hitmarker.classList.remove('flash'), 90);
+    }
+
+    function resetMatchStats() {
+      matchStats.shotsFired = 0;
+      matchStats.shotsHit = 0;
+      matchStats.eliminations = 0;
+      matchStats.deaths = 0;
+    }
+
+    function renderMatchStats() {
+      if (!ui.matchStatsEl) return;
+      const acc = matchStats.shotsFired > 0 ? Math.round((matchStats.shotsHit / matchStats.shotsFired) * 100) : 0;
+      const items = [
+        { val: matchStats.eliminations, label: 'Eliminations' },
+        { val: matchStats.deaths, label: 'Deaths' },
+        { val: matchStats.shotsFired, label: 'Shots Fired' },
+        { val: acc + '%', label: 'Accuracy' }
+      ];
+      ui.matchStatsEl.innerHTML = items.map(i =>
+        `<div class="matchStatItem"><span class="matchStatVal">${i.val}</span><span class="matchStatLabel">${i.label}</span></div>`
+      ).join('');
+    }
+
+    function showTeamImbalance(msg) {
+      if (!ui.teamImbalanceBanner) return;
+      ui.teamImbalanceBanner.textContent = msg;
+      ui.teamImbalanceBanner.classList.add('visible');
+      setTimeout(() => ui.teamImbalanceBanner.classList.remove('visible'), 5000);
+    }
+
+    function startPingMonitor(socket) {
+      if (pingInterval) clearInterval(pingInterval);
+      if (!ui.pingDisplay) return;
+      ui.pingDisplay.classList.add('visible');
+      pingInterval = setInterval(() => {
+        if (!socket || !socket.connected) return;
+        const start = performance.now();
+        socket.volatile.emit('ping_check', null, () => {
+          pingMs = Math.round(performance.now() - start);
+          if (ui.pingDisplay) ui.pingDisplay.textContent = pingMs + 'ms';
+        });
+      }, 2000);
+    }
+
+    function stopPingMonitor() {
+      if (pingInterval) { clearInterval(pingInterval); pingInterval = null; }
+      if (ui.pingDisplay) ui.pingDisplay.classList.remove('visible');
     }
 
     window.__paintballDebug = {

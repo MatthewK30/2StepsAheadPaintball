@@ -1745,6 +1745,7 @@
 
     let selectedSkinIndex = Math.max(0, SKINS.findIndex(s => s.id === getSavedSkin().id));
     let carouselAutoTimer = null;
+    let userPickedSkin = (() => { try { return !!localStorage.getItem('selectedSkin'); } catch(_) { return false; } })();
 
     const carouselImg  = document.getElementById('carouselImg');
     const carouselName = document.getElementById('carouselName');
@@ -1757,7 +1758,7 @@
         const dot = document.createElement('button');
         dot.className = 'skinDot' + (i === selectedSkinIndex ? ' active' : '');
         dot.type = 'button';
-        dot.addEventListener('click', () => selectSkin(i));
+        dot.addEventListener('click', () => { userPickedSkin = true; clearInterval(carouselAutoTimer); selectSkin(i); });
         dotsWrap.appendChild(dot);
       });
     }
@@ -1773,7 +1774,7 @@
       img.alt = skin.name;
       img.draggable = false;
       thumb.appendChild(img);
-      thumb.addEventListener('click', () => selectSkin(i));
+      thumb.addEventListener('click', () => { userPickedSkin = true; clearInterval(carouselAutoTimer); selectSkin(i); });
       skinGrid.appendChild(thumb);
     });
 
@@ -1813,21 +1814,15 @@
       } catch(_) {}
     }
 
-    // Auto-cycle carousel every 3s (pauses on user interaction)
+    // Auto-cycle only if user has never picked a skin; stops permanently on first manual selection
     function startCarouselAuto() {
+      if (userPickedSkin) return;
       carouselAutoTimer = setInterval(() => {
         selectSkin((selectedSkinIndex + 1) % SKINS.length);
       }, 3000);
     }
 
-    function resetCarouselAuto() {
-      clearInterval(carouselAutoTimer);
-      setTimeout(startCarouselAuto, 5000);
-    }
-
-    if (dotsWrap) dotsWrap.addEventListener('click', resetCarouselAuto);
-    if (skinGrid) skinGrid.addEventListener('click', resetCarouselAuto);
-    if (carouselImg) startCarouselAuto();
+    if (carouselImg && !userPickedSkin) startCarouselAuto();
     selectSkin(selectedSkinIndex); // sync UI on load
 
     /* ══════════════════════════════════════

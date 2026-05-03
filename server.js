@@ -469,6 +469,8 @@ io.on('connection', (socket) => {
     if (typeof ack === 'function') ack()
   })
 
+  socket.on('ping_check', (_, cb) => { if (typeof cb === 'function') cb(); })
+
   socket.on('disconnect', () => {
     Object.keys(rooms).forEach(code => {
       const room = rooms[code]
