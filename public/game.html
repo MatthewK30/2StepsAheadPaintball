@@ -4179,18 +4179,18 @@
     }
 
     function createCastleSiegeMaterials() {
-      const standard = (color, opts = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.9, metalness: 0.02, envMap: environmentMap, envMapIntensity: 0.18, ...opts });
-      const stone = standard(0x555550, { roughness: 0.95, metalness: 0.05, envMapIntensity: 0.16 });
-      const cobble = standard(0x3a3a38, { roughness: 0.96, metalness: 0.02, vertexColors: true, envMapIntensity: 0.12 });
+      const standard = (color, opts = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.9, metalness: 0.02, envMap: environmentMap, envMapIntensity: 0.4, ...opts });
+      const stone = standard(0xaaa898, { roughness: 0.88, metalness: 0.05, envMapIntensity: 0.35 });
+      const cobble = standard(0x888880, { roughness: 0.9, metalness: 0.02, vertexColors: true, envMapIntensity: 0.3 });
       textureLibrary.apply(stone, 'concrete', 2.4, 1.8);
       textureLibrary.apply(cobble, 'concrete', 15, 8);
       return {
         stone,
         cobble,
-        forestFloor: standard(0x1a1208, { roughness: 1, metalness: 0, envMapIntensity: 0.04 }),
-        wood: standard(0x4f321c, { roughness: 0.92, metalness: 0, envMapIntensity: 0.12 }),
-        trunk: standard(0x2a1a0a, { roughness: 0.96, metalness: 0, envMapIntensity: 0.08 }),
-        canopy: standard(0x1a2d0a, { roughness: 1, metalness: 0, envMapIntensity: 0.05 }),
+        forestFloor: standard(0x4a4030, { roughness: 1, metalness: 0, envMapIntensity: 0.1 }),
+        wood: standard(0x8a6040, { roughness: 0.88, metalness: 0, envMapIntensity: 0.25 }),
+        trunk: standard(0x6a4a28, { roughness: 0.92, metalness: 0, envMapIntensity: 0.2 }),
+        canopy: standard(0x4a7020, { roughness: 0.95, metalness: 0, envMapIntensity: 0.15 }),
         water: standard(0x004488, { roughness: 0.3, metalness: 0, emissive: 0x004488, emissiveIntensity: 0.3, transparent: true, opacity: 0.7 }),
         flame: standard(0xff8844, { roughness: 0.38, metalness: 0, emissive: 0xff6622, emissiveIntensity: 1.45, transparent: true, opacity: 0.9 }),
         invisible: new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0, depthWrite: false })
@@ -4217,7 +4217,7 @@
         const z = pos.getZ(i);
         const tile = ((Math.floor((x + ARENA_HALF_X) / 2) + Math.floor((z + ARENA_HALF_Z) / 2)) & 1) ? 0.02 : -0.015;
         const wear = Math.sin(x * 0.7) * 0.018 + Math.cos(z * 0.9) * 0.018 + (((i * 17) % 11) - 5) * 0.003;
-        color.setHex(0x3a3a38).offsetHSL(0, -0.03, tile + wear);
+        color.setHex(0x888880).offsetHSL(0, -0.03, tile + wear);
         colors.push(color.r, color.g, color.b);
       }
       geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
@@ -11360,16 +11360,16 @@
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         // Medieval dusk — deep slate-blue sky
-        scene.background = new THREE.Color(0x3a4a6b);
-        scene.fog = new THREE.Fog(0x3a4a6b, 60, 160);
+        scene.background = new THREE.Color(0x7090c0);
+        scene.fog = new THREE.Fog(0x7090c0, 80, 200);
         skyStatus = 'castle-night';
-        renderer.toneMappingExposure = 2.2;
-        // Bright cool-white ambient so everything is clearly visible
-        ambientLight.color.setHex(0xc8d8f0);
-        ambientLight.intensity = 3.5;
-        // Strong warm sun
-        keyLight.color.setHex(0xffeebb);
-        keyLight.intensity = 4.5;
+        renderer.toneMappingExposure = 2.8;
+        // Very bright ambient
+        ambientLight.color.setHex(0xdce8ff);
+        ambientLight.intensity = 6.0;
+        // Bright sun
+        keyLight.color.setHex(0xfff0cc);
+        keyLight.intensity = 6.0;
         keyLight.position.set(40, 80, 30);
         keyLight.castShadow = true;
         keyLight.shadow.mapSize.set(2048, 2048);
