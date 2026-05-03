@@ -11359,26 +11359,32 @@
       if (active && active.ambient === 'castle') {
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        scene.background = new THREE.Color(0x0a0810);
-        scene.fog = new THREE.Fog(0x0a0810, 30, 80);
+        // Medieval dusk — deep slate-blue sky
+        scene.background = new THREE.Color(0x3a4a6b);
+        scene.fog = new THREE.Fog(0x3a4a6b, 60, 160);
         skyStatus = 'castle-night';
-        renderer.toneMappingExposure = 1.05;
-        ambientLight.color.setHex(0x1a1208);
-        ambientLight.intensity = 0.3;
-        keyLight.color.setHex(0x334422);
-        keyLight.intensity = 0.4;
-        keyLight.position.set(0, 100, 0);
+        renderer.toneMappingExposure = 1.1;
+        // Bright enough to see everything, cool blue-grey ambient
+        ambientLight.color.setHex(0x8090b8);
+        ambientLight.intensity = 1.2;
+        // Warm directional sun low on the horizon
+        keyLight.color.setHex(0xffcc88);
+        keyLight.intensity = 2.2;
+        keyLight.position.set(40, 60, 30);
         keyLight.castShadow = true;
         keyLight.shadow.mapSize.set(2048, 2048);
-        keyLight.shadow.camera.left = -60;
-        keyLight.shadow.camera.right = 60;
-        keyLight.shadow.camera.top = 60;
-        keyLight.shadow.camera.bottom = -60;
-        keyLight.shadow.camera.far = 200;
+        keyLight.shadow.camera.left = -80;
+        keyLight.shadow.camera.right = 80;
+        keyLight.shadow.camera.top = 80;
+        keyLight.shadow.camera.bottom = -80;
+        keyLight.shadow.camera.far = 220;
         keyLight.shadow.bias = -0.0001;
         keyLight.target.position.set(0, 0, 0);
         keyLight.target.updateMatrixWorld();
-        hemiLight.intensity = 0;
+        // Subtle blue-sky fill from above
+        hemiLight.color.setHex(0x7090cc);
+        hemiLight.groundColor.setHex(0x3d3020);
+        hemiLight.intensity = 0.6;
         return;
       }
       if (active && active.ambient === 'funland') {
