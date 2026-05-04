@@ -5834,6 +5834,106 @@
         hills.rotation.y = 0.22;
         group.add(hills);
       }
+      // ── Background villas — bigger modern white boxes scattered behind/sides ──
+      const villaSpecs = [
+        // x, z, w, h, d, yaw
+        [-52, -38, 7.0, 4.2, 5.4, 0.08],
+        [-58, -28, 6.2, 6.8, 5.0, -0.05],
+        [-54, -16, 8.0, 3.6, 5.6, 0.02],
+        [-60,  -4, 6.6, 5.4, 5.4, -0.10],
+        [-56,   8, 7.4, 4.0, 5.2, 0.04],
+        [-62,  20, 6.8, 7.2, 5.0, 0.12],
+        [-55,  32, 7.8, 4.6, 5.4, -0.08],
+        [-68, -34, 8.4, 5.6, 6.0, 0.18],
+        [-72, -22, 7.0, 8.4, 5.4, -0.04],
+        [-70, -10, 6.4, 4.4, 5.2, 0.10],
+        [-74,   2, 8.0, 6.6, 5.8, -0.12],
+        [-70,  14, 7.2, 5.0, 5.4, 0.06],
+        [-76,  26, 6.8, 7.8, 5.2, -0.06],
+        [-72,  36, 7.6, 4.2, 5.4, 0.14],
+        [-80, -28, 8.6, 9.2, 6.2, 0.20],
+        [-78, -14, 7.4, 5.6, 5.6, -0.10],
+        [-82,   6, 8.2, 7.4, 5.8, 0.08],
+        [-80,  22, 7.0, 6.0, 5.4, -0.14],
+      ];
+      for (const [vx, vz, vw, vh, vd, vy] of villaSpecs) {
+        const v = addBox(group, vx, vh * 0.5, vz, vw, vh, vd, beach.suburbWall, null, vy);
+        v.castShadow = false;
+        const r = addBox(group, vx, vh + 0.22, vz, vw + 0.6, 0.42, vd + 0.5, beach.suburbRoof, null, vy);
+        r.castShadow = false;
+      }
+
+      // ── Clifftop perimeter palms ──
+      const farPalms = [
+        [37.5, -28, 6.4], [38.0, -14, 5.6], [37.0,  -2, 6.0],
+        [38.2,  10, 5.8], [37.6,  24, 6.2], [36.8,  30, 5.4],
+        [36.4, -34, 5.2], [37.8,  -8, 5.0],
+      ];
+      for (const [px, pz, ph] of farPalms) addBeachPalm(group, beach, px, pz, ph);
+      const bgPalms = [
+        [-50, -32, 4.4], [-52, -20, 4.0], [-54,  -6, 4.6], [-50,  10, 4.2],
+        [-58,  22, 4.4], [-52,  34, 4.0], [-64, -26, 4.2], [-66,   0, 4.6],
+        [-70,  18, 4.4], [-68,  30, 4.0],
+      ];
+      for (const [px, pz, ph] of bgPalms) addBeachPalm(group, beach, px, pz, ph);
+
+      // ── Dock / pier extending from cliff into ocean ──
+      const pierDeck = addBox(group, 53.5, -6.55, 22, 23, 0.25, 2.4, beach.travertine, null, 0);
+      pierDeck.castShadow = false;
+      for (let px = 43; px <= 64; px += 3) {
+        const post = addCylinder(group, px, -7.4, 21.0, 0.18, 1.8, beach.suburbWall, null, 0, false, 1);
+        post.castShadow = false;
+        const post2 = addCylinder(group, px, -7.4, 23.0, 0.18, 1.8, beach.suburbWall, null, 0, false, 1);
+        post2.castShadow = false;
+      }
+      // Small boat at pier end
+      const hull = addBox(group, 66, -6.6, 22, 4.2, 0.7, 1.6, beach.suburbWall, null, 0);
+      hull.castShadow = false;
+      const cabin = addBox(group, 66.4, -6.0, 22, 1.8, 0.6, 1.2, beach.suburbRoof, null, 0);
+      cabin.castShadow = false;
+
+      // ── Distant yacht ──
+      const yHullA = addBox(group, 82, -6.3, -22, 7.0, 1.0, 2.2, beach.suburbWall, null, 0.05);
+      yHullA.castShadow = false;
+      const yCabA = addBox(group, 82, -5.5, -22, 3.6, 0.9, 1.6, beach.suburbWall, null, 0.05);
+      yCabA.castShadow = false;
+      const yMastA = addCylinder(group, 82.4, -4.0, -22, 0.08, 3.0, beach.blackIron || beach.suburbRoof, null, 0, false, 1);
+      yMastA.castShadow = false;
+      const yHullB = addBox(group, 88, -6.3,  26, 8.4, 1.1, 2.6, beach.suburbWall, null, -0.08);
+      yHullB.castShadow = false;
+      const yCabB = addBox(group, 88, -5.4,  26, 4.2, 1.0, 1.8, beach.suburbWall, null, -0.08);
+      yCabB.castShadow = false;
+      const yMastB = addCylinder(group, 88.6, -3.8, 26, 0.10, 3.4, beach.blackIron || beach.suburbRoof, null, 0, false, 1);
+      yMastB.castShadow = false;
+
+      // ── Background mountains/hills on the left ──
+      for (let i = 0; i < 5; i++) {
+        const hills = new THREE.Mesh(createRooftopHillGeometry(140 + i * 22, 22 + i * 7, 2.4 + i * 1.3), beach.hills);
+        hills.position.set(-88 - i * 4, 4 + i * 2.4, -10 + i * 14 - 28);
+        hills.rotation.y = 0.18 + i * 0.05;
+        hills.castShadow = false;
+        group.add(hills);
+      }
+      const tallHill = new THREE.Mesh(createRooftopHillGeometry(110, 34, 3.2), beach.hills);
+      tallHill.position.set(-96, 10, 24);
+      tallHill.rotation.y = -0.22;
+      tallHill.castShadow = false;
+      group.add(tallHill);
+
+      // ── Beach umbrellas, posts, and lounge chairs on the beach strip ──
+      const umbrellaZs = [-22, -10, 2, 14, 24];
+      for (const uz of umbrellaZs) {
+        const ux = 52 + ((uz % 7) * 0.4);
+        const post = addCylinder(group, ux, -6.1, uz, 0.05, 1.6, beach.blackIron || beach.suburbRoof, null, 0, false, 1);
+        post.castShadow = false;
+        const top = addCylinder(group, ux, -5.25, uz, 1.6, 0.08, beach.suburbRoof, null, 0, false, 1);
+        top.castShadow = false;
+        const chair1 = addBox(group, ux + 1.8, -6.55, uz - 0.6, 1.8, 0.12, 0.7, beach.travertine, null, 0);
+        chair1.castShadow = false;
+        const chair2 = addBox(group, ux + 1.8, -6.55, uz + 0.6, 1.8, 0.12, 0.7, beach.travertine, null, 0);
+        chair2.castShadow = false;
+      }
+
       const haze = new THREE.Mesh(new THREE.PlaneGeometry(150, 55, 1, 1), beach.haze);
       haze.position.set(62, 16, -48);
       haze.rotation.y = -0.35;
