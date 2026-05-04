@@ -6168,11 +6168,8 @@
       addBox(group, -3, 0.02, -2, 17.5, 0.02, 24, beach.marble, null, 0);
       addBox(group, 3.5, 0.03, 8.5, 5.5, 0.02, 10, beach.concrete, null, 0);
 
-      // === STAIRCASE (x=-9 to x=1, z=10.5 to 12.8) ===
+      // === STAIRCASE (x=-9 to x=1, z=11.5 centre, width=2.2) ===
       addBeachStaircase(group, colliders, shootables, beach, -9, 1, 11.5, 2.2);
-      // Stairwell opening guard — glass barrier at z=9.8 edge preventing falls
-      addBeachGlassBarrier(group, colliders, -4, 3.05, 9.8, 10, 6.1, 0.08, beach.glassRail);
-      for (let gp = -9; gp <= 1; gp += 2.5) addBox(group, gp, 3.05, 9.8, 0.06, 6.1, 0.06, beach.darkSteel, null, 0);
 
       // === FOYER ===
       addBox(group, -11.3, 0.47, -3.5, 0.38, 0.94, 2.0, beach.darkSteel, colliders, 0);
@@ -6417,16 +6414,34 @@
 
     function addBeachStaircase(group, colliders, shootables, beach, x1, x2, z, width) {
       const steps = 12, rise = 5.5;
+      const stepW = Math.abs(x2 - x1) / steps; // x-depth of each step
+
+      // Solid diagonal stringer (visual undercarriage)
+      const stringer = addBox(group, (x1 + x2) * 0.5, rise * 0.5, z, Math.abs(x2 - x1), rise, width * 0.18, beach.darkSteel, null, 0);
+      const sc = addMeshCollider(colliders, stringer, 'box');
+      if (sc) sc.walkable = true;
+
       for (let i = 0; i < steps; i++) {
-        const t0 = i / steps, t1 = (i + 1) / steps;
-        const xc = x1 + (x2 - x1) * (t0 + t1) * 0.5;
-        const sx = Math.abs(x2 - x1) / steps + 0.06;
-        const tread = addBox(group, xc, rise * t1 - 0.06, z, sx, 0.12, width, beach.wood, null, 0);
-        const c = addMeshCollider(colliders, tread, 'box');
-        if (c) c.walkable = true;
+        const t1 = (i + 1) / steps;
+        const xc = x1 + (x2 - x1) * (i + 0.5) / steps;
+        const stepTop = rise * t1;          // top surface of this step
+        const stepH   = rise / steps;       // riser height (each step same)
+
+        // Tread — full-width slab, sits on top of the riser
+        const tread = addBox(group, xc, stepTop - stepH * 0.08, z, stepW + 0.04, stepH * 0.18, width, beach.wood, null, 0);
+        const ct = addMeshCollider(colliders, tread, 'box');
+        if (ct) ct.walkable = true;
         shootables.push(tread);
+
+        // Riser — vertical face filling the gap below the tread
+        const riserMid = stepTop - stepH * 0.58;
+        const riserH   = stepH * 0.82;
+        const riser = addBox(group, xc - stepW * 0.42, riserMid, z, stepW * 0.16, riserH, width, beach.darkSteel, null, 0);
+        const cr = addMeshCollider(colliders, riser, 'box');
+        if (cr) cr.walkable = true;
       }
-      // Glass side railing along open side
+
+      // Glass side railing (living-room-facing open side)
       addBeachGlassBarrier(group, colliders, (x1 + x2) * 0.5, rise * 0.5 + 0.65, z - width * 0.55, Math.abs(x2 - x1), 1.3, 0.07, beach.glassRail);
       const numPosts = Math.ceil(Math.abs(x2 - x1) / 1.5) + 1;
       for (let i = 0; i <= numPosts; i++) {
