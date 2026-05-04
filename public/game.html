@@ -2986,8 +2986,8 @@
     scene.background = new THREE.Color(OVERCAST_SKY_COLOR);
     scene.fog = new THREE.Fog(OVERCAST_SKY_COLOR, OVERCAST_FOG_NEAR, OVERCAST_FOG_FAR);
     const camera = new THREE.PerspectiveCamera(64, window.innerWidth / window.innerHeight, 0.05, 2200);
-    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance', logarithmicDepthBuffer: true });
-    renderer.setPixelRatio(window.devicePixelRatio || 1);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = false;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -10614,7 +10614,6 @@
       for (let i = 0; i < activeColliders.length; i++) {
         const c = activeColliders[i];
         if (c.walkable) continue;
-        updateMeshCollider(c);
         const bottom = pos.y || 0;
         const top = bottom + (height || STAND_HEIGHT);
         if (c.y - c.halfY > top || c.y + c.halfY < bottom) continue;
@@ -10698,7 +10697,6 @@
       for (let i = 0; i < activeColliders.length; i++) {
         const c = activeColliders[i];
         if (c.walkable) continue;
-        updateMeshCollider(c);
         if (y < c.y - c.halfY || y > c.y + c.halfY) continue;
         if (c.type === 'box') {
           const lx = (x - c.x) * c.cos - (z - c.z) * c.sin;
@@ -10732,11 +10730,11 @@
       coverRaycaster.set(tmpVecC, tmpVecD);
       coverRaycaster.near = 0;
       coverRaycaster.far = maxDistance;
-      for (let i = 0; i < activeCoverMeshes.length; i++) activeCoverMeshes[i].updateWorldMatrix(true, true);
       const hits = coverRaycaster.intersectObjects(activeCoverMeshes, true);
       return hits[0] ? hits[0].distance : maxDistance;
     }
 
+    let _wallDistCache = 0.6, _wallDistFrame = 0;
     function updateGun(dt, canMove) {
       const moveMag = Math.min(1, Math.hypot(player.velocity.x, player.velocity.z) / WALK_SPEED);
       const sprintLift = player.sprinting ? 1.65 : 1;
@@ -10748,7 +10746,8 @@
       const targetX = gun.baseX + sway;
       const targetY = gun.baseY - bob + (input.crawl ? -0.055 : input.crouch ? -0.035 : 0);
       const clearZ = gun.baseZ + gun.recoil * 0.05;
-      const wallDistance = distanceToWallAhead(0.6);
+      if ((_wallDistFrame++ & 3) === 0) _wallDistCache = distanceToWallAhead(0.6);
+      const wallDistance = _wallDistCache;
       const wallTuck = clamp(1 - wallDistance / 0.6, 0, 1);
       const targetZ = clearZ + (-0.2 - clearZ) * wallTuck;
       gun.group.position.x += (targetX - gun.group.position.x) * Math.min(1, dt * 16);
@@ -11108,7 +11107,6 @@
       coverRaycaster.set(p.prev, coverRayDirection);
       coverRaycaster.near = 0;
       coverRaycaster.far = distance;
-      for (let i = 0; i < activeCoverMeshes.length; i++) activeCoverMeshes[i].updateWorldMatrix(true, true);
       const hits = coverRaycaster.intersectObjects(activeCoverMeshes, true);
       const bestHit = hits[0] || null;
       if (!bestHit) return false;
