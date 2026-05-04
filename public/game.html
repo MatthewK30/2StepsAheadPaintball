@@ -5736,20 +5736,21 @@
       const standard = (color, opts = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.82, metalness: 0.02, envMap: environmentMap, envMapIntensity: 0.28, ...opts });
       const basic = (color, opts = {}) => new THREE.MeshBasicMaterial({ color, ...opts });
       // Modern white mansion: clean white walls, light grey concrete, flat white roof
-      const stucco = standard(0xf8f8f6, { roughness: 0.88, metalness: 0.01, envMapIntensity: 0.28 });
-      const travertine = standard(0xd4d4ce, { roughness: 0.82, metalness: 0.02, envMapIntensity: 0.26 });
-      const terracotta = standard(0xe2e2de, { roughness: 0.85, metalness: 0.01, envMapIntensity: 0.22 }); // flat grey modern roof
-      textureLibrary.apply(stucco, 'concrete', 3.6, 2.8);
-      textureLibrary.apply(travertine, 'concrete', 5, 4);
-      textureLibrary.apply(terracotta, 'concrete', 2.4, 2.4);
+      // No color texture maps — pure painted white/grey surfaces
+      const stucco = standard(0xf4f4f2, { roughness: 0.86, metalness: 0.01, envMapIntensity: 0.32 });
+      const travertine = standard(0xccccca, { roughness: 0.80, metalness: 0.02, envMapIntensity: 0.28 });
+      const terracotta = standard(0xe0e0dc, { roughness: 0.84, metalness: 0.01, envMapIntensity: 0.24 }); // flat grey modern roof
+      // Apply only bump/roughness maps (no color map) so white stays white
+      textureLibrary.apply(stucco, 'concreteBump', 3.6, 2.8, 'bumpMap', THREE.NoColorSpace || THREE.LinearSRGBColorSpace);
+      textureLibrary.apply(travertine, 'concreteBump', 5, 4, 'bumpMap', THREE.NoColorSpace || THREE.LinearSRGBColorSpace);
       return {
         ground: standard(0xd8e8d0, { roughness: 1, metalness: 0, vertexColors: true, envMapIntensity: 0.12 }),
         stucco,
         travertine,
         terracotta,
         marble: standard(0xf2f2f0, { roughness: 0.45, metalness: 0.04, envMapIntensity: 0.42 }),
-        wood: standard(0x5a4030, { roughness: 0.82, metalness: 0.02, envMapIntensity: 0.2 }),
-        darkWood: standard(0x28201a, { roughness: 0.88, metalness: 0.02, envMapIntensity: 0.16 }),
+        wood: standard(0x8c7a6a, { roughness: 0.78, metalness: 0.02, envMapIntensity: 0.2 }),
+        darkWood: standard(0x4a3a30, { roughness: 0.84, metalness: 0.02, envMapIntensity: 0.18 }),
         glass: new THREE.MeshPhysicalMaterial({ color: 0xa8d8f0, roughness: 0.04, metalness: 0.1, transmission: 0.65, thickness: 0.12, transparent: true, opacity: 0.38, envMap: environmentMap, envMapIntensity: 1.2 }),
         hedge: standard(0x3a8c42, { roughness: 0.98, metalness: 0, envMapIntensity: 0.1 }),
         flower: standard(0x58a8e8, { roughness: 0.82, metalness: 0, envMapIntensity: 0.14 }), // modern blue accents
