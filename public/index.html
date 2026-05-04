@@ -2567,8 +2567,8 @@
     }
 
     function bindUi() {
-      $('#playMultiplayerBtn').addEventListener('click', () => openDrawer('multiplayer'));
-      $('#playPracticeBtn').addEventListener('click', () => openDrawer('practice'));
+      $('#playMultiplayerBtn').addEventListener('click', () => showView('lobby'));
+      $('#playPracticeBtn').addEventListener('click', startPractice);
       ui.menuBackBtn.addEventListener('click', navigateBack);
 
       $('#configMapCard').addEventListener('click', () => showSubView('map'));

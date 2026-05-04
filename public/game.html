@@ -9488,7 +9488,18 @@
       });
     }
 
-    function updateRemotePlayerFromNetwork({ id, position, rotation, crouching, prone, team }) {
+    // Network interpolation state for remote player
+    const netInterp = {
+      fromPos: new THREE.Vector3(),
+      toPos:   new THREE.Vector3(),
+      fromRot: 0,
+      toRot:   0,
+      t:       1,          // 0→1 between last two snapshots
+      stepDt:  0.05,       // seconds per snapshot interval (filled on first packet)
+      hasFrom: false
+    };
+
+    function updateRemotePlayerFromNetwork({ id, position, rotation, crouching, prone, team, stepDt }) {
       if (!MULTIPLAYER || !position) return;
       if (team === MY_TEAM) return;
       if (id) remotePlayer.id = id;
@@ -9497,25 +9508,73 @@
       remotePlayer.visible = true;
       remotePlayer.crouching = !!crouching;
       remotePlayer.prone = !!prone;
-      remotePlayer.lastPosition.copy(ai.position);
-      ai.position.set(Number(position.x) || 0, Number(position.y) || 0, Number(position.z) || 0);
-      ai.group.position.copy(ai.position);
-      if (rotation && Number.isFinite(Number(rotation.y))) ai.group.rotation.y = Number(rotation.y);
+
+      const nx = Number(position.x) || 0;
+      const ny = Number(position.y) || 0;
+      const nz = Number(position.z) || 0;
+      const nr = (rotation && Number.isFinite(Number(rotation.y))) ? Number(rotation.y) : netInterp.toRot;
+
+      if (!netInterp.hasFrom) {
+        // First packet — snap immediately, no interpolation
+        netInterp.fromPos.set(nx, ny, nz);
+        netInterp.toPos.set(nx, ny, nz);
+        netInterp.fromRot = nr; netInterp.toRot = nr;
+        netInterp.hasFrom = true;
+        netInterp.t = 1;
+        ai.position.set(nx, ny, nz);
+        ai.group.position.copy(ai.position);
+        ai.group.rotation.y = nr;
+      } else {
+        // Large jump — snap rather than slide
+        const dist = netInterp.toPos.distanceTo(new THREE.Vector3(nx, ny, nz));
+        if (dist > 6) {
+          netInterp.fromPos.set(nx, ny, nz);
+          netInterp.t = 1;
+        } else {
+          netInterp.fromPos.copy(netInterp.toPos);
+          netInterp.fromRot = netInterp.toRot;
+          netInterp.t = 0;
+        }
+        netInterp.toPos.set(nx, ny, nz);
+        netInterp.toRot = nr;
+        if (stepDt && stepDt > 0.01 && stepDt < 0.5) netInterp.stepDt = stepDt;
+      }
+
       ai.tacticalHeight = remotePlayer.prone ? 0.5 : remotePlayer.crouching ? 0.95 : ai.height;
-      ai.bodyCenter.set(ai.position.x, (ai.position.y || 0) + ai.tacticalHeight * 0.5, ai.position.z);
       if (!state.aiEliminated) ai.group.visible = true;
     }
 
     function updateRemotePlayer(dt) {
       if (!MULTIPLAYER || !remotePlayer.visible || state.aiEliminated) return;
       if (remotePlayer.isBot) return;
-      const moving = ai.position.distanceToSquared(remotePlayer.lastPosition) > 0.0004;
-      updateAiVisual(dt, moving, false);
+
+      // Advance interpolation
+      if (netInterp.t < 1) {
+        netInterp.t = Math.min(1, netInterp.t + dt / netInterp.stepDt);
+        const t = netInterp.t;
+        ai.position.lerpVectors(netInterp.fromPos, netInterp.toPos, t);
+        ai.group.position.copy(ai.position);
+        let dr = netInterp.toRot - netInterp.fromRot;
+        if (dr > Math.PI) dr -= Math.PI * 2;
+        if (dr < -Math.PI) dr += Math.PI * 2;
+        ai.group.rotation.y = netInterp.fromRot + dr * t;
+      }
+
+      ai.bodyCenter.set(ai.position.x, (ai.position.y || 0) + ai.tacticalHeight * 0.5, ai.position.z);
       remotePlayer.lastPosition.copy(ai.position);
+      const moving = netInterp.t < 1 && netInterp.fromPos.distanceToSquared(netInterp.toPos) > 0.0004;
+      updateAiVisual(dt, moving, false);
     }
 
-    function sendMultiplayerUpdate() {
+    // Throttle sends to 20 Hz
+    const NET_SEND_INTERVAL = 1 / 20;
+    let netSendAccum = 0;
+    function sendMultiplayerUpdate(dt) {
       if (!MULTIPLAYER || !multiplayer.socket || !multiplayer.socket.connected) return;
+      netSendAccum += dt;
+      if (netSendAccum < NET_SEND_INTERVAL) return;
+      netInterp.stepDt = netSendAccum;  // tell remote how long to interpolate over
+      netSendAccum = 0;
       multiplayer.socket.emit('player_update', {
         code: ROOM_CODE,
         position: {
@@ -9526,7 +9585,8 @@
         rotation: { y: player.yaw },
         team: MY_TEAM,
         crouching: input.crouch,
-        prone: input.crawl || player.diving
+        prone: input.crawl || player.diving,
+        stepDt: NET_SEND_INTERVAL
       });
     }
 
@@ -10268,7 +10328,7 @@
       updateCastleTorches(dt);
       updateBeachMansionWater();
       updatePlayer(dt);
-      sendMultiplayerUpdate();
+      sendMultiplayerUpdate(dt);
       updateReload(dt);
       updateGun(dt, state.phase === 'active' && !state.playerEliminated);
       updateProjectiles(dt);

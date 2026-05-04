@@ -545,11 +545,11 @@ io.on('connection', (socket) => {
     io.to(code).emit('player_in_game', { id: socket.id, username, team, ...skin })
   })
 
-  socket.on('player_update', ({ code, position, rotation, state, crouching, prone, team }) => {
+  socket.on('player_update', ({ code, position, rotation, state, crouching, prone, team, stepDt }) => {
     code = normalizeCode(code)
     if (!rooms[code]) return
     socket.to(code).emit('opponent_update', {
-      id: socket.id, position, rotation, state, crouching, prone, team
+      id: socket.id, position, rotation, state, crouching, prone, team, stepDt
     })
   })
 
