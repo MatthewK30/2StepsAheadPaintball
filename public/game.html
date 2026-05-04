@@ -5697,8 +5697,7 @@
       const walkSurfaces = [
         { x1: -BEACH_MANSION_BOUNDS.halfX, x2: BEACH_MANSION_BOUNDS.halfX, z1: -BEACH_MANSION_BOUNDS.halfZ, z2: BEACH_MANSION_BOUNDS.halfZ, y: 0 },
         { type: 'ramp', axis: 'z', x1: -9, x2: -2, z1: 9, z2: 14, y1: 0, y2: 5.5 },
-        { x1: -12, x2: 6, z1: -14, z2: 10, y: 5.5 },
-        { x1: -12, x2: 6, z1: 10, z2: 14, y: 5.5 },
+        { x1: -12, x2: 6, z1: -14, z2: 14, y: 5.5 },
         { x1: 6, x2: 10, z1: -5, z2: 5, y: 5.5 }
       ];
 
@@ -5729,49 +5728,6 @@
         fog: 0xff6633,
         ambient: 'beachmansion',
         beachWater
-      };
-    }
-
-    function createBeachMansionMaterials() {
-      const standard = (color, opts = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.82, metalness: 0.02, envMap: environmentMap, envMapIntensity: 0.28, ...opts });
-      const basic = (color, opts = {}) => new THREE.MeshBasicMaterial({ color, ...opts });
-      const stucco = standard(0xfaf8f5, { roughness: 0.85, metalness: 0.02, envMapIntensity: 0.2 });
-      textureLibrary.apply(stucco, 'concrete', 4, 3);
-      return {
-        ground: standard(0xf0ece4, { roughness: 1, metalness: 0, vertexColors: true, envMapIntensity: 0.1 }),
-        stucco,
-        darkSteel: standard(0x1a1a1a, { roughness: 0.5, metalness: 0.7, envMapIntensity: 0.5 }),
-        wood: standard(0x3d2b1a, { roughness: 0.88, metalness: 0.02, envMapIntensity: 0.18 }),
-        marble: standard(0xf0ece4, { roughness: 0.5, metalness: 0.02, envMapIntensity: 0.35 }),
-        concrete: standard(0xd4cec8, { roughness: 0.9, metalness: 0, envMapIntensity: 0.12 }),
-        stone: standard(0xf0e8d8, { roughness: 0.88, metalness: 0.01, envMapIntensity: 0.2 }),
-        lawn: standard(0x3a7a2a, { roughness: 1, metalness: 0, envMapIntensity: 0.08 }),
-        brass: standard(0xc8a84a, { roughness: 0.3, metalness: 0.7, envMapIntensity: 0.55 }),
-        steel: standard(0x888888, { roughness: 0.4, metalness: 0.8, envMapIntensity: 0.55 }),
-        glass: new THREE.MeshPhysicalMaterial({ color: 0xaabbcc, roughness: 0.05, metalness: 0, transmission: 0.7, thickness: 0.15, transparent: true, opacity: 0.4, envMap: environmentMap, envMapIntensity: 0.9 }),
-        glassRail: new THREE.MeshPhysicalMaterial({ color: 0xccddee, roughness: 0.05, metalness: 0, transmission: 0.8, thickness: 0.1, transparent: true, opacity: 0.35, envMap: environmentMap, envMapIntensity: 0.8 }),
-        poolWater: new THREE.MeshPhysicalMaterial({ color: 0x00aacc, roughness: 0.02, metalness: 0, transmission: 0.5, thickness: 0.8, transparent: true, opacity: 0.85, emissive: 0x004466, emissiveIntensity: 0.15, envMap: environmentMap, envMapIntensity: 0.6, side: THREE.DoubleSide }),
-        ocean: standard(0x004488, { roughness: 0.1, metalness: 0, transparent: true, opacity: 0.88, envMapIntensity: 0.4, side: THREE.DoubleSide }),
-        flame: standard(0xff6600, { emissive: 0xff4400, emissiveIntensity: 0.6, roughness: 1, metalness: 0, envMapIntensity: 0 }),
-        emissiveWarm: standard(0xffeecc, { emissive: 0xffeecc, emissiveIntensity: 0.4, roughness: 0.8, envMapIntensity: 0.1 }),
-        brass2: standard(0xc8a84a, { emissive: 0xffcc66, emissiveIntensity: 0.3, roughness: 0.3, metalness: 0.7, envMapIntensity: 0.5 }),
-        fabricGrey: standard(0xd4cec4, { roughness: 1, metalness: 0, envMapIntensity: 0.08 }),
-        fabricTan: standard(0xc4a882, { roughness: 0.95, metalness: 0, envMapIntensity: 0.1 }),
-        fabricWhite: standard(0xfafaf8, { roughness: 1, metalness: 0, envMapIntensity: 0.08 }),
-        teak: standard(0x5a3a0a, { roughness: 0.85, metalness: 0.02, envMapIntensity: 0.15 }),
-        darkWall: standard(0x1a1a1a, { roughness: 0.92, metalness: 0.02, envMapIntensity: 0.08 }),
-        artCanvas: standard(0xc87840, { roughness: 0.95, metalness: 0, envMapIntensity: 0.05 }),
-        oliveGreen: standard(0x6a7a3a, { roughness: 1, metalness: 0, envMapIntensity: 0.05 }),
-        hedge: standard(0x1a3a1a, { roughness: 1, metalness: 0, envMapIntensity: 0.05 }),
-        cream: standard(0xe8e0d0, { roughness: 0.95, metalness: 0, envMapIntensity: 0.1 }),
-        cliff: basic(0x4a4a3a),
-        suburbWall: basic(0xf1e6d0),
-        suburbRoof: basic(0x8a4a2a),
-        hills: basic(0xc8b882, { transparent: true, opacity: 0.6, side: THREE.DoubleSide, depthWrite: false }),
-        sunRefl: basic(0xff8833, { transparent: true, opacity: 0.7, depthWrite: false, side: THREE.DoubleSide }),
-        island: basic(0x1a2a3a),
-        haze: basic(0xff9966, { transparent: true, opacity: 0.18, depthWrite: false, side: THREE.DoubleSide }),
-        invisible: new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0, depthWrite: false })
       };
     }
 
@@ -6672,34 +6628,63 @@
     function addBeachStaircase(group, colliders, shootables, beach, zBottom, zTop, xCenter, xWidth) {
       const steps = 12, rise = 5.5;
       const zSpan = zTop - zBottom;
-      const stepDepth = zSpan / steps;   // z depth of each tread
-      const stepH     = rise / steps;    // height of each riser
+      const stepDepth = zSpan / steps;
+      const stepH = rise / steps;
 
       for (let i = 0; i < steps; i++) {
-        const zc     = zBottom + (i + 0.5) * stepDepth;
+        const zc = zBottom + (i + 0.5) * stepDepth;
         const treadY = (i + 1) * stepH;
 
-        // Tread — walnut slab the player walks on
-        const tread = addBox(group, xCenter, treadY - stepH * 0.1, zc, xWidth, stepH * 0.22, stepDepth + 0.04, beach.wood, null, 0);
+        // Floating white tread slab
+        const tread = addBox(group, xCenter, treadY - stepH * 0.15, zc, xWidth, stepH * 0.18, stepDepth + 0.06, beach.concrete, null, 0);
+        sm(tread, true, true);
         const ct = addMeshCollider(colliders, tread, 'box');
         if (ct) ct.walkable = true;
         shootables.push(tread);
 
-        // Riser — dark steel vertical face
-        const riserY = treadY - stepH * 0.62;
-        const riser  = addBox(group, xCenter, riserY, zc - stepDepth * 0.44, xWidth, stepH * 0.78, stepDepth * 0.12, beach.darkSteel, null, 0);
-        const cr = addMeshCollider(colliders, riser, 'box');
-        if (cr) cr.walkable = true;
+        // Dark steel riser (thin vertical accent)
+        const riserY = treadY - stepH * 0.7;
+        const riser = addBox(group, xCenter, riserY, zc - stepDepth * 0.42, xWidth - 0.1, stepH * 0.75, 0.03, beach.darkSteel, null, 0);
+        sm(riser, true, false);
+
+        // LED strip under each tread (emissive)
+        const led = new THREE.Mesh(geometries.cylinderLow, beach.emissiveWarm);
+        led.position.set(xCenter, treadY - stepH * 0.35, zc - stepDepth * 0.38);
+        led.scale.set(xWidth - 0.2, 0.015, 0.02);
+        group.add(led);
       }
 
-      // Glass railing along east side (x = xCenter + xWidth/2)
-      const railX = xCenter + xWidth * 0.5 + 0.04;
-      addBeachGlassBarrier(group, colliders, railX, rise * 0.5 + 0.65, (zBottom + zTop) * 0.5, 0.07, 1.3, zSpan, beach.glassRail);
-      const numPosts = Math.ceil(zSpan / 1.5) + 1;
+      // Modern glass railing — east side
+      const railX = xCenter + xWidth * 0.5 + 0.02;
+      const glassPanel = addBox(group, railX, rise * 0.5 + 0.55, (zBottom + zTop) * 0.5, 0.04, 1.1, zSpan, beach.glassRail, null, 0);
+      sm(glassPanel, false, false);
+
+      // Steel top rail
+      const topRail = addBox(group, railX, rise + 0.6, (zBottom + zTop) * 0.5, 0.06, 0.04, zSpan + 0.2, beach.steel, null, 0);
+      sm(topRail, true, false);
+
+      // Steel posts along east side
+      const numPosts = Math.ceil(zSpan / 1.2) + 1;
       for (let i = 0; i <= numPosts; i++) {
         const pz = zBottom + zSpan * i / numPosts;
         const py = rise * i / numPosts;
-        addBox(group, railX, py + 0.65, pz, 0.06, 1.3, 0.06, beach.darkSteel, null, 0);
+        const post = addBox(group, railX, py + 0.55, pz, 0.04, 1.1, 0.04, beach.darkSteel, null, 0);
+        sm(post, true, false);
+      }
+
+      // Glass railing — west side (matching)
+      const railXW = xCenter - xWidth * 0.5 - 0.02;
+      const glassPanelW = addBox(group, railXW, rise * 0.5 + 0.55, (zBottom + zTop) * 0.5, 0.04, 1.1, zSpan, beach.glassRail, null, 0);
+      sm(glassPanelW, false, false);
+
+      const topRailW = addBox(group, railXW, rise + 0.6, (zBottom + zTop) * 0.5, 0.06, 0.04, zSpan + 0.2, beach.steel, null, 0);
+      sm(topRailW, true, false);
+
+      for (let i = 0; i <= numPosts; i++) {
+        const pz = zBottom + zSpan * i / numPosts;
+        const py = rise * i / numPosts;
+        const post = addBox(group, railXW, py + 0.55, pz, 0.04, 1.1, 0.04, beach.darkSteel, null, 0);
+        sm(post, true, false);
       }
     }
 
@@ -6758,6 +6743,544 @@
       addBox(group, x, 1.7, z + 0.48, 0.07, 0.62, 1.0, mat, null, 0);
       addBox(group, x, 0.035, z, 4.4, 0.018, 0.18, mat, null, 0);
       addBox(group, x, 0.036, z, 0.18, 0.018, 4.4, mat, null, 0);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       TEXTURE GENERATORS & ARCHITECTURAL DETAILS (Beach Mansion)
+    ═══════════════════════════════════════════════════════════════ */
+
+    function createCanvasTexture(drawFn, w = 256, h = 256, repeatX = 4, repeatY = 4, colorSpace = THREE.SRGBColorSpace) {
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      drawFn(ctx, w, h);
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(repeatX, repeatY);
+      tex.colorSpace = colorSpace;
+      const maxAniso = renderer.capabilities.getMaxAnisotropy ? renderer.capabilities.getMaxAnisotropy() : 1;
+      tex.anisotropy = Math.min(maxAniso, 8);
+      return tex;
+    }
+
+    function createStuccoTexture(baseColor = 0xffffff, variation = 0.02, tileSize = 256) {
+      const tex = createCanvasTexture((ctx, w, h) => {
+        const c = new THREE.Color(baseColor);
+        ctx.fillStyle = `rgb(${c.r*255|0},${c.g*255|0},${c.b*255|0})`;
+        ctx.fillRect(0, 0, w, h);
+        for (let i = 0; i < 8000; i++) {
+          const x = Math.random() * w, y = Math.random() * h;
+          const shift = (Math.random() - 0.5) * variation * 255;
+          const r = Math.min(255, Math.max(0, c.r * 255 + shift));
+          const g = Math.min(255, Math.max(0, c.g * 255 + shift * 0.8));
+          const b = Math.min(255, Math.max(0, c.b * 255 + shift * 0.6));
+          ctx.fillStyle = `rgba(${r|0},${g|0},${b|0},${0.12 + Math.random() * 0.2})`;
+          const s = 0.5 + Math.random() * 2;
+          ctx.fillRect(x, y, s, s);
+        }
+      }, tileSize, tileSize, 4, 4);
+      tex.needsUpdate = true;
+      return tex;
+    }
+
+    function createMarbleTexture(tileSize = 512) {
+      const tex = createCanvasTexture((ctx, w, h) => {
+        ctx.fillStyle = '#f5f5f5';
+        ctx.fillRect(0, 0, w, h);
+        for (let i = 0; i < 12000; i++) {
+          const x = Math.random() * w, y = Math.random() * h;
+          const v = 230 + Math.random() * 25;
+          ctx.fillStyle = `rgba(${v|0},${v|0},${(v-2)|0},${0.08 + Math.random() * 0.12})`;
+          ctx.fillRect(x, y, 1 + Math.random() * 2, 1 + Math.random() * 2);
+        }
+        for (let v = 0; v < 10; v++) {
+          ctx.strokeStyle = `rgba(${180+Math.random()*30|0},${175+Math.random()*30|0},${170+Math.random()*30|0},${0.06+Math.random()*0.14})`;
+          ctx.lineWidth = 0.5 + Math.random() * 2;
+          ctx.beginPath();
+          let cx = Math.random() * w, cy = Math.random() * h;
+          ctx.moveTo(cx, cy);
+          for (let s = 0; s < 10; s++) { cx += (Math.random()-0.5)*60; cy += (Math.random()-0.5)*60; ctx.quadraticCurveTo(cx+(Math.random()-0.5)*30, cy+(Math.random()-0.5)*30, cx, cy); }
+          ctx.stroke();
+        }
+      }, tileSize, tileSize, 2, 2);
+      tex.needsUpdate = true;
+      return tex;
+    }
+
+    function createWoodGrainTexture(baseHue = 0.07, tileSize = 256) {
+      const tex = createCanvasTexture((ctx, w, h) => {
+        const base = new THREE.Color().setHSL(baseHue, 0.5, 0.12);
+        ctx.fillStyle = `rgb(${base.r*255|0},${base.g*255|0},${base.b*255|0})`;
+        ctx.fillRect(0, 0, w, h);
+        for (let row = 0; row < h; row++) {
+          const wave = Math.sin(row * 0.05) * 8 + Math.sin(row * 0.13) * 4;
+          const darkness = Math.random() * 0.1;
+          ctx.fillStyle = `rgba(${(20+Math.random()*15)|0},${(12+Math.random()*10)|0},${(5+Math.random()*8)|0},${darkness})`;
+          ctx.fillRect(wave, row, w, 1 + Math.random());
+        }
+        for (let i = 0; i < 40; i++) {
+          const x = Math.random() * w, y = Math.random() * h;
+          const r = 2 + Math.random() * 5;
+          ctx.strokeStyle = `rgba(15,8,3,${0.08+Math.random()*0.12})`;
+          ctx.lineWidth = 0.5 + Math.random();
+          ctx.beginPath();
+          ctx.ellipse(x, y, r * 3, r, 0, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      }, tileSize, tileSize, 4, 8);
+      tex.needsUpdate = true;
+      return tex;
+    }
+
+    function createTileTexture(bgColor = 0xe8e4dc, tileSize = 512, tileCount = 4) {
+      const tex = createCanvasTexture((ctx, w, h) => {
+        const bg = new THREE.Color(bgColor);
+        ctx.fillStyle = `rgb(${bg.r*255|0},${bg.g*255|0},${bg.b*255|0})`;
+        ctx.fillRect(0, 0, w, h);
+        const ts = w / tileCount;
+        for (let r = 0; r < tileCount; r++) {
+          for (let c = 0; c < tileCount; c++) {
+            const x = c * ts + 2, y = r * ts + 2, s = ts - 4;
+            const v = (Math.random() - 0.5) * 6;
+            ctx.fillStyle = `rgb(${(bg.r*255+v)|0},${(bg.g*255+v)|0},${(bg.b*255+v)|0})`;
+            ctx.fillRect(x, y, s, s);
+          }
+        }
+        ctx.strokeStyle = `rgba(${(bg.r*200)|0},${(bg.g*200)|0},${(bg.b*200)|0},0.5)`;
+        ctx.lineWidth = 2;
+        for (let i = 0; i <= tileCount; i++) { ctx.beginPath(); ctx.moveTo(i*ts,0); ctx.lineTo(i*ts,h); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0,i*ts); ctx.lineTo(w,i*ts); ctx.stroke(); }
+      }, tileSize, tileSize, 2, 2);
+      tex.needsUpdate = true;
+      return tex;
+    }
+
+    function createRockTexture(tileSize = 256) {
+      const tex = createCanvasTexture((ctx, w, h) => {
+        ctx.fillStyle = '#4a4a3a';
+        ctx.fillRect(0, 0, w, h);
+        for (let i = 0; i < 12000; i++) {
+          const x = Math.random() * w, y = Math.random() * h;
+          const v = 50 + Math.random() * 50;
+          ctx.fillStyle = `rgba(${v|0},${(v-3)|0},${(v-8)|0},${0.12+Math.random()*0.2})`;
+          const s = 1 + Math.random() * 3;
+          ctx.fillRect(x, y, s, s * (0.5 + Math.random()));
+        }
+      }, tileSize, tileSize, 6, 4);
+      tex.needsUpdate = true;
+      return tex;
+    }
+
+    function createGrassTexture(tileSize = 256) {
+      const tex = createCanvasTexture((ctx, w, h) => {
+        ctx.fillStyle = '#3a7a2a';
+        ctx.fillRect(0, 0, w, h);
+        for (let i = 0; i < 6000; i++) {
+          const x = Math.random() * w, y = Math.random() * h;
+          const g = 80 + Math.random() * 80;
+          ctx.fillStyle = `rgba(${20+Math.random()*30|0},${g|0},${10+Math.random()*20|0},${0.15+Math.random()*0.25})`;
+          ctx.fillRect(x, y, 1, 2 + Math.random() * 3);
+        }
+      }, tileSize, tileSize, 8, 8);
+      tex.needsUpdate = true;
+      return tex;
+    }
+
+    function createFabricTexture(baseColor = 0xd4cec4, tileSize = 128) {
+      const tex = createCanvasTexture((ctx, w, h) => {
+        const c = new THREE.Color(baseColor);
+        ctx.fillStyle = `rgb(${c.r*255|0},${c.g*255|0},${c.b*255|0})`;
+        ctx.fillRect(0, 0, w, h);
+        for (let y = 0; y < h; y += 2) { ctx.fillStyle = `rgba(0,0,0,${0.015+Math.random()*0.025})`; ctx.fillRect(0, y, w, 1); }
+        for (let x = 0; x < w; x += 2) { ctx.fillStyle = `rgba(255,255,255,${0.008+Math.random()*0.018})`; ctx.fillRect(x, 0, 1, h); }
+      }, tileSize, tileSize, 2, 2);
+      tex.needsUpdate = true;
+      return tex;
+    }
+
+    function createRugTexture(tileSize = 256) {
+      const tex = createCanvasTexture((ctx, w, h) => {
+        ctx.fillStyle = '#8a6a4a';
+        ctx.fillRect(0, 0, w, h);
+        const b = 12;
+        ctx.strokeStyle = '#c8a060'; ctx.lineWidth = 4; ctx.strokeRect(b, b, w-b*2, h-b*2);
+        ctx.strokeStyle = '#a07840'; ctx.lineWidth = 2; ctx.strokeRect(b+6, b+6, w-(b+6)*2, h-(b+6)*2);
+        for (let i = 0; i < 4000; i++) {
+          const x = b + Math.random()*(w-b*2), y = b + Math.random()*(h-b*2);
+          ctx.fillStyle = `rgba(${120+Math.random()*60|0},${90+Math.random()*50|0},${50+Math.random()*40|0},${0.08+Math.random()*0.15})`;
+          ctx.fillRect(x, y, 2, 3 + Math.random()*3);
+        }
+      }, tileSize, tileSize, 1, 1);
+      tex.needsUpdate = true;
+      return tex;
+    }
+
+    function createArtTexture(hue = 0.08, tileSize = 256) {
+      const tex = createCanvasTexture((ctx, w, h) => {
+        const c = new THREE.Color().setHSL(hue + Math.random()*0.1, 0.5, 0.4);
+        ctx.fillStyle = `rgb(${c.r*255|0},${c.g*255|0},${c.b*255|0})`;
+        ctx.fillRect(0, 0, w, h);
+        for (let i = 0; i < 12; i++) {
+          ctx.fillStyle = `hsla(${Math.random()*360|0},${40+Math.random()*40|0}%,${30+Math.random()*40|0}%,${0.2+Math.random()*0.35})`;
+          ctx.beginPath(); ctx.arc(Math.random()*w, Math.random()*h, 10+Math.random()*50, 0, Math.PI*2); ctx.fill();
+        }
+        for (let i = 0; i < 20; i++) {
+          ctx.strokeStyle = `rgba(${100+Math.random()*155|0},${80+Math.random()*120|0},${50+Math.random()*100|0},${0.12+Math.random()*0.25})`;
+          ctx.lineWidth = 1 + Math.random()*3;
+          ctx.beginPath(); ctx.moveTo(Math.random()*w, Math.random()*h); ctx.lineTo(Math.random()*w, Math.random()*h); ctx.stroke();
+        }
+      }, tileSize, tileSize, 1, 1);
+      tex.needsUpdate = true;
+      return tex;
+    }
+
+    function createCloudTexture(tileSize = 512) {
+      const tex = createCanvasTexture((ctx, w, h) => {
+        ctx.clearRect(0, 0, w, h);
+        for (let i = 0; i < 35; i++) {
+          const x = Math.random()*w, y = Math.random()*h, r = 30+Math.random()*90;
+          const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
+          grad.addColorStop(0, `rgba(255,255,255,${0.06+Math.random()*0.12})`);
+          grad.addColorStop(1, 'rgba(255,255,255,0)');
+          ctx.fillStyle = grad;
+          ctx.fillRect(x-r, y-r, r*2, r*2);
+        }
+      }, tileSize, tileSize, 1, 1, THREE.NoColorSpace);
+      tex.needsUpdate = true;
+      return tex;
+    }
+
+    function createConcreteTexture(tileSize = 256) {
+      const tex = createCanvasTexture((ctx, w, h) => {
+        ctx.fillStyle = '#cccccc';
+        ctx.fillRect(0, 0, w, h);
+        for (let i = 0; i < 10000; i++) {
+          const x = Math.random()*w, y = Math.random()*h, v = 180+Math.random()*60;
+          ctx.fillStyle = `rgba(${v|0},${v|0},${(v-4)|0},${0.06+Math.random()*0.12})`;
+          ctx.fillRect(x, y, 1+Math.random()*2, 1+Math.random()*2);
+        }
+      }, tileSize, tileSize, 4, 4);
+      tex.needsUpdate = true;
+      return tex;
+    }
+
+    function createCharcoalTexture(tileSize = 256) {
+      const tex = createCanvasTexture((ctx, w, h) => {
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fillRect(0, 0, w, h);
+        for (let i = 0; i < 5000; i++) {
+          const x = Math.random()*w, y = Math.random()*h, v = 20+Math.random()*20;
+          ctx.fillStyle = `rgba(${v|0},${v|0},${v|0},${0.1+Math.random()*0.15})`;
+          ctx.fillRect(x, y, 1+Math.random(), 1+Math.random());
+        }
+      }, tileSize, tileSize, 3, 3);
+      tex.needsUpdate = true;
+      return tex;
+    }
+
+    function sm(mesh, cast = true, receive = true) { mesh.castShadow = cast; mesh.receiveShadow = receive; return mesh; }
+
+    /* ─── Architectural detail helpers ─── */
+
+    function addCornice(group, x, y, z, length, material, depth = 0.15, height = 0.1) {
+      return addBox(group, x, y, z, length, height, depth, material, null, 0);
+    }
+
+    function addWindowFrame(group, x, y, z, w, h, frameMat, glassMat, depth = 0.1) {
+      const fw = 0.05;
+      addBox(group, x, y, z, w+fw*2, h+fw*2, depth, frameMat, null, 0);
+      if (glassMat) addBox(group, x, y, z-0.02, w, h, depth*0.5, glassMat, null, 0);
+      addBox(group, x, y, z, w+0.01, fw*1.5, depth+0.02, frameMat, null, 0);
+      addBox(group, x, y, z, fw*1.5, h+0.01, depth+0.02, frameMat, null, 0);
+    }
+
+    function addPillar(group, x, y, z, height, material, radius = 0.12) {
+      const base = addCylinder(group, x, y-height*0.5, z, radius*1.3, 0.12, material, null, 0, false, 1);
+      const shaft = addCylinder(group, x, y, z, radius, height, material, null, 0, false, 1);
+      const cap = addCylinder(group, x, y+height*0.5, z, radius*1.3, 0.1, material, null, 0, false, 1);
+      sm(base); sm(shaft); sm(cap);
+    }
+
+    function addWallSconce(group, x, y, z, facingAngle, material, emissiveMat) {
+      addBox(group, x, y, z, 0.12, 0.3, 0.2, material, null, facingAngle);
+      if (emissiveMat) {
+        const glow = new THREE.Mesh(geometries.cylinderLow, emissiveMat);
+        glow.position.set(x, y+0.05, z);
+        glow.scale.set(0.1, 0.15, 0.1);
+        group.add(glow);
+      }
+    }
+
+    function addFlowerBed(group, x, z, radius, colors, beach) {
+      for (let i = 0; i < 18; i++) {
+        const a = Math.random()*Math.PI*2, r = Math.random()*radius;
+        const fx = x+Math.cos(a)*r, fz = z+Math.sin(a)*r;
+        const stemH = 0.25+Math.random()*0.35;
+        addCylinder(group, fx, stemH*0.5, fz, 0.012, stemH, beach.lawn, null, 0, false, 1);
+        const col = colors[Math.floor(Math.random()*colors.length)];
+        const bloom = new THREE.Mesh(geometries.cylinderLow, new THREE.MeshStandardMaterial({ color: col, roughness: 0.9, metalness: 0, envMapIntensity: 0.1 }));
+        bloom.position.set(fx, stemH+0.04, fz);
+        bloom.scale.set(0.08+Math.random()*0.07, 0.03, 0.08+Math.random()*0.07);
+        group.add(bloom);
+      }
+    }
+
+    function addStringLights(group, points, material, droop = 0.25) {
+      for (let i = 0; i < points.length-1; i++) {
+        const [x1,y1,z1] = points[i], [x2,y2,z2] = points[i+1];
+        const dist = Math.sqrt((x2-x1)**2+(z2-z1)**2);
+        const segments = Math.max(4, Math.floor(dist*2));
+        for (let s = 0; s <= segments; s++) {
+          const t = s/segments, px = x1+(x2-x1)*t, pz = z1+(z2-z1)*t;
+          const d = Math.sin(t*Math.PI)*droop, py = y1+(y2-y1)*t-d;
+          if (s%2 === 0) {
+            const bulb = new THREE.Mesh(geometries.cylinderLow, material);
+            bulb.position.set(px, py-0.05, pz);
+            bulb.scale.set(0.03, 0.05, 0.03);
+            group.add(bulb);
+          }
+        }
+      }
+    }
+
+    function addBeachRocks(group, beach, count = 15) {
+      for (let i = 0; i < count; i++) {
+        const x = 38+Math.random()*8, z = (Math.random()-0.5)*50, size = 0.3+Math.random()*1.2;
+        const geo = new THREE.DodecahedronGeometry(size, 1);
+        const pos = geo.attributes.position;
+        for (let v = 0; v < pos.count; v++) {
+          pos.setX(v, pos.getX(v)+(Math.random()-0.5)*size*0.3);
+          pos.setY(v, pos.getY(v)+(Math.random()-0.5)*size*0.2);
+          pos.setZ(v, pos.getZ(v)+(Math.random()-0.5)*size*0.3);
+        }
+        pos.needsUpdate = true; geo.computeVertexNormals();
+        const rock = new THREE.Mesh(geo, beach.cliff);
+        rock.position.set(x, -7+Math.random()*2, z);
+        rock.rotation.set(Math.random(), Math.random(), Math.random());
+        rock.castShadow = true;
+        group.add(rock);
+      }
+    }
+
+    function addBeachDriftwood(group, beach) {
+      for (let i = 0; i < 5; i++) {
+        const x = 50+Math.random()*30, z = (Math.random()-0.5)*40, len = 1.5+Math.random()*3;
+        const log = new THREE.Mesh(geometries.cylinderLow, beach.wood);
+        log.position.set(x, -7.4, z);
+        log.scale.set(0.08, len, 0.08);
+        log.rotation.z = Math.PI/2;
+        log.rotation.y = Math.random()*Math.PI;
+        group.add(log);
+      }
+    }
+
+    function addDetailedPalm(group, beach, x, z, height) {
+      const segments = 8, lean = (Math.random()-0.5)*0.15;
+      for (let i = 0; i < segments; i++) {
+        const t = i/segments, y = t*height, segH = height/segments;
+        const r = 0.15*(1-t*0.3), leanX = lean*t*t*height;
+        const trunk = new THREE.Mesh(geometries.cylinderLow, beach.wood);
+        trunk.position.set(x+leanX, y+segH*0.5, z);
+        trunk.scale.set(r, segH+0.05, r);
+        trunk.rotation.z = lean*0.5;
+        sm(trunk, true, false);
+        group.add(trunk);
+        if (i > 0 && i%2 === 0) {
+          const ring = new THREE.Mesh(geometries.cylinderLow, new THREE.MeshStandardMaterial({ color: 0x2a1a0a, roughness: 1, metalness: 0, envMapIntensity: 0 }));
+          ring.position.set(x+leanX*(i/segments), y, z);
+          ring.scale.set(r+0.02, 0.03, r+0.02);
+          group.add(ring);
+        }
+      }
+      const topX = x+lean*height, topY = height+0.2;
+      const leafCount = 8+Math.floor(Math.random()*4);
+      for (let i = 0; i < leafCount; i++) {
+        const angle = i/leafCount*Math.PI*2, leafLen = 2.5+Math.random()*1.5;
+        const leaf = new THREE.Mesh(geometries.plane, new THREE.MeshStandardMaterial({ color: 0x2a6a1a+Math.floor(Math.random()*0x101010), roughness: 0.95, metalness: 0, side: THREE.DoubleSide, envMapIntensity: 0.15 }));
+        leaf.position.set(topX+Math.cos(angle)*leafLen*0.5, topY-0.3, z+Math.sin(angle)*leafLen*0.5);
+        leaf.scale.set(leafLen, 0.6, 0.4);
+        leaf.rotation.set(-0.4-Math.random()*0.3, angle, 0.1+Math.random()*0.15);
+        sm(leaf, false, false);
+        group.add(leaf);
+      }
+      for (let i = 0; i < 3; i++) {
+        const coco = new THREE.Mesh(geometries.cylinderLow, new THREE.MeshStandardMaterial({ color: 0x5a3a1a, roughness: 0.9, metalness: 0, envMapIntensity: 0.1 }));
+        const a = i/3*Math.PI*2;
+        coco.position.set(topX+Math.cos(a)*0.15, topY-0.15, z+Math.sin(a)*0.15);
+        coco.scale.set(0.08, 0.08, 0.08);
+        group.add(coco);
+      }
+    }
+
+    function addBeachCliffLights(group, beach) {
+      [[39,0.1,-20],[39,0.1,-10],[39,0.1,0],[39,0.1,10],[39,0.1,20]].forEach(([x,y,z]) => {
+        addBox(group, x, y, z, 0.08, 0.04, 0.08, beach.darkSteel, null, 0);
+        const light = new THREE.Mesh(geometries.cylinderLow, beach.emissiveWarm);
+        light.position.set(x, y+0.03, z);
+        light.scale.set(0.05, 0.02, 0.05);
+        group.add(light);
+      });
+    }
+
+    function addOutdoorKitchen(group, beach, x, z) {
+      addBox(group, x, 0.5, z, 2.4, 1.0, 0.7, beach.stucco, null, 0);
+      addBox(group, x, 1.05, z, 2.5, 0.12, 0.75, beach.marble, null, 0);
+      addBox(group, x, 1.4, z, 2.2, 0.7, 0.55, beach.darkSteel, null, 0);
+      for (let i = 0; i < 2; i++) addCylinder(group, x-0.6+i*1.2, 1.25, z, 0.08, 0.04, beach.steel, null, 0, false, 1);
+    }
+
+    function addPoolLadder(group, beach, x, z) {
+      addCylinder(group, x-0.3, 0.5, z, 0.025, 1.0, beach.steel, null, 0, false, 1);
+      addCylinder(group, x+0.3, 0.5, z, 0.025, 1.0, beach.steel, null, 0, false, 1);
+      for (let i = 0; i < 3; i++) addBox(group, x, 0.15-i*0.25, z, 0.6, 0.03, 0.25, beach.steel, null, 0);
+    }
+
+    function addInteriorLamp(group, beach, x, y, z, type = 'table') {
+      if (type === 'table') {
+        addCylinder(group, x, y+0.25, z, 0.1, 0.5, beach.brass, null, 0, false, 1);
+        const shade = new THREE.Mesh(geometries.cylinderLow, new THREE.MeshStandardMaterial({ color: 0xfaf8f0, roughness: 1, metalness: 0, emissive: 0xffeecc, emissiveIntensity: 0.15, envMapIntensity: 0.05 }));
+        shade.position.set(x, y+0.6, z);
+        shade.scale.set(0.25, 0.2, 0.25);
+        group.add(shade);
+      } else {
+        addCylinder(group, x, y*0.5, z, 0.14, y*0.08, beach.darkSteel, null, 0, false, 1);
+        addCylinder(group, x, y*0.92, z, 0.03, y*0.85, beach.darkSteel, null, 0, false, 1);
+        const fShade = new THREE.Mesh(geometries.cylinderLow, new THREE.MeshStandardMaterial({ color: 0xfaf8f0, roughness: 1, metalness: 0, emissive: 0xffeecc, emissiveIntensity: 0.2, envMapIntensity: 0.05 }));
+        fShade.position.set(x, y-0.12, z);
+        fShade.scale.set(0.2, 0.25, 0.2);
+        group.add(fShade);
+      }
+    }
+
+    function addBookshelf(group, beach, x, y, z, width = 1.8, height = 3.2, depth = 0.4) {
+      addBox(group, x, y+height*0.5, z, width, height, depth, beach.wood, null, 0);
+      const shelfCount = 5;
+      for (let i = 0; i <= shelfCount; i++) {
+        const sy = y+i*(height/shelfCount);
+        addBox(group, x, sy, z, width-0.04, 0.04, depth-0.02, beach.wood, null, 0);
+        if (i < shelfCount) {
+          for (let b = 0; b < 5+Math.floor(Math.random()*5); b++) {
+            const bx = x-width*0.4+b*0.13+Math.random()*0.04;
+            const bh = 0.25+Math.random()*0.3;
+            const bookCol = new THREE.Color().setHSL(Math.random(), 0.25+Math.random()*0.4, 0.2+Math.random()*0.35);
+            addBox(group, bx, sy+bh*0.5+0.02, z, 0.09, bh, depth*0.6, new THREE.MeshStandardMaterial({ color: bookCol, roughness: 0.9, metalness: 0, envMapIntensity: 0.05 }), null, 0);
+          }
+        }
+      }
+    }
+
+    function addArtPiece(group, beach, x, y, z, w = 1.2, h = 0.9, hue = 0.08) {
+      const artTex = createArtTexture(hue, 256);
+      const artMat = new THREE.MeshStandardMaterial({ map: artTex, roughness: 0.9, metalness: 0, envMapIntensity: 0.1 });
+      addBox(group, x, y, z, w+0.1, h+0.1, 0.05, beach.darkSteel, null, 0);
+      addBox(group, x, y, z+0.03, w, h, 0.03, artMat, null, 0);
+    }
+
+    function addCurtain(group, beach, x, y, z, w, h, material) {
+      for (let side = -1; side <= 1; side += 2) {
+        const curtain = new THREE.Mesh(new THREE.PlaneGeometry(w*0.45, h, 4, 1), material);
+        curtain.position.set(x+side*w*0.3, y, z);
+        const pos = curtain.geometry.attributes.position;
+        for (let i = 0; i < pos.count; i++) pos.setZ(i, Math.sin(pos.getX(i)*3)*0.06);
+        pos.needsUpdate = true;
+        curtain.geometry.computeVertexNormals();
+        sm(curtain, false, false);
+        group.add(curtain);
+      }
+    }
+
+    function createBeachMansionMaterials() {
+      const maxAniso = renderer.capabilities.getMaxAnisotropy ? renderer.capabilities.getMaxAnisotropy() : 1;
+
+      // Pure white stucco with texture
+      const stuccoTex = createStuccoTexture(0xffffff, 0.015, 512);
+      const stucco = new THREE.MeshStandardMaterial({ map: stuccoTex, roughness: 0.95, metalness: 0, envMapIntensity: 0.1 });
+
+      // Dark charcoal for accents
+      const charcoalTex = createCharcoalTexture(256);
+      const charcoal = new THREE.MeshStandardMaterial({ map: charcoalTex, roughness: 0.9, metalness: 0, envMapIntensity: 0.05 });
+
+      // Dark steel for frames, railings, accents
+      const darkSteel = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.25, metalness: 0.95, envMapIntensity: 0.8 });
+
+      // Brushed steel for pool, railings, modern elements
+      const steel = new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.15, metalness: 0.98, envMapIntensity: 1.2 });
+
+      // Polished concrete for floors
+      const concreteTex = createConcreteTexture(512);
+      const concrete = new THREE.MeshStandardMaterial({ map: concreteTex, roughness: 0.35, metalness: 0.05, envMapIntensity: 0.4 });
+
+      // Marble for countertops, accents
+      const marbleTex = createMarbleTexture(512);
+      const marble = new THREE.MeshStandardMaterial({ map: marbleTex, roughness: 0.12, metalness: 0.02, envMapIntensity: 0.6 });
+
+      // Warm wood
+      const woodTex = createWoodGrainTexture(0.07, 512);
+      const wood = new THREE.MeshStandardMaterial({ map: woodTex, roughness: 0.65, metalness: 0, envMapIntensity: 0.15 });
+
+      // Dark wood
+      const darkWood = new THREE.MeshStandardMaterial({ color: 0x3a2515, roughness: 0.7, metalness: 0, envMapIntensity: 0.1 });
+
+      // Tile
+      const tileTex = createTileTexture(0xe8e4dc, 512, 4);
+      const tile = new THREE.MeshStandardMaterial({ map: tileTex, roughness: 0.45, metalness: 0, envMapIntensity: 0.3 });
+
+      // Glass
+      const glass = new THREE.MeshPhysicalMaterial({ color: 0xddeeff, roughness: 0.02, metalness: 0, transmission: 0.94, thickness: 0.08, ior: 1.52, clearcoat: 1, clearcoatRoughness: 0.02, envMapIntensity: 1.5 });
+      const glassRail = new THREE.MeshPhysicalMaterial({ color: 0xccddee, roughness: 0.05, metalness: 0, transmission: 0.8, thickness: 0.1, transparent: true, opacity: 0.35, envMapIntensity: 0.8 });
+
+      // Pool water
+      const poolWater = new THREE.MeshPhysicalMaterial({ color: 0x00aacc, roughness: 0.02, metalness: 0, transmission: 0.5, thickness: 0.8, transparent: true, opacity: 0.85, emissive: 0x004466, emissiveIntensity: 0.15, envMapIntensity: 0.6, side: THREE.DoubleSide });
+
+      // Ground
+      const ground = new THREE.MeshStandardMaterial({ color: 0xf0ece4, roughness: 1, metalness: 0, vertexColors: true, envMapIntensity: 0.1 });
+
+      // Grass
+      const grassTex = createGrassTexture(512);
+      const lawn = new THREE.MeshStandardMaterial({ map: grassTex, roughness: 0.95, metalness: 0, envMapIntensity: 0.05 });
+
+      // Sand
+      const sand = new THREE.MeshStandardMaterial({ color: 0xe8d5b5, roughness: 1, metalness: 0, envMapIntensity: 0 });
+
+      // Cliff/rock
+      const rockTex = createRockTexture(512);
+      const cliff = new THREE.MeshStandardMaterial({ map: rockTex, roughness: 0.95, metalness: 0, envMapIntensity: 0.05 });
+
+      // Brass
+      const brass = new THREE.MeshStandardMaterial({ color: 0xc8a84a, roughness: 0.3, metalness: 0.7, envMapIntensity: 0.55 });
+      const brass2 = new THREE.MeshStandardMaterial({ color: 0xc8a84a, emissive: 0xffcc66, emissiveIntensity: 0.3, roughness: 0.3, metalness: 0.7, envMapIntensity: 0.5 });
+
+      // Emissive
+      const emissiveWarm = new THREE.MeshStandardMaterial({ color: 0xffeecc, emissive: 0xffeecc, emissiveIntensity: 0.4, roughness: 0.8, envMapIntensity: 0.1 });
+
+      // Fabric
+      const fabricTex = createFabricTexture(0xd4cec4, 256);
+      const fabricGrey = new THREE.MeshStandardMaterial({ map: fabricTex, roughness: 0.95, metalness: 0, envMapIntensity: 0.08 });
+      const fabricTan = new THREE.MeshStandardMaterial({ color: 0xc4a882, roughness: 0.95, metalness: 0, envMapIntensity: 0.1 });
+      const fabricWhite = new THREE.MeshStandardMaterial({ color: 0xfafaf8, roughness: 1, metalness: 0, envMapIntensity: 0.08 });
+
+      // Rug
+      const rugTex = createRugTexture(256);
+      const rug = new THREE.MeshStandardMaterial({ map: rugTex, roughness: 1, metalness: 0, envMapIntensity: 0 });
+
+      // Misc
+      const stone = new THREE.MeshStandardMaterial({ color: 0xf0e8d8, roughness: 0.88, metalness: 0.01, envMapIntensity: 0.2 });
+      const teak = new THREE.MeshStandardMaterial({ color: 0x5a3a0a, roughness: 0.85, metalness: 0.02, envMapIntensity: 0.15 });
+      const darkWall = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.92, metalness: 0.02, envMapIntensity: 0.08 });
+      const artCanvas = new THREE.MeshStandardMaterial({ color: 0xc87840, roughness: 0.95, metalness: 0, envMapIntensity: 0.05 });
+      const oliveGreen = new THREE.MeshStandardMaterial({ color: 0x6a7a3a, roughness: 1, metalness: 0, envMapIntensity: 0.05 });
+      const hedge = new THREE.MeshStandardMaterial({ color: 0x1a3a1a, roughness: 1, metalness: 0, envMapIntensity: 0.05 });
+      const cream = new THREE.MeshStandardMaterial({ color: 0xe8e0d0, roughness: 0.95, metalness: 0, envMapIntensity: 0.1 });
+      const flame = new THREE.MeshStandardMaterial({ color: 0xff6600, emissive: 0xff4400, emissiveIntensity: 0.6, roughness: 1, metalness: 0, envMapIntensity: 0 });
+      const ocean = new THREE.MeshStandardMaterial({ color: 0x004488, roughness: 0.1, metalness: 0, transparent: true, opacity: 0.88, envMapIntensity: 0.4, side: THREE.DoubleSide });
+      const suburbWall = new THREE.MeshBasicMaterial({ color: 0xf1e6d0 });
+      const suburbRoof = new THREE.MeshBasicMaterial({ color: 0x8a4a2a });
+      const hills = new THREE.MeshBasicMaterial({ color: 0xc8b882, transparent: true, opacity: 0.6, side: THREE.DoubleSide, depthWrite: false });
+      const sunRefl = new THREE.MeshBasicMaterial({ color: 0xff8833, transparent: true, opacity: 0.7, depthWrite: false, side: THREE.DoubleSide });
+      const island = new THREE.MeshBasicMaterial({ color: 0x1a2a3a });
+      const haze = new THREE.MeshBasicMaterial({ color: 0xff9966, transparent: true, opacity: 0.18, depthWrite: false, side: THREE.DoubleSide });
+      const invisible = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0, depthWrite: false });
+
+      return { ground, stucco, charcoal, darkSteel, steel, concrete, marble, wood, darkWood, tile, glass, glassRail, poolWater, lawn, sand, cliff, brass, brass2, emissiveWarm, fabricGrey, fabricTan, fabricWhite, rug, stone, teak, darkWall, artCanvas, oliveGreen, hedge, cream, flame, ocean, suburbWall, suburbRoof, hills, sunRefl, island, haze, invisible };
     }
 
     function createRooftopMaterials() {
