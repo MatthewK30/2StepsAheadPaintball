@@ -435,8 +435,11 @@
 
     /* Map select: bigger grid */
     #mapSelectView .mapGrid {
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-      height: clamp(220px, 35vh, 380px);
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      height: auto;
+    }
+    #mapSelectView .mapCard {
+      height: clamp(160px, 22vh, 240px);
     }
 
     /* Options view: two-col layout */
