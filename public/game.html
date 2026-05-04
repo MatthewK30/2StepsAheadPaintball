@@ -3024,6 +3024,7 @@
     let ghostTownLights = [];
     let funlandSkyDome = null;
     let castleSkyDome = null;
+    let beachMansionSkyDome = null;
 
     player.root.add(camera);
     scene.add(player.root);
@@ -5695,18 +5696,15 @@
       const beachWater = [];
       const walkSurfaces = [
         { x1: -BEACH_MANSION_BOUNDS.halfX, x2: BEACH_MANSION_BOUNDS.halfX, z1: -BEACH_MANSION_BOUNDS.halfZ, z2: BEACH_MANSION_BOUNDS.halfZ, y: 0 },
-        { type: 'ramp', axis: 'x', x1: -16.2, x2: -6.4, z1: 6.0, z2: 10.6, y1: 0, y2: 3.2 },
-        { type: 'ramp', axis: 'x', x1: 7.2, x2: 13.8, z1: -13.2, z2: -9.4, y1: 0, y2: 3.2 },
-        { x1: -18.2, x2: -10.2, z1: -14.2, z2: 14.2, y: 3.2 },
-        { x1: -10.2, x2: 8.8, z1: 5.0, z2: 14.2, y: 3.2 },
-        { x1: -10.2, x2: 8.8, z1: -14.2, z2: -5.0, y: 3.2 },
-        { x1: -3.2, x2: 9.0, z1: -5.0, z2: 5.0, y: 3.2 },
-        { x1: 8.8, x2: 18.5, z1: -12.2, z2: 12.2, y: 3.2 }
+        { type: 'ramp', axis: 'x', x1: -9, x2: 1, z1: 10, z2: 13, y1: 0, y2: 5.5 },
+        { x1: -12, x2: 6, z1: -14, z2: 10, y: 5.5 },
+        { x1: -12, x2: 6, z1: 10, z2: 14, y: 5.5 },
+        { x1: 6, x2: 10, z1: -5, z2: 5, y: 5.5 }
       ];
 
       group.add(makeBeachMansionGround(beach.ground));
       addBeachMansionBoundary(group, colliders, beach.invisible);
-      addBeachMansionLandscape(group, beach, beachWater);
+      addBeachMansionLandscape(group, colliders, beach, beachWater);
       addBeachMansionExterior(group, colliders, shootables, coverPoints, beach, beachWater);
       addBeachMansionHouse(group, colliders, shootables, coverPoints, beach);
       addSpawnMark(group, -34, 0, BLUE, false);
@@ -5725,8 +5723,8 @@
           blue: { x: -34, y: 0, z: 0 },
           red: { x: 34, y: 0, z: 0 }
         },
-        sky: 0x87CEEB,
-        fog: 0x87CEEB,
+        sky: null,
+        fog: 0xff6633,
         ambient: 'beachmansion',
         beachWater
       };
@@ -5735,37 +5733,42 @@
     function createBeachMansionMaterials() {
       const standard = (color, opts = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.82, metalness: 0.02, envMap: environmentMap, envMapIntensity: 0.28, ...opts });
       const basic = (color, opts = {}) => new THREE.MeshBasicMaterial({ color, ...opts });
-      // Modern white mansion: clean white walls, light grey concrete, flat white roof
-      // No color texture maps — pure painted white/grey surfaces
-      const stucco = standard(0xf4f4f2, { roughness: 0.86, metalness: 0.01, envMapIntensity: 0.32 });
-      const travertine = standard(0xccccca, { roughness: 0.80, metalness: 0.02, envMapIntensity: 0.28 });
-      const terracotta = standard(0xe0e0dc, { roughness: 0.84, metalness: 0.01, envMapIntensity: 0.24 }); // flat grey modern roof
-      // Apply only bump/roughness maps (no color map) so white stays white
-      textureLibrary.apply(stucco, 'concreteBump', 3.6, 2.8, 'bumpMap', THREE.NoColorSpace || THREE.LinearSRGBColorSpace);
-      textureLibrary.apply(travertine, 'concreteBump', 5, 4, 'bumpMap', THREE.NoColorSpace || THREE.LinearSRGBColorSpace);
+      const stucco = standard(0xfaf8f5, { roughness: 0.85, metalness: 0.02, envMapIntensity: 0.2 });
+      textureLibrary.apply(stucco, 'concrete', 4, 3);
       return {
-        ground: standard(0xd8e8d0, { roughness: 1, metalness: 0, vertexColors: true, envMapIntensity: 0.12 }),
+        ground: standard(0xf0ece4, { roughness: 1, metalness: 0, vertexColors: true, envMapIntensity: 0.1 }),
         stucco,
-        travertine,
-        terracotta,
-        marble: standard(0xf2f2f0, { roughness: 0.45, metalness: 0.04, envMapIntensity: 0.42 }),
-        wood: standard(0x8c7a6a, { roughness: 0.78, metalness: 0.02, envMapIntensity: 0.2 }),
-        darkWood: standard(0x4a3a30, { roughness: 0.84, metalness: 0.02, envMapIntensity: 0.18 }),
-        glass: new THREE.MeshPhysicalMaterial({ color: 0xa8d8f0, roughness: 0.04, metalness: 0.1, transmission: 0.65, thickness: 0.12, transparent: true, opacity: 0.38, envMap: environmentMap, envMapIntensity: 1.2 }),
-        hedge: standard(0x3a8c42, { roughness: 0.98, metalness: 0, envMapIntensity: 0.1 }),
-        flower: standard(0x58a8e8, { roughness: 0.82, metalness: 0, envMapIntensity: 0.14 }), // modern blue accents
-        asphalt: standard(0x3a3e42, { roughness: 0.92, metalness: 0.02, envMapIntensity: 0.14 }),
-        line: standard(0xffffff, { roughness: 0.45, metalness: 0, transparent: true, opacity: 0.8, depthWrite: false }),
-        poolWater: standard(0x22c4e8, { roughness: 0.12, metalness: 0, transparent: true, opacity: 0.78, emissive: 0x0880a0, emissiveIntensity: 0.22, side: THREE.DoubleSide }),
-        ocean: basic(0x1a9ad4, { transparent: true, opacity: 0.76, side: THREE.DoubleSide }),
-        beach: basic(0xecd9a8, { side: THREE.DoubleSide }),
-        cliff: basic(0xb8c4c0),
-        suburbWall: basic(0xf0f0ee), // modern white background houses
-        suburbRoof: basic(0xb8baba), // flat grey roofs
-        hills: basic(0x5a9e6a, { transparent: true, opacity: 0.52, side: THREE.DoubleSide, depthWrite: false }),
-        haze: basic(0xd0eeff, { transparent: true, opacity: 0.26, depthWrite: false, side: THREE.DoubleSide }),
-        rail: standard(0xd8d8d4, { roughness: 0.42, metalness: 0.28, envMapIntensity: 0.6 }), // steel rail
-        blackIron: standard(0x222222, { roughness: 0.38, metalness: 0.82, envMapIntensity: 0.7 }),
+        darkSteel: standard(0x1a1a1a, { roughness: 0.5, metalness: 0.7, envMapIntensity: 0.5 }),
+        wood: standard(0x3d2b1a, { roughness: 0.88, metalness: 0.02, envMapIntensity: 0.18 }),
+        marble: standard(0xf0ece4, { roughness: 0.5, metalness: 0.02, envMapIntensity: 0.35 }),
+        concrete: standard(0xd4cec8, { roughness: 0.9, metalness: 0, envMapIntensity: 0.12 }),
+        stone: standard(0xf0e8d8, { roughness: 0.88, metalness: 0.01, envMapIntensity: 0.2 }),
+        lawn: standard(0x3a7a2a, { roughness: 1, metalness: 0, envMapIntensity: 0.08 }),
+        brass: standard(0xc8a84a, { roughness: 0.3, metalness: 0.7, envMapIntensity: 0.55 }),
+        steel: standard(0x888888, { roughness: 0.4, metalness: 0.8, envMapIntensity: 0.55 }),
+        glass: new THREE.MeshPhysicalMaterial({ color: 0xaabbcc, roughness: 0.05, metalness: 0, transmission: 0.7, thickness: 0.15, transparent: true, opacity: 0.4, envMap: environmentMap, envMapIntensity: 0.9 }),
+        glassRail: new THREE.MeshPhysicalMaterial({ color: 0xccddee, roughness: 0.05, metalness: 0, transmission: 0.8, thickness: 0.1, transparent: true, opacity: 0.35, envMap: environmentMap, envMapIntensity: 0.8 }),
+        poolWater: new THREE.MeshPhysicalMaterial({ color: 0x00aacc, roughness: 0.02, metalness: 0, transmission: 0.5, thickness: 0.8, transparent: true, opacity: 0.85, emissive: 0x004466, emissiveIntensity: 0.15, envMap: environmentMap, envMapIntensity: 0.6, side: THREE.DoubleSide }),
+        ocean: standard(0x004488, { roughness: 0.1, metalness: 0, transparent: true, opacity: 0.88, envMapIntensity: 0.4, side: THREE.DoubleSide }),
+        flame: standard(0xff6600, { emissive: 0xff4400, emissiveIntensity: 0.6, roughness: 1, metalness: 0, envMapIntensity: 0 }),
+        emissiveWarm: standard(0xffeecc, { emissive: 0xffeecc, emissiveIntensity: 0.4, roughness: 0.8, envMapIntensity: 0.1 }),
+        brass2: standard(0xc8a84a, { emissive: 0xffcc66, emissiveIntensity: 0.3, roughness: 0.3, metalness: 0.7, envMapIntensity: 0.5 }),
+        fabricGrey: standard(0xd4cec4, { roughness: 1, metalness: 0, envMapIntensity: 0.08 }),
+        fabricTan: standard(0xc4a882, { roughness: 0.95, metalness: 0, envMapIntensity: 0.1 }),
+        fabricWhite: standard(0xfafaf8, { roughness: 1, metalness: 0, envMapIntensity: 0.08 }),
+        teak: standard(0x5a3a0a, { roughness: 0.85, metalness: 0.02, envMapIntensity: 0.15 }),
+        darkWall: standard(0x1a1a1a, { roughness: 0.92, metalness: 0.02, envMapIntensity: 0.08 }),
+        artCanvas: standard(0xc87840, { roughness: 0.95, metalness: 0, envMapIntensity: 0.05 }),
+        oliveGreen: standard(0x6a7a3a, { roughness: 1, metalness: 0, envMapIntensity: 0.05 }),
+        hedge: standard(0x1a3a1a, { roughness: 1, metalness: 0, envMapIntensity: 0.05 }),
+        cream: standard(0xe8e0d0, { roughness: 0.95, metalness: 0, envMapIntensity: 0.1 }),
+        cliff: basic(0x4a4a3a),
+        suburbWall: basic(0xf1e6d0),
+        suburbRoof: basic(0x8a4a2a),
+        hills: basic(0xc8b882, { transparent: true, opacity: 0.6, side: THREE.DoubleSide, depthWrite: false }),
+        sunRefl: basic(0xff8833, { transparent: true, opacity: 0.7, depthWrite: false, side: THREE.DoubleSide }),
+        island: basic(0x1a2a3a),
+        haze: basic(0xff9966, { transparent: true, opacity: 0.18, depthWrite: false, side: THREE.DoubleSide }),
         invisible: new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0, depthWrite: false })
       };
     }
@@ -5779,25 +5782,16 @@
       for (let i = 0; i < pos.count; i++) {
         const x = pos.getX(i);
         const z = pos.getZ(i);
-        const noise = Math.sin(x * 0.31 + z * 0.17) * 0.025 + Math.cos(z * 0.43) * 0.018;
-        const absZ = Math.abs(z);
-        const edgeSand = Math.max(0, (absZ - 22) / 18); // fade to sand near z edges
-        if (x > 34) {
-          color.setHex(0xdfd0a0).offsetHSL(0, -0.01, noise); // east sand
-        } else if (edgeSand > 0.6) {
-          color.setHex(0xe2d090).offsetHSL(0, 0, noise * 0.6); // north/south beach sand
-        } else if (edgeSand > 0.2) {
-          // blend lawn to sand
-          color.setHex(0x9aba80).offsetHSL(0, -edgeSand * 0.3, noise * 0.5);
-        } else if (x < -30) {
-          color.setHex(0x3c4040).offsetHSL(0, 0, noise);
-        } else if (x < -20) {
-          color.setHex(0x4a9450).offsetHSL(0.02, 0.04, noise);
-        } else if (x < 12) {
-          color.setHex(0x5aaa60).offsetHSL(0.01, 0.03, noise * 0.7);
-        } else {
-          color.setHex(0x68b870).offsetHSL(0, 0.02, noise * 0.8);
-        }
+        const noise = Math.sin(x * 0.31 + z * 0.17) * 0.022 + Math.cos(z * 0.43) * 0.015;
+        if (x < -38) color.setHex(0x2a2e32).offsetHSL(0, 0, noise * 0.5);
+        else if (x < -12) color.setHex(0xc8c4c0).offsetHSL(0, 0, noise);
+        else if (x < 6) color.setHex(0xf0ece4).offsetHSL(0, 0, noise * 0.5);
+        else if (x < 20) {
+          const lz = Math.abs(z);
+          if (lz > 7) color.setHex(0x3a7a2a).offsetHSL(0.01, 0.02, noise);
+          else color.setHex(0xf0e8d8).offsetHSL(0, 0, noise);
+        } else if (x < 35) color.setHex(0xf0e8d8).offsetHSL(0, 0, noise * 0.7);
+        else color.setHex(0x6a6258).offsetHSL(0, -0.02, noise * 0.5);
         colors.push(color.r, color.g, color.b);
       }
       geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
@@ -5816,493 +5810,491 @@
       addBox(group, bx + 0.08, 1.6, 0, 0.18, 3.2, bz * 2 + 0.4, material, colliders, 0);
     }
 
-    function addBeachMansionLandscape(group, beach, waterMeshes) {
-      let s = 23;
-      const rand = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
-      const ARENA_HX = BEACH_MANSION_BOUNDS.halfX;
-      const ARENA_HZ = BEACH_MANSION_BOUNDS.halfZ;
-
-      // ─────────────────────────────────────────────────────────
-      // 1. MASSIVE OCEAN (covers everything to the east and around)
-      // ─────────────────────────────────────────────────────────
-      const ocean = new THREE.Mesh(new THREE.PlaneGeometry(900, 900, 1, 1), beach.ocean);
-      ocean.rotation.x = -Math.PI / 2;
-      ocean.position.set(0, -7.4, 0);
-      ocean.userData.beachWater = true;
-      ocean.userData.baseY = ocean.position.y;
+    function addBeachMansionLandscape(group, colliders, beach, waterMeshes) {
+      // Ocean with wave-animated vertices
+      const oceanGeo = new THREE.PlaneGeometry(220, 90, 32, 32);
+      oceanGeo.rotateX(-Math.PI / 2);
+      const ocean = new THREE.Mesh(oceanGeo, beach.ocean);
+      ocean.position.set(90, -6.5, 0);
+      const origPos = new Float32Array(oceanGeo.attributes.position.array);
+      ocean.userData.oceanWave = true;
+      ocean.userData.origPositions = origPos;
       group.add(ocean);
       waterMeshes.push(ocean);
 
-      // ─────────────────────────────────────────────────────────
-      // 2. SURROUNDING TERRAIN — huge displaced sand/grass plane
-      //    (mimics Funland's surround with rolling hills)
-      // ─────────────────────────────────────────────────────────
-      const surroundMat = new THREE.MeshStandardMaterial({
-        color: 0xe8d6a6, roughness: 1, metalness: 0, vertexColors: true
-      });
-      const surroundGeo = new THREE.PlaneGeometry(800, 800, 96, 96);
-      const sPos = surroundGeo.attributes.position;
-      const sCol = [];
-      const tmpC = new THREE.Color();
-      for (let i = 0; i < sPos.count; i++) {
-        const x = sPos.getX(i);
-        const y = sPos.getY(i); // before rotation, this is "z" in world
-        const dist = Math.hypot(x, y);
-        const inArena = Math.abs(x) < ARENA_HX + 4 && Math.abs(y) < ARENA_HZ + 4;
-        // Rolling dunes — higher away from arena, max ~12 units
-        const roll = inArena ? 0
-          : (Math.sin(x * 0.038) * 1.2 + Math.cos(y * 0.041) * 1.4
-             + Math.sin((x - y) * 0.022) * 1.8 + Math.sin(x * 0.011 + y * 0.009) * 2.6)
-            * Math.min(1, (dist - 50) / 80);
-        sPos.setZ(i, roll);
-        // Vertex colors: sandy beach near water, green-ish further inland
-        const noise = Math.sin(x * 0.13) * 0.04 + Math.cos(y * 0.17) * 0.04;
-        if (x > 36) {
-          tmpC.setHex(0xe8d3a0).offsetHSL(0, 0, noise); // east beach
-        } else if (Math.abs(y) > 50) {
-          tmpC.setHex(0xe6d09a).offsetHSL(0, 0, noise); // north/south beaches
-        } else if (dist > 90) {
-          tmpC.setHex(0x6da06b).offsetHSL(0, 0.04, noise); // distant grass
-        } else if (dist > 60) {
-          tmpC.setHex(0x88b478).offsetHSL(0, 0.03, noise); // mid grass
-        } else {
-          tmpC.setHex(0xc8b88a).offsetHSL(0, 0, noise); // sandy near arena
-        }
-        sCol.push(tmpC.r, tmpC.g, tmpC.b);
-      }
-      surroundGeo.setAttribute('color', new THREE.Float32BufferAttribute(sCol, 3));
-      surroundGeo.computeVertexNormals();
-      const surround = new THREE.Mesh(surroundGeo, surroundMat);
-      surround.rotation.x = -Math.PI / 2;
-      surround.position.y = -0.15;
-      surround.castShadow = false;
-      surround.receiveShadow = false;
-      group.add(surround);
+      // Sun reflection path on water
+      const reflGeo = new THREE.PlaneGeometry(1, 1, 1, 1);
+      reflGeo.rotateX(-Math.PI / 2);
+      const reflection = new THREE.Mesh(reflGeo, beach.sunRefl);
+      reflection.position.set(75, -6.2, -18);
+      reflection.scale.set(80, 1, 8);
+      reflection.rotation.y = 0.22;
+      group.add(reflection);
 
-      // ─────────────────────────────────────────────────────────
-      // 3. CLIFF + EAST RAIL
-      // ─────────────────────────────────────────────────────────
-      addBox(group, 41.2, -3.1, 0, 2.4, 7.2, 80, beach.cliff, null, 0);
-      addBox(group, 39.2, 0.42, 0, 0.36, 0.84, 76, beach.rail, null, 0);
-      addBeachRailLine(group, null, beach, 38.6, -35, 38.6, 35, 0);
+      // Catalina Island silhouette on horizon
+      const islandGeo = new THREE.PlaneGeometry(30, 4, 1, 1);
+      const island = new THREE.Mesh(islandGeo, beach.island);
+      island.position.set(155, -4.5, -55);
+      island.rotation.y = 0.15;
+      group.add(island);
 
-      // ─────────────────────────────────────────────────────────
-      // 4. REAL 3D MOUNTAIN RANGES — actual cones/pyramids for depth
-      //    Three rings on north/south/west sides, varying heights
-      // ─────────────────────────────────────────────────────────
-      const mountainBase = new THREE.MeshStandardMaterial({ color: 0x6a8478, roughness: 1, metalness: 0, flatShading: true });
-      const mountainSnow = new THREE.MeshStandardMaterial({ color: 0xeef4f8, roughness: 0.9, metalness: 0, flatShading: true });
-      const mountainFar = new THREE.MeshStandardMaterial({ color: 0x9bb0b8, roughness: 1, metalness: 0, flatShading: true, transparent: true, opacity: 0.85 });
+      // Cliff face — series of irregular rock boxes dropping to ocean
+      addBox(group, 40.5, -3.5, 0, 4.5, 9.5, 68, beach.cliff, null, 0);
+      addBox(group, 38.5, -1.2, -26, 3.5, 5.0, 16, beach.cliff, null, 0.04);
+      addBox(group, 38.5, -1.2, 26, 3.5, 5.0, 16, beach.cliff, null, -0.04);
+      addBox(group, 42.5, -5, 0, 3.5, 8, 65, beach.cliff, null, 0);
 
-      function addMountain(x, z, height, baseRadius, snowy, mat) {
-        const m = new THREE.Mesh(new THREE.ConeGeometry(baseRadius, height, 6, 1, false), mat || mountainBase);
-        m.position.set(x, height * 0.5 - 1.5, z);
-        m.rotation.y = rand() * Math.PI;
-        m.castShadow = false;
-        group.add(m);
-        if (snowy && height > 22) {
-          const cap = new THREE.Mesh(new THREE.ConeGeometry(baseRadius * 0.35, height * 0.28, 6), mountainSnow);
-          cap.position.set(x, height * 0.86 - 1.5, z);
-          cap.rotation.y = m.rotation.y;
-          cap.castShadow = false;
-          group.add(cap);
-        }
+      // Cliff glass barrier — players stopped, paintballs pass through
+      addBeachGlassBarrier(group, colliders, 38.3, 1.2, 0, 0.08, 2.4, 62, beach.glassRail);
+      // Steel posts at intervals
+      for (let z = -28; z <= 28; z += 5.5) {
+        addBox(group, 38.3, 1.2, z, 0.08, 2.4, 0.08, beach.darkSteel, null, 0);
       }
 
-      // West mountain range — biggest and most prominent (behind the neighborhood)
-      const westMountains = [
-        { x: -130, z: -80, h: 38, r: 22, snow: true },
-        { x: -150, z: -50, h: 52, r: 28, snow: true },
-        { x: -160, z: -10, h: 68, r: 34, snow: true },
-        { x: -155, z:  30, h: 48, r: 26, snow: true },
-        { x: -140, z:  70, h: 42, r: 24, snow: true },
-        { x: -120, z:  95, h: 32, r: 20, snow: false },
-        { x: -110, z: -100, h: 30, r: 18, snow: false },
-        // closer foothills
-        { x: -100, z: -40, h: 22, r: 16, snow: false, mat: mountainBase },
-        { x:  -95, z:  20, h: 20, r: 14, snow: false, mat: mountainBase },
-      ];
-      westMountains.forEach(({x, z, h, r, snow, mat}) => addMountain(x, z, h, r, snow, mat));
-
-      // North mountain range
-      const northMountains = [
-        { x: -60, z: 140, h: 36, r: 22, snow: true },
-        { x: -20, z: 155, h: 44, r: 26, snow: true },
-        { x:  20, z: 150, h: 38, r: 24, snow: true },
-        { x:  60, z: 145, h: 30, r: 20, snow: false },
-        { x:   0, z: 120, h: 24, r: 16, snow: false, mat: mountainBase },
-        { x: -40, z: 115, h: 22, r: 14, snow: false, mat: mountainBase },
-        { x:  40, z: 118, h: 26, r: 17, snow: false, mat: mountainBase },
-      ];
-      northMountains.forEach(({x, z, h, r, snow, mat}) => addMountain(x, z, h, r, snow, mat));
-
-      // South mountain range
-      const southMountains = [
-        { x: -60, z: -140, h: 34, r: 22, snow: true },
-        { x: -20, z: -155, h: 42, r: 26, snow: true },
-        { x:  20, z: -150, h: 36, r: 24, snow: true },
-        { x:  60, z: -145, h: 28, r: 20, snow: false },
-        { x:   0, z: -120, h: 22, r: 16, snow: false, mat: mountainBase },
-        { x: -40, z: -115, h: 24, r: 14, snow: false, mat: mountainBase },
-        { x:  40, z: -118, h: 26, r: 17, snow: false, mat: mountainBase },
-      ];
-      southMountains.forEach(({x, z, h, r, snow, mat}) => addMountain(x, z, h, r, snow, mat));
-
-      // Far distant haze mountains (very subtle backdrop)
-      for (let i = 0; i < 12; i++) {
-        const ang = (i / 12) * Math.PI * 2;
-        const r = 220 + rand() * 30;
-        const fx = Math.cos(ang) * r;
-        const fz = Math.sin(ang) * r;
-        const fh = 40 + rand() * 30;
-        addMountain(fx, fz, fh, 28 + rand() * 10, true, mountainFar);
+      // California dry hills background
+      for (let i = 0; i < 3; i++) {
+        const hills = new THREE.Mesh(createRooftopHillGeometry(160 + i * 25, 14 + i * 4, 0.7 + i * 1.5), beach.hills);
+        hills.position.set(-68 - i * 8, 3 + i * 2, -40 - i * 10);
+        hills.rotation.y = 0.18;
+        group.add(hills);
+      }
+      // Small coastal houses on hills
+      for (let i = 0; i < 10; i++) {
+        const x = -58 - (i % 3) * 7;
+        const z = -35 + i * 7;
+        const h = addBox(group, x, 1.0, z, 3.8, 2.0, 2.8, beach.suburbWall, null, 0.04 * ((i % 3) - 1));
+        h.castShadow = false;
+        const r = addBox(group, x, 2.15, z, 4.2, 0.38, 3.2, beach.suburbRoof, null, h.rotation.y);
+        r.castShadow = false;
       }
 
-      // ─────────────────────────────────────────────────────────
-      // 5. NEIGHBORHOOD — modern white villas in 2 clusters with detail
-      // ─────────────────────────────────────────────────────────
-      const villas = [
-        // [x, z, w, h, d, hasPool, hasGarage]
-        [-58, -32, 9, 4.2, 7, false, true],
-        [-62, -20, 7, 5.6, 5.5, true, false],
-        [-58,  -8, 8, 3.8, 6, false, true],
-        [-64,   4, 7.5, 6.4, 5.5, true, false],
-        [-58,  16, 9, 4.2, 7, false, true],
-        [-62,  28, 8, 5.4, 6, true, false],
-        [-78, -28, 10, 7.5, 7.5, true, true],
-        [-82, -14, 8, 5.2, 6.5, false, false],
-        [-80,   2, 9, 8.4, 7, true, true],
-        [-82,  16, 8.5, 6, 6.8, false, true],
-        [-78,  30, 10, 7, 7.5, true, false],
-      ];
-      villas.forEach(([vx, vz, vw, vh, vd, pool, garage]) => {
-        // Main wall
-        const wall = addBox(group, vx, vh * 0.5, vz, vw, vh, vd, beach.suburbWall, null, 0);
-        wall.castShadow = false;
-        // Flat roof
-        const roof = addBox(group, vx, vh + 0.18, vz, vw + 0.6, 0.36, vd + 0.5, beach.suburbRoof, null, 0);
-        roof.castShadow = false;
-        // Roof parapet
-        addBox(group, vx, vh + 0.5, vz, vw + 0.7, 0.25, 0.18, beach.suburbWall, null, 0).castShadow = false;
-        // Windows — strip of dark glass on front (east face)
-        addBox(group, vx + vw * 0.5 + 0.02, vh * 0.6, vz, 0.04, vh * 0.45, vd * 0.7, beach.glass, null, 0);
-        // Garage door (if applicable)
-        if (garage) {
-          addBox(group, vx + vw * 0.5 + 0.02, vh * 0.25, vz - vd * 0.3, 0.04, vh * 0.4, vd * 0.3, beach.darkWood, null, 0);
-        }
-        // Pool in the yard
-        if (pool) {
-          const py = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 1.6, 1, 1), beach.poolWater);
-          py.rotation.x = -Math.PI / 2;
-          py.position.set(vx + vw * 0.5 + 2.5, 0.05, vz);
-          py.userData.beachWater = true;
-          py.userData.baseY = py.position.y;
-          group.add(py);
-          waterMeshes.push(py);
-          // Pool surround
-          addBox(group, vx + vw * 0.5 + 2.5, 0.03, vz, 3.4, 0.06, 2.2, beach.marble, null, 0).castShadow = false;
-        }
-      });
-
-      // ─────────────────────────────────────────────────────────
-      // 6. DENSE 3D PALM TREE RINGS — three concentric rings
-      // ─────────────────────────────────────────────────────────
-      const palmRings = [
-        { r: 50, count: 16, hMin: 4.0, hMax: 5.5 },  // close ring
-        { r: 75, count: 22, hMin: 4.5, hMax: 6.5 },  // mid ring
-        { r: 105, count: 28, hMin: 5.5, hMax: 7.8 }, // far ring
-      ];
-      palmRings.forEach(({ r, count, hMin, hMax }) => {
-        for (let i = 0; i < count; i++) {
-          const ang = (i / count) * Math.PI * 2 + rand() * 0.3;
-          const rJit = r + (rand() - 0.5) * 12;
-          const px = Math.cos(ang) * rJit;
-          const pz = Math.sin(ang) * rJit;
-          // Skip if inside arena bounds
-          if (Math.abs(px) < ARENA_HX + 6 && Math.abs(pz) < ARENA_HZ + 6) continue;
-          // Skip if in ocean (east) or on top of villas
-          if (px > 38) continue;
-          const ph = hMin + rand() * (hMax - hMin);
-          addBeachPalm(group, beach, px, pz, ph);
-        }
-      });
-
-      // Clifftop palms (existing east edge)
-      [[-30, 6.4], [-16, 5.8], [-3, 6.1], [11, 5.9], [25, 6.3], [33, 5.5], [-35, 5.2]].forEach(([pz, ph]) => {
-        addBeachPalm(group, beach, 37.5 + (pz % 3) * 0.4, pz, ph);
-      });
-
-      // ─────────────────────────────────────────────────────────
-      // 7. PIER + BOATS
-      // ─────────────────────────────────────────────────────────
-      const pierDeck = addBox(group, 54, -6.55, -24, 24, 0.22, 2.6, beach.travertine, null, 0);
-      pierDeck.castShadow = false;
-      for (let px = 43; px <= 65; px += 4) {
-        [22, 24].forEach(pz => {
-          const p = addCylinder(group, px, -7.3, -pz, 0.14, 1.5, beach.darkWood, null, 0, false, 1);
-          p.castShadow = false;
-        });
-      }
-      // Lighthouse at end of pier
-      const lhBase = addCylinder(group, 67, -5.2, -24, 1.4, 2.8, beach.stucco, null, 0, false, 16);
-      lhBase.castShadow = false;
-      const lhMid = addCylinder(group, 67, -2.8, -24, 1.0, 2.0, beach.suburbWall, null, 0, false, 16);
-      lhMid.castShadow = false;
-      const lhTop = addCylinder(group, 67, -1.0, -24, 0.9, 1.4, beach.glass, null, 0, false, 16);
-      lhTop.castShadow = false;
-      const lhCap = new THREE.Mesh(new THREE.ConeGeometry(1.0, 1.0, 12), beach.terracotta);
-      lhCap.position.set(67, 0.2, -24);
-      lhCap.castShadow = false;
-      group.add(lhCap);
-      // Lighthouse glow
-      const lhLight = new THREE.PointLight(0xfff8d8, 1.2, 35);
-      lhLight.position.set(67, -1, -24);
-      group.add(lhLight);
-
-      // Two yachts in ocean
-      [[80, -20, 0.06], [90, 28, -0.05], [95, -45, 0.12]].forEach(([yx, yz, yaw]) => {
-        const yh = addBox(group, yx, -6.2, yz, 8, 1.1, 2.4, beach.suburbWall, null, yaw);
-        yh.castShadow = false;
-        const yc = addBox(group, yx, -5.3, yz, 4, 1.0, 1.7, beach.suburbWall, null, yaw);
-        yc.castShadow = false;
-        const ym = addCylinder(group, yx + 0.5, -3.5, yz, 0.08, 3.5, beach.blackIron, null, 0, false, 1);
-        ym.castShadow = false;
-        // Sail
-        const sail = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 3.0), new THREE.MeshStandardMaterial({ color: 0xffffff, side: THREE.DoubleSide, roughness: 0.6 }));
-        sail.position.set(yx + 0.5, -2.0, yz);
-        sail.castShadow = false;
-        group.add(sail);
-      });
-
-      // ─────────────────────────────────────────────────────────
-      // 8. BEACH UMBRELLAS + LOUNGERS along east beach
-      // ─────────────────────────────────────────────────────────
-      const umbColors = [0xff5566, 0x5fb8ff, 0xffd23f, 0xff7ad6, 0x6fe89a];
-      [-26, -14, 0, 14, 26].forEach((uz, idx) => {
-        const ux = 52 + Math.sin(uz * 0.3) * 1.2;
-        const post = addCylinder(group, ux, -6.1, uz, 0.05, 1.5, beach.blackIron, null, 0, false, 1);
-        post.castShadow = false;
-        const umbMat = new THREE.MeshStandardMaterial({ color: umbColors[idx % umbColors.length], roughness: 0.7, side: THREE.DoubleSide });
-        const top = new THREE.Mesh(new THREE.ConeGeometry(1.6, 0.6, 8), umbMat);
-        top.position.set(ux, -5.0, uz);
-        top.castShadow = false;
-        group.add(top);
-        [-0.7, 0.7].forEach(dz => {
-          const c = addBox(group, ux + 1.6, -6.6, uz + dz, 2.0, 0.1, 0.65, beach.travertine, null, 0);
-          c.castShadow = false;
-        });
-      });
-
-      // ─────────────────────────────────────────────────────────
-      // 9. SCATTERED BEACH ROCKS for natural detail
-      // ─────────────────────────────────────────────────────────
-      const rockMat = new THREE.MeshStandardMaterial({ color: 0xa8a09a, roughness: 0.95, metalness: 0, flatShading: true });
-      for (let i = 0; i < 24; i++) {
-        const ang = rand() * Math.PI * 2;
-        const r = 50 + rand() * 60;
-        const rx = Math.cos(ang) * r;
-        const rz = Math.sin(ang) * r;
-        if (Math.abs(rx) < ARENA_HX + 5 && Math.abs(rz) < ARENA_HZ + 5) continue;
-        if (rx > 38) continue;
-        const rockSize = 0.6 + rand() * 1.4;
-        const rock = new THREE.Mesh(new THREE.IcosahedronGeometry(rockSize, 0), rockMat);
-        rock.position.set(rx, rockSize * 0.4 - 0.1, rz);
-        rock.rotation.set(rand(), rand() * Math.PI * 2, rand());
-        rock.castShadow = false;
-        group.add(rock);
-      }
-
-      // ─────────────────────────────────────────────────────────
-      // 10. SEAGULLS / DISTANT BIRDS for life
-      // ─────────────────────────────────────────────────────────
-      const birdMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-      for (let i = 0; i < 12; i++) {
-        const bx = 40 + rand() * 80;
-        const bz = (rand() - 0.5) * 120;
-        const by = 12 + rand() * 18;
-        const bird = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.05, 0.15), birdMat);
-        bird.position.set(bx, by, bz);
-        bird.rotation.y = rand() * Math.PI * 2;
-        bird.rotation.z = (rand() - 0.5) * 0.4;
-        group.add(bird);
-      }
-
-      // ─────────────────────────────────────────────────────────
-      // 11. ATMOSPHERIC HAZE
-      // ─────────────────────────────────────────────────────────
-      [[100, 10, 0, 0], [0, 8, 130, -Math.PI/2], [0, 8, -130, Math.PI/2], [-130, 8, 0, Math.PI/2]].forEach(([hx, hy, hz, ry]) => {
-        const haze = new THREE.Mesh(new THREE.PlaneGeometry(220, 60, 1, 1), beach.haze);
-        haze.position.set(hx, hy, hz);
-        haze.rotation.y = ry;
-        haze.rotation.x = -Math.PI * 0.06;
-        group.add(haze);
-      });
+      // Atmospheric sunset haze near horizon
+      const haze = new THREE.Mesh(new THREE.PlaneGeometry(200, 50, 1, 1), beach.haze);
+      haze.position.set(70, 14, -30);
+      haze.rotation.y = -0.2;
+      group.add(haze);
     }
 
     function addBeachMansionExterior(group, colliders, shootables, points, beach, waterMeshes) {
-      // ── Driveway ──
-      addBox(group, -36, 0.035, 0, 8.0, 0.035, 60, beach.asphalt, null, 0);
-      for (let z = -24; z <= 24; z += 8) addBox(group, -36, 0.065, z, 0.16, 0.018, 4.8, beach.line, null, 0);
+      // Perimeter walls — stucco matching house
+      addBox(group, -36.5, 0.6, -9.5, 5, 1.2, 0.5, beach.stucco, colliders, 0);
+      addBox(group, -36.5, 0.6, 9.5, 5, 1.2, 0.5, beach.stucco, colliders, 0);
+      addBox(group, -39.5, 1.0, -4.5, 0.6, 2.0, 0.6, beach.stucco, colliders, 0);
+      addBox(group, -39.5, 1.0, 4.5, 0.6, 2.0, 0.6, beach.stucco, colliders, 0);
+      addBox(group, -39.5, 2.08, -4.5, 0.7, 0.08, 0.7, beach.darkSteel, null, 0);
+      addBox(group, -39.5, 2.08, 4.5, 0.7, 0.08, 0.7, beach.darkSteel, null, 0);
+      addBox(group, -22, 1.0, -14.55, 36, 2.0, 0.4, beach.stucco, colliders, 0);
+      addBox(group, -22, 1.0, 14.55, 36, 2.0, 0.4, beach.stucco, colliders, 0);
+      addBox(group, -22, 2.08, -14.55, 36, 0.08, 0.45, beach.darkSteel, null, 0);
+      addBox(group, -22, 2.08, 14.55, 36, 0.08, 0.45, beach.darkSteel, null, 0);
+      addCoverPoints(points, -38, -9.5, 3, 1.0, 'blue', 1.2);
+      addCoverPoints(points, -38, 9.5, 3, 1.0, 'blue', 1.2);
 
-      // Front entrance plaza — white concrete pad with centre feature strip
-      addBox(group, -27.2, 0.045, 0, 15.0, 0.035, 12.0, beach.marble, null, 0);
-      addBox(group, -27.2, 0.065, 0, 0.22, 0.04, 10.0, beach.travertine, null, 0); // centre line
+      // Driveway and front yard
+      addBox(group, -26, 0.04, 0, 28, 0.04, 7.5, beach.concrete, null, 0);
 
-      // Gate pillars flanking driveway entrance
-      addBox(group, -32.8, 1.4, -4.5, 0.7, 2.8, 0.7, beach.stucco, colliders, 0);
-      addBox(group, -32.8, 1.4,  4.5, 0.7, 2.8, 0.7, beach.stucco, colliders, 0);
-      // Pillar cap
-      addBox(group, -32.8, 2.95, -4.5, 0.9, 0.18, 0.9, beach.marble, null, 0);
-      addBox(group, -32.8, 2.95,  4.5, 0.9, 0.18, 0.9, beach.marble, null, 0);
-      // Gate crossbar (decorative)
-      addBox(group, -32.8, 2.65, 0, 0.08, 0.12, 8.6, beach.blackIron, null, 0);
+      // Olive tree planters flanking entrance
+      addBox(group, -13.5, 0.4, -5.5, 1.5, 0.8, 1.5, beach.stucco, colliders, 0);
+      addBox(group, -13.5, 0.4, 5.5, 1.5, 0.8, 1.5, beach.stucco, colliders, 0);
+      addBeachOliveTree(group, beach, -13.5, -5.5, 4.2);
+      addBeachOliveTree(group, beach, -13.5, 5.5, 4.0);
 
-      // Geometric hedge border along driveway
-      addBox(group, -28.2, 0.55, -6.8, 10.5, 1.1, 0.65, beach.hedge, colliders, 0);
-      addBox(group, -28.2, 0.55,  6.8, 10.5, 1.1, 0.65, beach.hedge, colliders, 0);
-      // Hedge corner blocks
-      addBox(group, -22.8, 0.55, -9.0, 0.65, 1.1, 4.0, beach.hedge, colliders, 0);
-      addBox(group, -22.8, 0.55,  9.0, 0.65, 1.1, 4.0, beach.hedge, colliders, 0);
+      // Boxwood hedges along driveway
+      addBox(group, -22, 0.3, -3.8, 16, 0.6, 0.5, beach.hedge, colliders, 0);
+      addBox(group, -22, 0.3, 3.8, 16, 0.6, 0.5, beach.hedge, colliders, 0);
+      addCoverPoints(points, -22, -3.8, 16, 1.0, 'blue', 1.0);
+      addCoverPoints(points, -22, 3.8, 16, 1.0, 'blue', 1.0);
 
-      // Cars
-      addBeachCar(group, colliders, points, beach, -33.4, -10.5, 0.05, materials.blue);
-      addBeachCar(group, colliders, points, beach, -34.2,  11.2, -0.08, materials.white);
+      // Ornamental grass clusters
+      for (let i = 0; i < 5; i++) {
+        addBeachGrassCluster(group, beach, -34 + i * 4.5, -6.5, 0.85 + Math.sin(i) * 0.15);
+        addBeachGrassCluster(group, beach, -34 + i * 4.5, 6.5, 0.9 + Math.cos(i) * 0.12);
+      }
 
-      // Tall modern palms flanking entrance
-      addBeachPalm(group, beach, -23.5, -18.6, 5.8);
-      addBeachPalm(group, beach, -23.5,  18.6, 5.6);
-      // Extra palms along driveway edge
-      addBeachPalm(group, beach, -30.5, -17.0, 4.2);
-      addBeachPalm(group, beach, -30.5,  17.0, 4.0);
+      // Vertical garden wall on south exterior
+      for (let xi = 0; xi < 4; xi++) {
+        for (let yi = 0; yi < 3; yi++) {
+          const gMat = new THREE.MeshStandardMaterial({ color: (xi + yi) % 2 === 0 ? 0x2a5a1a : 0x4a8a3a, roughness: 1, metalness: 0, envMap: environmentMap, envMapIntensity: 0.05 });
+          addBox(group, -9 + xi * 4.5, 0.7 + yi * 1.55, -14.6, 4.0, 1.35, 0.28, gMat, null, 0);
+        }
+      }
 
-      // Exterior wall light sconces on gate pillars
-      const sconceMat = beach.blackIron;
-      [-4.5, 4.5].forEach(z => {
-        addBox(group, -33.3, 2.1, z, 0.18, 0.14, 0.14, sconceMat, null, 0);
-        const sl = new THREE.PointLight(0xfff8e8, 0.55, 6);
-        sl.position.set(-33.5, 2.1, z);
-        group.add(sl);
-      });
+      // Right side yard outdoor shower
+      addCylinder(group, -3, 2.8, 14.55, 0.04, 5.6, beach.darkSteel, null, 0, false, 1);
+      const shwrHead = new THREE.Mesh(geometries.cylinderLow, beach.steel);
+      shwrHead.position.set(-3, 5.65, 14.55);
+      shwrHead.scale.set(0.35, 0.06, 0.35);
+      group.add(shwrHead);
 
-      // ── Pool terrace ──
-      // Large white marble terrace deck
-      addBox(group, 23.5, 0.04, 0, 28, 0.05, 30, beach.marble, null, 0);
+      // === BACKYARD ===
+      addBox(group, 22, 0.04, 0, 34, 0.04, 30, beach.stone, null, 0);
+      addBox(group, 16, 0.06, -10.8, 18, 0.06, 7.4, beach.lawn, null, 0);
+      addBox(group, 16, 0.06, 10.8, 18, 0.06, 7.4, beach.lawn, null, 0);
 
-      // Pool coping — raised white border around pool
-      addBox(group, 25.2, 0.055, -10.5, 13.4, 0.10, 7.8, beach.marble, null, 0);
-      addBox(group, 25.2, 0.30, -14.65, 14.2, 0.55, 0.55, beach.stucco, null, 0); // far edge
-      addBox(group, 25.2, 0.30,  -6.35, 14.2, 0.55, 0.55, beach.stucco, null, 0); // near edge
-      addBox(group, 18.35, 0.30, -10.5, 0.55, 0.55, 8.6, beach.stucco, null, 0); // left
-      addBox(group, 32.05, 0.30, -10.5, 0.55, 0.55, 8.6, beach.stucco, null, 0); // right
-
-      // Pool water
-      const pool = new THREE.Mesh(new THREE.PlaneGeometry(12.8, 7.4, 1, 1), beach.poolWater);
+      // Infinity pool (14 wide × 8 deep, centered x=23, z=0)
+      addBox(group, 23, 0.1, 0, 8.8, 0.2, 14.8, beach.stone, null, 0);
+      addBox(group, 23, -0.3, 0, 8.0, 0.65, 14.0, beach.darkSteel, null, 0);
+      addBox(group, 27.4, 0.0, 0, 0.55, 0.22, 14.8, beach.stone, null, 0);
+      const pool = new THREE.Mesh(new THREE.PlaneGeometry(13.6, 7.6, 1, 1), beach.poolWater);
       pool.rotation.x = -Math.PI / 2;
-      pool.position.set(25.2, 0.155, -10.5);
+      pool.position.set(23, 0.12, 0);
       pool.userData.beachWater = true;
       pool.userData.baseY = pool.position.y;
       group.add(pool);
       waterMeshes.push(pool);
       shootables.push(pool);
+      addCoverPoints(points, 23, 0, 9.5, 15.5, 'red', 1.2);
 
-      // Sun loungers (simple flat boxes with headrest) beside pool
-      const loungerMat = beach.marble;
-      [[-5.6, 5.2], [-5.6, 7.2], [36.0, 5.2], [36.0, 7.2]].forEach(([x, z]) => {
-        addBox(group, x, 0.16, z, 2.2, 0.18, 0.68, loungerMat, null, 0);
-        addBox(group, x - 0.85, 0.36, z, 0.28, 0.36, 0.6, loungerMat, null, 0.38);
+      // Sun loungers beside pool
+      [[-5.5, 21.5], [5.5, 21.5], [-5.5, 17.5], [5.5, 17.5]].forEach(([z, x]) => {
+        addBox(group, x, 0.14, z, 2.0, 0.12, 0.72, beach.teak, null, 0);
+        addBox(group, x, 0.22, z, 1.9, 0.08, 0.64, beach.fabricWhite, null, 0);
       });
 
-      // Modern outdoor wall — white low boundary around terrace garden
-      addBox(group, 23.5, 0.55, 15.5, 24.0, 1.05, 0.45, beach.stucco, colliders, 0);
-      addBox(group, 23.5, 0.55, -21.0, 24.0, 1.05, 0.45, beach.stucco, colliders, 0);
-      addBox(group, 36.5, 0.55, -3.0, 0.45, 1.05, 36.0, beach.stucco, colliders, 0);
+      // Outdoor sectional sofa near back wall
+      addBox(group, 8.5, 0.35, 9.5, 3.8, 0.35, 1.2, beach.fabricWhite, colliders, 0);
+      addBox(group, 9.8, 0.35, 11.0, 1.5, 0.35, 1.2, beach.fabricWhite, colliders, 0);
+      addBox(group, 9.5, 0.35, 8.0, 0.8, 0.35, 0.8, beach.stone, null, 0);
+      addCoverPoints(points, 8.5, 10.2, 4.5, 3.5, 'red', 1.2);
 
-      // Geometric hedges along terrace boundary
-      addBox(group, 14.5, 0.55, 14.5, 0.65, 1.05, 4.0, beach.hedge, colliders, 0);
-      addBox(group, 14.5, 0.55, -14.5, 0.65, 1.05, 4.0, beach.hedge, colliders, 0);
-      addBox(group, 35.5, 0.55,  14.5, 4.0, 1.05, 0.65, beach.hedge, colliders, 0);
-      addBox(group, 35.5, 0.55, -14.5, 4.0, 1.05, 0.65, beach.hedge, colliders, 0);
-
-      // Outdoor terrace light posts
-      [[20.0, 14.0], [20.0, -14.0], [32.0, 14.0], [32.0, -14.0]].forEach(([x, z]) => {
-        addCylinder(group, x, 1.5, z, 0.06, 3.0, beach.blackIron, null, 0, false, 1);
-        addBox(group, x, 3.08, z, 0.28, 0.12, 0.28, beach.marble, null, 0);
-        const pl = new THREE.PointLight(0xfff5e0, 0.38, 10);
-        pl.position.set(x, 3.0, z);
-        group.add(pl);
+      // Outdoor dining table
+      addCylinder(group, 14, 0.4, 9, 0.14, 0.82, beach.darkSteel, null, 0, false, 1);
+      addBox(group, 14, 0.85, 9, 1.85, 0.1, 1.85, beach.stone, null, 0);
+      [[-0.7, -0.7], [-0.7, 0.7], [0.7, -0.7], [0.7, 0.7]].forEach(([dx, dz]) => {
+        addBox(group, 14 + dx, 0.45, 9 + dz, 0.6, 0.9, 0.5, beach.fabricWhite, null, 0);
       });
 
-      addCoverPoints(points, 25.2, 7.8, 8.4, 1.2, 'red', 1.2);
-      addCoverPoints(points, 30.8, -2.0, 1.2, 8.4, 'red', 1.2);
+      // Fire pit with flame and chairs
+      addCylinder(group, 16, 0.25, -8.5, 0.52, 0.52, beach.darkSteel, colliders, 0, false, 1);
+      for (let fi = 0; fi < 4; fi++) {
+        const fa = fi / 4 * Math.PI * 2;
+        const flm = new THREE.Mesh(geometries.cone, beach.flame);
+        flm.position.set(16 + Math.cos(fa) * 0.14, 0.58, -8.5 + Math.sin(fa) * 0.14);
+        flm.scale.set(0.1, 0.38, 0.1);
+        group.add(flm);
+      }
+      for (let ci = 0; ci < 4; ci++) {
+        const ca = ci / 4 * Math.PI * 2;
+        addBox(group, 16 + Math.cos(ca) * 1.5, 0.35, -8.5 + Math.sin(ca) * 1.5, 0.7, 0.7, 0.6, beach.fabricTan, colliders, ca);
+      }
+      addCoverPoints(points, 16, -8.5, 4.5, 4.5, 'red', 1.2);
 
-      // Tall palms around terrace
-      addBeachPalm(group, beach, 33.0, -20.0, 6.2);
-      addBeachPalm(group, beach, 33.5,  20.5, 5.8);
-      addBeachPalm(group, beach, 14.5, -20.0, 5.0);
-      addBeachPalm(group, beach, 14.5,  20.5, 5.2);
+      // Umbrella
+      addCylinder(group, 13.5, 1.5, -10.5, 0.04, 3.2, beach.steel, null, 0, false, 1);
+      const umbShade = new THREE.Mesh(geometries.cylinderLow, beach.cream);
+      umbShade.position.set(13.5, 3.2, -10.5);
+      umbShade.scale.set(2.2, 0.1, 2.2);
+      group.add(umbShade);
+
+      // Pergola beams over back patio
+      [-10, -3.5, 3.5, 10].forEach((z) => {
+        addBox(group, 8.5, 5.8, z, 5.5, 0.18, 0.2, beach.darkSteel, null, 0);
+      });
+
+      // Palm trees
+      addBeachPalm(group, beach, 34, -17, 6.5);
+      addBeachPalm(group, beach, 34, 17, 6.2);
+      addBeachPalm(group, beach, 28, -22, 5.8);
+      addBeachPalm(group, beach, 28, 22, 5.5);
+      addBeachPalm(group, beach, 36, 2, 7.0);
+
+      // Tropical plant clusters at boundary
+      for (let ti = 0; ti < 5; ti++) {
+        addBeachTropicalCluster(group, beach, 35 + (ti % 2) * 2, -14 + ti * 7);
+      }
+
+      // Palm uplights
+      [[34, -17], [34, 17], [36, 2]].forEach(([px, pz]) => {
+        const ul = new THREE.Mesh(geometries.cylinderLow, beach.emissiveWarm);
+        ul.position.set(px, 0.06, pz);
+        ul.scale.set(0.1, 0.1, 0.1);
+        group.add(ul);
+      });
     }
 
     function addBeachMansionHouse(group, colliders, shootables, points, beach) {
-      addBox(group, -5, 0.12, 0, 30.6, 0.24, 34.2, beach.marble, null, 0);
-      addBeachWalkableBox(group, colliders, -14.2, 3.08, 0, 8.0, 0.22, 28.4, beach.marble, 0);
-      addBeachWalkableBox(group, colliders, -0.7, 3.08, 9.6, 19.0, 0.22, 9.2, beach.marble, 0);
-      addBeachWalkableBox(group, colliders, -0.7, 3.08, -9.6, 19.0, 0.22, 9.2, beach.marble, 0);
-      addBeachWalkableBox(group, colliders, 3.0, 3.08, 0, 12.4, 0.22, 10.0, beach.marble, 0);
-      addBeachWalkableBox(group, colliders, 13.6, 3.08, 0, 9.4, 0.22, 24.0, beach.travertine, 0);
+      addBeachMansionShell(group, colliders, beach);
+      addBeachMansionGroundFloor(group, colliders, shootables, points, beach);
+      addBeachMansionSecondFloor(group, colliders, beach);
+      addBeachMansionBalcony(group, colliders, beach);
+    }
 
-      addBeachWallX(group, colliders, -19.4, -16, 16, 0, 3.1, beach.stucco, [{ from: -3.2, to: 3.2, height: 2.35 }]);
-      addBeachWallX(group, colliders, 9.4, -16, 16, 0, 3.1, beach.stucco, [{ from: -13.0, to: -9.0, height: 2.35 }, { from: -5.0, to: 5.0, height: 2.45 }]);
-      addBeachWallZ(group, colliders, -16, -19.4, 9.4, 0, 3.1, beach.stucco, [{ from: -7.0, to: -4.2, height: 2.25 }, { from: 3.8, to: 6.4, height: 2.25 }]);
-      addBeachWallZ(group, colliders, 16, -19.4, 9.4, 0, 3.1, beach.stucco, [{ from: -6.4, to: -3.8, height: 2.25 }, { from: 4.2, to: 7.0, height: 2.25 }]);
+    function addBeachMansionShell(group, colliders, beach) {
+      const gfh = 5.5, sfh = 4.5, sfBase = 5.5, wt = 0.5;
 
-      addBeachWallX(group, colliders, -19.4, -16, 16, 3.15, 2.9, beach.stucco, [{ from: -2.8, to: 2.8, height: 2.05 }]);
-      addBeachWallX(group, colliders, 9.4, -16, 16, 3.15, 2.9, beach.stucco, [{ from: -13.0, to: -9.0, height: 2.35 }, { from: -4.8, to: 4.8, height: 2.45 }]);
-      addBeachWallZ(group, colliders, -16, -19.4, 9.4, 3.15, 2.9, beach.stucco, []);
-      addBeachWallZ(group, colliders, 16, -19.4, 9.4, 3.15, 2.9, beach.stucco, []);
+      // Ground floor front wall (x=-12) — door opening 2.5 wide × 3.5 tall
+      addBeachWallX(group, colliders, -12, -14, 14, 0, gfh, beach.stucco, [{ from: -1.25, to: 1.25, height: 3.5 }], wt);
+      // Wood slat accent panels flanking door
+      [-5.5, -4.0, -2.8, 2.8, 4.0, 5.5].forEach((z) => {
+        addBox(group, -12, gfh * 0.5, z, wt + 0.04, gfh, 0.2, beach.wood, null, 0);
+      });
+      // Front windows (visual only — wall behind provides collision)
+      addBox(group, -12, 2.75, -9.5, wt + 0.05, 3.4, 4.5, beach.glass, null, 0);
+      addBox(group, -12, 2.75, 9.5, wt + 0.05, 3.4, 4.5, beach.glass, null, 0);
+      // Entrance canopy
+      addBox(group, -14, 4.2, 0, 4.0, 0.22, 3.8, beach.stucco, null, 0);
+      addCylinder(group, -15.5, 2.1, -1.6, 0.07, 4.2, beach.darkSteel, null, 0, false, 1);
+      addCylinder(group, -15.5, 2.1, 1.6, 0.07, 4.2, beach.darkSteel, null, 0, false, 1);
+      // Dark door frame
+      addBox(group, -12, 1.78, 0, wt + 0.06, 3.6, 2.6, beach.darkSteel, null, 0);
 
-      addBox(group, -5, 6.22, 0, 31.5, 0.5, 35.0, beach.terracotta, null, 0);
-      addBox(group, -14.6, 6.58, 0, 6.8, 0.55, 29.6, beach.terracotta, null, 0);
-      addBox(group, 2.6, 6.58, -10.2, 13.0, 0.55, 8.8, beach.terracotta, null, 0);
-      addBox(group, 2.6, 6.58, 10.2, 13.0, 0.55, 8.8, beach.terracotta, null, 0);
-      addBox(group, 13.6, 3.24, 0, 10.2, 0.26, 24.8, beach.travertine, null, 0);
+      // Ground floor back wall (x=6) — pilasters + large glass barriers
+      addBox(group, 6, gfh * 0.5, -14, wt, gfh, 1.0, beach.stucco, colliders, 0);
+      addBox(group, 6, gfh * 0.5, 14, wt, gfh, 1.0, beach.stucco, colliders, 0);
+      addBox(group, 6, gfh * 0.5, 0, wt, gfh, 0.7, beach.stucco, colliders, 0);
+      addBeachGlassBarrier(group, colliders, 6, gfh * 0.5, -7.2, wt, gfh, 12.6, beach.glass);
+      addBeachGlassBarrier(group, colliders, 6, gfh * 0.5, 7.2, wt, gfh, 12.6, beach.glass);
+      // Glass frame rails
+      [-14, 0, 14].forEach((z) => {
+        addBox(group, 6, gfh + 0.02, z, wt + 0.04, 0.08, 14, beach.darkSteel, null, 0);
+      });
 
-      for (let z = -13.2; z <= 13.2; z += 6.6) {
-        addCylinder(group, -18.9, 1.55, z, 0.22, 3.1, beach.stucco, colliders, 0, false, 1);
-        addCylinder(group, 8.9, 1.55, z, 0.22, 3.1, beach.stucco, colliders, 0, false, 1);
-        addCylinder(group, 9.0, 4.55, z, 0.18, 2.7, beach.stucco, colliders, 0, false, 1);
+      // Ground floor south wall (z=-14) — solid stucco + glass overlay
+      addBeachWallZ(group, colliders, -14, -12, 6, 0, gfh, beach.stucco, [], wt);
+      addBox(group, -3, 2.75, -14, 5.5, 3.0, wt + 0.05, beach.glass, null, 0);
+      addBox(group, 3.5, 2.75, -14, 4.0, 3.0, wt + 0.05, beach.glass, null, 0);
+
+      // Ground floor north wall (z=14) — solid stucco + glass overlay
+      addBeachWallZ(group, colliders, 14, -12, 6, 0, gfh, beach.stucco, [], wt);
+      addBox(group, -3, 2.75, 14, 5.5, 3.0, wt + 0.05, beach.glass, null, 0);
+      addBox(group, 3.5, 2.75, 14, 4.0, 3.0, wt + 0.05, beach.glass, null, 0);
+
+      // Second floor front wall (x=-12)
+      addBeachWallX(group, colliders, -12, -14, 14, sfBase, sfh, beach.stucco, [{ from: -4.5, to: -1.0, height: 3.2 }], wt);
+      addBox(group, -12, sfBase + 2.25, -9, wt + 0.05, 3.2, 5.0, beach.glass, null, 0);
+      addBox(group, -12, sfBase + 2.25, 8.5, wt + 0.05, 3.2, 5.5, beach.glass, null, 0);
+
+      // Second floor back wall (x=6) — pilasters + glass, open zone z=-5 to 5 for balcony access
+      addBox(group, 6, sfBase + sfh * 0.5, -14, wt, sfh, 1.0, beach.stucco, colliders, 0);
+      addBox(group, 6, sfBase + sfh * 0.5, 14, wt, sfh, 1.0, beach.stucco, colliders, 0);
+      addBeachGlassBarrier(group, colliders, 6, sfBase + sfh * 0.5, -9.5, wt, sfh, 8.0, beach.glass);
+      addBeachGlassBarrier(group, colliders, 6, sfBase + sfh * 0.5, 9.5, wt, sfh, 8.0, beach.glass);
+      // Balcony door area — visual glass only (players walk through opening)
+      addBox(group, 6, sfBase + sfh * 0.5, 0, wt + 0.05, sfh, 9.8, beach.glass, null, 0);
+      addBox(group, 6, sfBase + 1.45, 0, wt + 0.08, 2.95, 2.55, beach.darkSteel, null, 0);
+
+      // Second floor south wall (z=-14) — stucco + glass ribbon
+      addBeachWallZ(group, colliders, -14, -12, 6, sfBase, sfh, beach.stucco, [], wt);
+      addBox(group, -3, sfBase + sfh * 0.5, -14, 13.5, sfh - 0.25, wt + 0.05, beach.glass, null, 0);
+
+      // Second floor north wall (z=14) — stucco + glass ribbon
+      addBeachWallZ(group, colliders, 14, -12, 6, sfBase, sfh, beach.stucco, [], wt);
+      addBox(group, -3, sfBase + sfh * 0.5, 14, 13.5, sfh - 0.25, wt + 0.05, beach.glass, null, 0);
+
+      // Flat roof slab
+      addBox(group, -3, 10.12, 0, 18.5, 0.25, 28.5, beach.stucco, null, 0);
+      addBox(group, -12, 10.3, 0, 0.35, 0.42, 28.8, beach.darkSteel, null, 0);
+      addBox(group, 6, 10.3, 0, 0.35, 0.42, 28.8, beach.darkSteel, null, 0);
+      addBox(group, -3, 10.3, -14, 18.8, 0.42, 0.35, beach.darkSteel, null, 0);
+      addBox(group, -3, 10.3, 14, 18.8, 0.42, 0.35, beach.darkSteel, null, 0);
+    }
+
+    function addBeachMansionGroundFloor(group, colliders, shootables, points, beach) {
+      // Interior floors
+      addBox(group, -3, 0.02, -2, 17.5, 0.02, 24, beach.marble, null, 0);
+      addBox(group, 3.5, 0.03, 8.5, 5.5, 0.02, 10, beach.concrete, null, 0);
+
+      // === STAIRCASE (x=-9 to x=1, z=10.5 to 12.8) ===
+      addBeachStaircase(group, colliders, shootables, beach, -9, 1, 11.5, 2.2);
+      // Stairwell opening guard — glass barrier at z=9.8 edge preventing falls
+      addBeachGlassBarrier(group, colliders, -4, 3.05, 9.8, 10, 6.1, 0.08, beach.glassRail);
+      for (let gp = -9; gp <= 1; gp += 2.5) addBox(group, gp, 3.05, 9.8, 0.06, 6.1, 0.06, beach.darkSteel, null, 0);
+
+      // === FOYER ===
+      addBox(group, -11.3, 0.47, -3.5, 0.38, 0.94, 2.0, beach.darkSteel, colliders, 0);
+      addBox(group, -11.3, 0.92, -3.5, 0.42, 0.1, 2.1, beach.marble, null, 0);
+      addBox(group, -11.6, 1.9, 4.0, 0.08, 1.5, 2.2, beach.artCanvas, null, 0);
+
+      // === LIVING ROOM ===
+      const rug = new THREE.Mesh(new THREE.PlaneGeometry(6.5, 4.5, 1, 1), beach.cream);
+      rug.rotation.x = -Math.PI / 2;
+      rug.position.set(-4.5, 0.03, -1);
+      group.add(rug);
+      // Sectional sofa
+      addBox(group, -6.5, 0.2, -2.5, 6.0, 0.4, 1.2, beach.fabricGrey, colliders, 0);
+      addBox(group, -3.2, 0.2, -1.2, 1.4, 0.4, 1.5, beach.fabricGrey, colliders, 0);
+      addBox(group, -3.0, 0.2, 0.5, 3.0, 0.4, 1.2, beach.fabricGrey, colliders, 0);
+      addCoverPoints(points, -5, -2.5, 7.5, 1.5, 'any', 1.1);
+      // Coffee table
+      addBox(group, -5, 0.48, -2.5, 2.5, 0.25, 1.2, beach.marble, colliders, 0);
+      // Accent chairs
+      addBox(group, -7.5, 0.4, 0.8, 1.0, 0.75, 0.9, beach.fabricTan, colliders, 0);
+      addBox(group, -7.5, 0.4, -1.5, 1.0, 0.75, 0.9, beach.fabricTan, colliders, 0);
+      // Floor lamp
+      addCylinder(group, -2.0, 1.0, -0.8, 0.04, 2.0, beach.steel, null, 0, false, 1);
+      const lampShade = new THREE.Mesh(geometries.cylinderLow, beach.emissiveWarm);
+      lampShade.position.set(-2.0, 2.12, -0.8);
+      lampShade.scale.set(0.22, 0.18, 0.22);
+      group.add(lampShade);
+      // Side tables
+      addCylinder(group, -9.5, 0.28, -2.5, 0.3, 0.55, beach.marble, null, 0, false, 1);
+      addCylinder(group, -9.5, 0.28, 0.5, 0.3, 0.55, beach.marble, null, 0, false, 1);
+      // Fireplace feature — dark panel with fire
+      addBox(group, -11.35, 3.5, -3, 0.28, 6.5, 5.8, beach.darkSteel, colliders, 0);
+      addBox(group, -11.52, 0.88, -3, 0.32, 0.5, 2.1, beach.darkSteel, colliders, 0);
+      for (let fi = 0; fi < 3; fi++) {
+        const flm = new THREE.Mesh(geometries.cone, beach.flame);
+        flm.position.set(-11.3, 0.96, -3 + (fi - 1) * 0.38);
+        flm.scale.set(0.12, 0.4, 0.12);
+        group.add(flm);
       }
-      addBox(group, -18.8, 1.2, -8.5, 0.12, 1.25, 3.0, beach.glass, null, 0);
-      addBox(group, -18.8, 1.2, 8.5, 0.12, 1.25, 3.0, beach.glass, null, 0);
-      addBox(group, 9.0, 4.45, -9.2, 0.12, 1.25, 3.2, beach.glass, null, 0);
-      addBox(group, 9.0, 4.45, 9.2, 0.12, 1.25, 3.2, beach.glass, null, 0);
+      [2.5, 4.5].forEach((fy) => {
+        addBox(group, -11.52, fy, -0.5, 0.12, 0.1, 2.0, beach.wood, null, 0);
+        addBox(group, -11.52, fy, -5.5, 0.12, 0.1, 2.0, beach.wood, null, 0);
+      });
 
-      addBeachStaircase(group, shootables, beach, -16.2, -6.4, 8.3, 4.2);
-      addBeachStaircase(group, shootables, beach, 7.2, 13.8, -11.3, 3.5);
-      addBeachRailLine(group, colliders, beach, 18.4, -12.0, 18.4, 12.0, 3.2);
-      addBeachRailLine(group, colliders, beach, 9.0, -12.0, 18.4, -12.0, 3.2);
-      addBeachRailLine(group, colliders, beach, 9.0, 12.0, 18.4, 12.0, 3.2);
-      addBeachRailLine(group, colliders, beach, -10.1, -5.0, -3.2, -5.0, 3.2);
-      addBeachRailLine(group, colliders, beach, -10.1, 5.0, -3.2, 5.0, 3.2);
-      addBeachRailLine(group, colliders, beach, -10.1, -5.0, -10.1, 5.0, 3.2);
-      addBeachRailLine(group, colliders, beach, -3.2, -5.0, -3.2, 5.0, 3.2);
+      // === KITCHEN ===
+      addBox(group, 3.5, 0.45, 13.7, 5.5, 0.9, 0.6, beach.stucco, colliders, 0);
+      addBox(group, 5.7, 0.45, 9.5, 0.55, 0.9, 8.5, beach.stucco, colliders, 0);
+      addBox(group, 3.5, 0.93, 13.7, 5.5, 0.1, 0.65, beach.marble, null, 0);
+      addBox(group, 5.7, 0.93, 9.5, 0.6, 0.1, 8.5, beach.marble, null, 0);
+      addBox(group, 3.5, 3.8, 13.7, 5.5, 0.8, 0.5, beach.stucco, null, 0);
+      addBox(group, 5.7, 3.8, 9.5, 0.5, 0.8, 8.0, beach.stucco, null, 0);
+      // Waterfall island
+      addBox(group, 1.5, 0.55, 10.5, 4.0, 1.1, 1.5, beach.marble, colliders, 0);
+      addBox(group, -0.48, 0.55, 10.5, 0.06, 1.1, 1.5, beach.marble, null, 0);
+      addBox(group, 1.5, 1.14, 10.5, 4.3, 0.1, 1.7, beach.marble, null, 0);
+      addCoverPoints(points, 1.5, 10.5, 4.5, 2.0, 'any', 1.2);
+      // Bar stools
+      [-0.5, 0.5, 1.5].forEach((dz) => {
+        addCylinder(group, 1.5, 0.55, 10.5 + dz, 0.2, 1.1, beach.fabricWhite, null, 0, false, 1);
+      });
+      addBox(group, 5.5, 4.6, 7.8, 0.5, 0.8, 1.8, beach.steel, null, 0);
+      addBox(group, 4.8, 1.2, 13.2, 0.9, 2.4, 0.8, beach.stucco, colliders, 0);
+      addBox(group, 5.6, 0.88, 11.5, 0.5, 0.65, 0.65, beach.darkSteel, null, 0);
+      // Pendant lights above island
+      [-0.5, 0.5, 1.5].forEach((dz) => {
+        addCylinder(group, 1.5, 3.5, 10.5 + dz, 0.04, 2.0, beach.darkSteel, null, 0, false, 1);
+        const pShade = new THREE.Mesh(geometries.cylinderLow, beach.brass2);
+        pShade.position.set(1.5, 2.42, 10.5 + dz);
+        pShade.scale.set(0.22, 0.22, 0.22);
+        group.add(pShade);
+      });
 
-      addBox(group, -7.0, 0.72, -9.8, 5.6, 1.35, 0.55, beach.darkWood, colliders, -0.08);
-      addBox(group, 0.0, 0.68, 6.2, 4.8, 1.25, 0.5, beach.stucco, colliders, 0.18);
-      addBox(group, 2.8, 0.62, -3.8, 0.55, 1.15, 6.2, beach.darkWood, colliders, 0);
-      addBox(group, -13.4, 0.65, -2.4, 0.52, 1.25, 5.8, beach.stucco, colliders, 0);
-      addBox(group, -0.6, 3.82, -10.4, 4.8, 1.15, 0.5, beach.darkWood, colliders, 0.14);
-      addBox(group, 5.2, 3.82, 8.7, 5.4, 1.15, 0.5, beach.stucco, colliders, -0.14);
-      addCoverPoints(points, -7.0, -9.8, 5.8, 1.1, 'any', 1.35);
-      addCoverPoints(points, 0.0, 6.2, 5.0, 1.0, 'any', 1.25);
-      addCoverPoints(points, 2.8, -3.8, 1.1, 6.4, 'any', 1.2);
+      // === DINING AREA ===
+      addBox(group, 1.5, 0.78, 5, 3.0, 0.12, 1.4, beach.marble, colliders, 0);
+      addBox(group, 1.5, 0.02, 5, 2.75, 0.04, 1.15, beach.darkSteel, null, 0);
+      [[-1.2, 5], [-0.4, 5], [0.4, 5], [1.2, 5]].forEach(([dx, z]) => {
+        addBox(group, 1.5 + dx, 0.45, z - 0.9, 0.65, 0.9, 0.55, beach.wood, null, 0);
+        addBox(group, 1.5 + dx, 0.45, z + 0.9, 0.65, 0.9, 0.55, beach.wood, null, 0);
+      });
+      addBox(group, 1.5, 3.8, 5, 2.0, 0.08, 0.8, beach.brass, null, 0);
+      [-0.7, 0, 0.7].forEach((dx) => {
+        addCylinder(group, 1.5 + dx, 3.0, 5, 0.03, 1.6, beach.brass2, null, 0, false, 1);
+      });
+      addBox(group, 5.5, 2.5, 4.5, 0.35, 3.5, 3.5, beach.darkSteel, colliders, 0);
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+          addCylinder(group, 5.38, 1.2 + r * 1.0, 3.3 + c * 1.0, 0.12, 0.6, beach.wood, null, 0, false, 1);
+        }
+      }
 
-      const lightPositions = [[-12, 2.45, -10], [-12, 2.45, 10], [1.5, 2.45, -10], [1.5, 2.45, 10], [-9, 5.35, 0], [4.5, 5.35, 0]];
-      lightPositions.forEach((p) => {
-        const light = new THREE.PointLight(0xf0f8ff, 0.48, 14);
-        light.position.set(p[0], p[1], p[2]);
-        light.castShadow = false;
-        group.add(light);
-        addCylinder(group, p[0], p[1] - 0.18, p[2], 0.09, 0.08, beach.terracotta, null, 0, false, 1);
+      // === POWDER BATHROOM (northwest corner, z=11 to 14, x=-12 to -9.5) ===
+      addBeachWallX(group, colliders, -9.5, 11, 14, 0, 5.5, beach.darkWall, [{ from: 11.5, to: 13.0, height: 2.4 }], 0.45);
+      addBeachWallZ(group, colliders, 11, -12, -9.5, 0, 5.5, beach.darkWall, [], 0.4);
+      addBox(group, -11.3, 0.26, 12.5, 0.48, 0.52, 1.5, beach.wood, null, 0);
+      addCylinder(group, -11.3, 0.6, 12.5, 0.26, 0.14, beach.marble, null, 0, false, 1);
+      addBox(group, -11.6, 1.52, 12.5, 0.06, 1.2, 0.92, beach.emissiveWarm, null, 0);
+    }
+
+    function addBeachMansionSecondFloor(group, colliders, beach) {
+      // Second floor slab — split to leave stairwell void (x=-9 to 1, z=10 to 14)
+      addBeachWalkableBox(group, colliders, -3, 5.39, -2, 18, 0.22, 24, beach.marble, 0);         // main
+      addBeachWalkableBox(group, colliders, -10.75, 5.39, 12, 2.5, 0.22, 4, beach.marble, 0);     // NW of stairs
+      addBeachWalkableBox(group, colliders, 3.5, 5.39, 12, 5, 0.22, 4, beach.marble, 0);          // landing NE
+
+      // Open landing glass railing at stairwell edge (z=9.8 on second floor)
+      addBeachGlassBarrier(group, colliders, -3, 6.15, 9.85, 18, 1.4, 0.08, beach.glassRail);
+      for (let gp = -11.5; gp <= 5.5; gp += 2.5) addBox(group, gp, 6.12, 9.85, 0.06, 1.4, 0.06, beach.darkSteel, null, 0);
+      // Hallway ceiling strip light
+      addBox(group, -7, 9.85, 0, 9.5, 0.08, 0.35, beach.emissiveWarm, null, 0);
+
+      // === MASTER BEDROOM (x=0 to 6, z=-14 to 5) ===
+      // Interior divider between master and hall/guest area
+      addBeachWallX(group, colliders, 0, -14, 5, 5.5, 4.5, beach.stucco, [{ from: 2.5, to: 4.5, height: 2.4 }], 0.4);
+      // Bed platform + mattress + headboard
+      addBox(group, 3, 5.62, -8, 2.5, 0.22, 3.2, beach.darkSteel, null, 0);
+      addBox(group, 3, 5.82, -8, 2.3, 0.18, 3.0, beach.fabricWhite, null, 0);
+      addBox(group, 5.52, 6.35, -8, 0.14, 1.42, 2.82, beach.fabricGrey, null, 0);
+      addBox(group, 5.42, 5.9, -9.5, 0.12, 0.4, 0.82, beach.wood, null, 0);
+      addBox(group, 5.42, 5.9, -6.5, 0.12, 0.4, 0.82, beach.wood, null, 0);
+      addCylinder(group, 5.4, 6.12, -9.5, 0.06, 0.44, beach.steel, null, 0, false, 1);
+      addCylinder(group, 5.4, 6.12, -6.5, 0.06, 0.44, beach.steel, null, 0, false, 1);
+      addBox(group, -1.8, 5.76, -12.5, 2.5, 0.75, 0.55, beach.stucco, null, 0);
+      addBox(group, 5.5, 5.62, -8, 0.12, 0.45, 2.0, beach.fabricGrey, null, 0);
+      addBox(group, -1.8, 5.76, -9.0, 1.0, 0.75, 0.9, beach.fabricTan, null, 0);
+
+      // === WALK-IN CLOSET (x=-12 to -6, z=-14 to -10) ===
+      addBeachWallZ(group, colliders, -10, -12, -5.5, 5.5, 4.5, beach.stucco, [{ from: -9, to: -7, height: 2.4 }], 0.4);
+      addBeachWallX(group, colliders, -5.5, -14, -10, 5.5, 4.5, beach.stucco, [], 0.4);
+      [-13.0, -11.5].forEach((z) => {
+        [0.6, 1.4, 2.2, 3.0, 3.8].forEach((dy) => {
+          addBox(group, -8.5, 5.5 + dy, z, 5.5, 0.08, 1.2, beach.wood, null, 0);
+        });
+      });
+
+      // === MASTER ENSUITE (x=-12 to -5.5, z=-14 to -5) ===
+      addBeachWallZ(group, colliders, -5, -12, -5.5, 5.5, 4.5, beach.stucco, [{ from: -10, to: -8, height: 2.4 }], 0.4);
+      // Freestanding tub (oval suggestion via cylinder scale)
+      const tub = new THREE.Mesh(geometries.cylinderLow, beach.stucco);
+      tub.position.set(-8.5, 5.76, -12.5);
+      tub.scale.set(1.1, 0.38, 0.55);
+      shadowMesh(tub, false, true);
+      group.add(tub);
+      // Walk-in shower glass
+      addBox(group, -6.5, 7.25, -11.5, 3.0, 3.5, 0.07, beach.glassRail, null, 0);
+      addBox(group, -5.1, 7.25, -10.0, 0.07, 3.5, 2.8, beach.glassRail, null, 0);
+      const rainHead = new THREE.Mesh(geometries.cylinderLow, beach.darkSteel);
+      rainHead.position.set(-7.0, 9.8, -11.5);
+      rainHead.scale.set(0.35, 0.06, 0.35);
+      group.add(rainHead);
+      // Double floating vanity
+      addBox(group, -11.52, 5.72, -7.0, 0.48, 0.44, 3.0, beach.wood, null, 0);
+      addCylinder(group, -11.42, 5.98, -7.7, 0.27, 0.14, beach.marble, null, 0, false, 1);
+      addCylinder(group, -11.42, 5.98, -6.3, 0.27, 0.14, beach.marble, null, 0, false, 1);
+      addBox(group, -11.75, 7.0, -7.0, 0.06, 1.5, 2.8, beach.emissiveWarm, null, 0);
+
+      // === GUEST BEDROOM (x=-12 to -0.5, z=0 to 9.8) ===
+      addBeachWallX(group, colliders, -0.5, 0, 9.8, 5.5, 4.5, beach.stucco, [], 0.4);
+      addBeachWallZ(group, colliders, 0, -12, -0.5, 5.5, 4.5, beach.stucco, [{ from: -9.5, to: -7.5, height: 2.4 }], 0.4);
+      addBox(group, -10, 5.62, 5.5, 2.0, 0.18, 2.8, beach.darkSteel, null, 0);
+      addBox(group, -10, 5.82, 5.5, 1.85, 0.15, 2.6, beach.fabricWhite, null, 0);
+      addBox(group, -11.52, 6.3, 5.5, 0.12, 1.2, 2.5, beach.fabricGrey, null, 0);
+      addBox(group, -11.42, 5.9, 7.2, 0.12, 0.38, 0.8, beach.wood, null, 0);
+      addBox(group, -11.42, 5.9, 3.8, 0.12, 0.38, 0.8, beach.wood, null, 0);
+      addBox(group, -11.42, 5.76, 1.5, 2.5, 0.75, 0.55, beach.stucco, null, 0);
+      addBox(group, -4.5, 5.76, 0.8, 0.55, 0.75, 2.0, beach.darkSteel, null, 0);
+      addBox(group, -4.5, 6.15, 0.8, 0.6, 0.1, 2.1, beach.marble, null, 0);
+
+      // === GUEST BATHROOM (x=-12 to -8, z=0 to 4.5) ===
+      addBeachWallX(group, colliders, -7.8, 0, 4.5, 5.5, 4.5, beach.stucco, [], 0.4);
+      addBox(group, -9.8, 7.25, 2.2, 4.5, 3.5, 0.07, beach.glassRail, null, 0);
+      addBox(group, -11.42, 5.72, 2.2, 0.48, 0.44, 1.5, beach.wood, null, 0);
+      addCylinder(group, -11.38, 5.98, 2.2, 0.24, 0.14, beach.marble, null, 0, false, 1);
+      addBox(group, -11.75, 6.9, 2.2, 0.06, 1.0, 1.4, beach.emissiveWarm, null, 0);
+    }
+
+    function addBeachMansionBalcony(group, colliders, beach) {
+      addBeachWalkableBox(group, colliders, 8, 5.39, 0, 4.0, 0.22, 10, beach.stone, 0);
+      // Glass railings on east, south, north
+      addBeachGlassBarrier(group, colliders, 10, 6.15, 0, 0.08, 1.4, 10.2, beach.glassRail);
+      addBeachGlassBarrier(group, colliders, 8, 6.15, -5, 4.0, 1.4, 0.08, beach.glassRail);
+      addBeachGlassBarrier(group, colliders, 8, 6.15, 5, 4.0, 1.4, 0.08, beach.glassRail);
+      // Posts
+      for (let z = -4.5; z <= 4.5; z += 2.5) addBox(group, 10, 6.12, z, 0.06, 1.4, 0.06, beach.darkSteel, null, 0);
+      [9.5, 6.3].forEach((x) => {
+        addBox(group, x, 6.12, -5, 0.06, 1.4, 0.06, beach.darkSteel, null, 0);
+        addBox(group, x, 6.12, 5, 0.06, 1.4, 0.06, beach.darkSteel, null, 0);
+      });
+      // Lounge chairs
+      addBox(group, 8.8, 5.62, -1.5, 2.0, 0.12, 0.72, beach.teak, null, 0);
+      addBox(group, 8.8, 5.7, -1.5, 1.9, 0.08, 0.64, beach.fabricWhite, null, 0);
+      addBox(group, 8.8, 5.62, 1.5, 2.0, 0.12, 0.72, beach.teak, null, 0);
+      addBox(group, 8.8, 5.7, 1.5, 1.9, 0.08, 0.64, beach.fabricWhite, null, 0);
+      addCylinder(group, 8.8, 5.82, 0, 0.3, 0.55, beach.marble, null, 0, false, 1);
+      // Pergola beams
+      [-4, -1.5, 1.5, 4].forEach((z) => {
+        addBox(group, 8, 7.5, z, 4.5, 0.15, 0.15, beach.darkSteel, null, 0);
       });
     }
 
@@ -6319,12 +6311,12 @@
       sorted.forEach((opening) => {
         const from = clamp(opening.from, z1, z2);
         const to = clamp(opening.to, z1, z2);
-        if (from > cursor + 0.05) addBox(group, x, yBase + height * 0.5, (cursor + from) * 0.5, thickness || 0.55, height, from - cursor, material, colliders, 0);
+        if (from > cursor + 0.05) addBox(group, x, yBase + height * 0.5, (cursor + from) * 0.5, thickness || 0.5, height, from - cursor, material, colliders, 0);
         const doorHeight = opening.height || 2.35;
-        if (height > doorHeight + 0.1) addBox(group, x, yBase + doorHeight + (height - doorHeight) * 0.5, (from + to) * 0.5, thickness || 0.55, height - doorHeight, to - from, material, colliders, 0);
+        if (height > doorHeight + 0.1) addBox(group, x, yBase + doorHeight + (height - doorHeight) * 0.5, (from + to) * 0.5, thickness || 0.5, height - doorHeight, to - from, material, colliders, 0);
         cursor = Math.max(cursor, to);
       });
-      if (cursor < z2 - 0.05) addBox(group, x, yBase + height * 0.5, (cursor + z2) * 0.5, thickness || 0.55, height, z2 - cursor, material, colliders, 0);
+      if (cursor < z2 - 0.05) addBox(group, x, yBase + height * 0.5, (cursor + z2) * 0.5, thickness || 0.5, height, z2 - cursor, material, colliders, 0);
     }
 
     function addBeachWallZ(group, colliders, z, x1, x2, yBase, height, material, openings, thickness) {
@@ -6333,75 +6325,90 @@
       sorted.forEach((opening) => {
         const from = clamp(opening.from, x1, x2);
         const to = clamp(opening.to, x1, x2);
-        if (from > cursor + 0.05) addBox(group, (cursor + from) * 0.5, yBase + height * 0.5, z, from - cursor, height, thickness || 0.55, material, colliders, 0);
+        if (from > cursor + 0.05) addBox(group, (cursor + from) * 0.5, yBase + height * 0.5, z, from - cursor, height, thickness || 0.5, material, colliders, 0);
         const doorHeight = opening.height || 2.35;
-        if (height > doorHeight + 0.1) addBox(group, (from + to) * 0.5, yBase + doorHeight + (height - doorHeight) * 0.5, z, to - from, height - doorHeight, thickness || 0.55, material, colliders, 0);
+        if (height > doorHeight + 0.1) addBox(group, (from + to) * 0.5, yBase + doorHeight + (height - doorHeight) * 0.5, z, to - from, height - doorHeight, thickness || 0.5, material, colliders, 0);
         cursor = Math.max(cursor, to);
       });
-      if (cursor < x2 - 0.05) addBox(group, (cursor + x2) * 0.5, yBase + height * 0.5, z, x2 - cursor, height, thickness || 0.55, material, colliders, 0);
+      if (cursor < x2 - 0.05) addBox(group, (cursor + x2) * 0.5, yBase + height * 0.5, z, x2 - cursor, height, thickness || 0.5, material, colliders, 0);
     }
 
-    function addBeachStaircase(group, shootables, beach, x1, x2, z, width) {
-      const steps = 12;
+    function addBeachGlassBarrier(group, colliders, x, y, z, sx, sy, sz, mat) {
+      const mesh = addBox(group, x, y, z, sx, sy, sz, mat, null, 0);
+      addMeshCollider(colliders, mesh, 'box');
+      const idx = colliders.shootables.indexOf(mesh);
+      if (idx !== -1) colliders.shootables.splice(idx, 1);
+      return mesh;
+    }
+
+    function addBeachStaircase(group, colliders, shootables, beach, x1, x2, z, width) {
+      const steps = 12, rise = 5.5;
       for (let i = 0; i < steps; i++) {
-        const t0 = i / steps;
-        const t1 = (i + 1) / steps;
-        const x = x1 + (x2 - x1) * (t0 + t1) * 0.5;
-        const sx = Math.abs(x2 - x1) / steps + 0.05;
-        const h = 3.2 * t1;
-        const step = addBox(group, x, h * 0.5, z, sx, h, width, beach.travertine, null, 0);
-        shootables.push(step);
+        const t0 = i / steps, t1 = (i + 1) / steps;
+        const xc = x1 + (x2 - x1) * (t0 + t1) * 0.5;
+        const sx = Math.abs(x2 - x1) / steps + 0.06;
+        const tread = addBox(group, xc, rise * t1 - 0.06, z, sx, 0.12, width, beach.wood, null, 0);
+        const c = addMeshCollider(colliders, tread, 'box');
+        if (c) c.walkable = true;
+        shootables.push(tread);
       }
-      addBox(group, (x1 + x2) * 0.5, 0.16, z - width * 0.52, Math.abs(x2 - x1), 0.32, 0.18, beach.rail, null, 0);
-      addBox(group, (x1 + x2) * 0.5, 0.16, z + width * 0.52, Math.abs(x2 - x1), 0.32, 0.18, beach.rail, null, 0);
-    }
-
-    function addBeachRailLine(group, colliders, beach, x1, z1, x2, z2, baseY) {
-      const horizontal = Math.abs(x2 - x1) >= Math.abs(z2 - z1);
-      const len = horizontal ? Math.abs(x2 - x1) : Math.abs(z2 - z1);
-      const cx = (x1 + x2) * 0.5;
-      const cz = (z1 + z2) * 0.5;
-      if (horizontal) {
-        addBox(group, cx, baseY + 0.72, cz, len, 0.08, 0.08, beach.rail, colliders, 0);
-        addBox(group, cx, baseY + 1.12, cz, len, 0.08, 0.08, beach.rail, colliders, 0);
-      } else {
-        addBox(group, cx, baseY + 0.72, cz, 0.08, 0.08, len, beach.rail, colliders, 0);
-        addBox(group, cx, baseY + 1.12, cz, 0.08, 0.08, len, beach.rail, colliders, 0);
+      // Glass side railing along open side
+      addBeachGlassBarrier(group, colliders, (x1 + x2) * 0.5, rise * 0.5 + 0.65, z - width * 0.55, Math.abs(x2 - x1), 1.3, 0.07, beach.glassRail);
+      const numPosts = Math.ceil(Math.abs(x2 - x1) / 1.5) + 1;
+      for (let i = 0; i <= numPosts; i++) {
+        const px = x1 + (x2 - x1) * i / numPosts;
+        const py = rise * i / numPosts;
+        addBox(group, px, py + 0.65, z - width * 0.55, 0.06, 1.3, 0.06, beach.darkSteel, null, 0);
       }
-      const posts = Math.max(2, Math.ceil(len / 2.2));
-      for (let i = 0; i <= posts; i++) {
-        const t = i / posts;
-        const px = x1 + (x2 - x1) * t;
-        const pz = z1 + (z2 - z1) * t;
-        addBox(group, px, baseY + 0.62, pz, 0.12, 1.18, 0.12, beach.blackIron, colliders, 0);
-      }
-    }
-
-    function addBeachCar(group, colliders, points, beach, x, z, yaw, material) {
-      addBox(group, x, 0.54, z, 3.2, 0.9, 1.55, material, colliders, yaw);
-      addBox(group, x - Math.sin(yaw) * 0.25, 1.05, z - Math.cos(yaw) * 0.25, 1.55, 0.55, 1.25, beach.glass, null, yaw);
-      addCylinder(group, x - 1.05, 0.2, z - 0.72, 0.22, 0.16, beach.blackIron, null, 0, true, 1);
-      addCylinder(group, x + 1.05, 0.2, z - 0.72, 0.22, 0.16, beach.blackIron, null, 0, true, 1);
-      addCylinder(group, x - 1.05, 0.2, z + 0.72, 0.22, 0.16, beach.blackIron, null, 0, true, 1);
-      addCylinder(group, x + 1.05, 0.2, z + 0.72, 0.22, 0.16, beach.blackIron, null, 0, true, 1);
-      addCoverPoints(points, x, z, 3.6, 1.9, 'blue', 1.2);
     }
 
     function addBeachPalm(group, beach, x, z, height) {
       const trunk = new THREE.Mesh(geometries.cylinderLow, beach.wood);
       trunk.position.set(x, height * 0.5, z);
-      trunk.scale.set(0.18, height, 0.18);
+      trunk.scale.set(0.15, height, 0.15);
       shadowMesh(trunk, true, true);
       group.add(trunk);
       for (let i = 0; i < 7; i++) {
-        const leaf = new THREE.Mesh(geometries.plane, materials.containerGreen);
         const angle = i / 7 * Math.PI * 2;
-        leaf.position.set(x + Math.cos(angle) * 0.75, height + 0.15, z + Math.sin(angle) * 0.75);
-        leaf.scale.set(2.8, 0.95, 0.45);
-        leaf.rotation.set(-0.75, angle, 0.18);
-        shadowMesh(leaf, false, true);
+        const leaf = new THREE.Mesh(geometries.plane, materials.containerGreen);
+        leaf.position.set(x + Math.cos(angle) * 1.2, height + 0.2, z + Math.sin(angle) * 1.2);
+        leaf.scale.set(3.2, 1.0, 0.4);
+        leaf.rotation.set(-0.65, angle, 0.15);
+        shadowMesh(leaf, false, false);
         group.add(leaf);
       }
+    }
+
+    function addBeachOliveTree(group, beach, x, z, height) {
+      addCylinder(group, x, height * 0.5, z, 0.12, height, beach.darkSteel, null, 0, false, 1);
+      const canopy = new THREE.Mesh(geometries.cylinderLow, beach.oliveGreen);
+      canopy.position.set(x, height + 0.6, z);
+      canopy.scale.set(1.4, 1.8, 1.4);
+      shadowMesh(canopy, true, false);
+      group.add(canopy);
+    }
+
+    function addBeachGrassCluster(group, beach, x, z, h) {
+      for (let gi = 0; gi < 6; gi++) {
+        const a = gi / 6 * Math.PI * 2, r = 0.18;
+        const gc = new THREE.Mesh(geometries.cylinderLow, beach.oliveGreen);
+        gc.position.set(x + Math.cos(a) * r, h * 0.5, z + Math.sin(a) * r);
+        gc.scale.set(0.06, h, 0.06);
+        gc.rotation.set(0.2 * Math.cos(a * 1.3), 0, 0.2 * Math.sin(a * 1.3));
+        group.add(gc);
+      }
+    }
+
+    function addBeachTropicalCluster(group, beach, x, z) {
+      for (let ti = 0; ti < 5; ti++) {
+        const a = ti / 5 * Math.PI * 2;
+        const leaf = new THREE.Mesh(geometries.plane, beach.lawn);
+        leaf.position.set(x + Math.cos(a) * 0.5, 0.9, z + Math.sin(a) * 0.5);
+        leaf.scale.set(0.4, 1.0, 1.8);
+        leaf.rotation.set(-0.35, a, 0.1);
+        group.add(leaf);
+      }
+      addCylinder(group, x, 1.0, z, 0.06, 2.0, beach.lawn, null, 0, false, 1);
     }
 
     function createRooftopMaterials() {
@@ -10021,12 +10028,12 @@
 
     function applyDronePreviewLighting(previewScene, mapName) {
       if (mapName === 'beachmansion') {
-        previewScene.background = new THREE.Color(0x87CEEB);
-        previewScene.fog = new THREE.Fog(0x87CEEB, 120, 360);
-        previewScene.add(new THREE.AmbientLight(0xfff5e0, 0.6));
-        previewScene.add(new THREE.HemisphereLight(0x87CEEB, 0xf5e6c8, 1.0));
-        const sun = new THREE.DirectionalLight(0xfff5e0, 2.5);
-        sun.position.set(40, 80, 20);
+        previewScene.background = new THREE.Color(0xff7744);
+        previewScene.fog = new THREE.Fog(0xff7744, 100, 360);
+        previewScene.add(new THREE.AmbientLight(0xff7733, 0.3));
+        previewScene.add(new THREE.HemisphereLight(0xff8844, 0x442233, 1.0));
+        const sun = new THREE.DirectionalLight(0xff6622, 2.5);
+        sun.position.set(-60, 30, -80);
         previewScene.add(sun);
         return;
       }
@@ -10750,10 +10757,25 @@
     function animateBeachWater(meshes, elapsed) {
       if (!meshes || meshes.length === 0) return;
       const t = elapsed || 0;
+      animateBeachWater._frame = ((animateBeachWater._frame || 0) + 1) % 2;
+      const skipOcean = animateBeachWater._frame !== 0;
       for (let i = 0; i < meshes.length; i++) {
         const mesh = meshes[i];
-        const baseY = Number.isFinite(mesh.userData.baseY) ? mesh.userData.baseY : mesh.position.y;
-        mesh.position.y = baseY + Math.sin(t * 0.8 + i * 1.7) * (i === 0 ? 0.08 : 0.018);
+        if (mesh.userData.oceanWave) {
+          if (skipOcean) continue;
+          const posAttr = mesh.geometry.attributes.position;
+          const orig = mesh.userData.origPositions;
+          if (!orig) continue;
+          for (let j = 0; j < posAttr.count; j++) {
+            const ox = orig[j * 3], oz = orig[j * 3 + 2];
+            const wave = Math.sin(ox * 0.18 + t * 0.8) * 0.15 + Math.sin(oz * 0.22 + t * 0.6) * 0.1;
+            posAttr.setY(j, orig[j * 3 + 1] + wave);
+          }
+          posAttr.needsUpdate = true;
+        } else {
+          const baseY = Number.isFinite(mesh.userData.baseY) ? mesh.userData.baseY : mesh.position.y;
+          mesh.position.y = baseY + Math.sin(t * 0.8 + i * 1.7) * 0.015;
+        }
       }
     }
 
@@ -13371,6 +13393,45 @@
       if (!hemiLight.parent) scene.add(hemiLight);
     }
 
+    function createBeachMansionSkyDome() {
+      const geo = new THREE.SphereGeometry(900, 32, 16);
+      const mat = new THREE.ShaderMaterial({
+        side: THREE.BackSide,
+        depthWrite: false,
+        uniforms: {},
+        vertexShader: `
+          varying vec3 vWorldPos;
+          void main() {
+            vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          varying vec3 vWorldPos;
+          void main() {
+            vec3 n = normalize(vWorldPos);
+            float t = clamp((n.y + 0.1) / 1.1, 0.0, 1.0);
+            vec3 horizon = vec3(1.0, 0.38, 0.08);
+            vec3 mid     = vec3(0.72, 0.22, 0.42);
+            vec3 top     = vec3(0.08, 0.10, 0.38);
+            vec3 col = t < 0.4
+              ? mix(horizon, mid, t / 0.4)
+              : mix(mid, top, (t - 0.4) / 0.6);
+            vec3 sunDir = normalize(vec3(-0.55, 0.08, -0.83));
+            float sunDot = dot(n, sunDir);
+            float glow = smoothstep(0.92, 0.99, sunDot);
+            float halo = smoothstep(0.70, 0.92, sunDot) * 0.35;
+            col += vec3(1.0, 0.75, 0.3) * glow;
+            col += vec3(0.8, 0.35, 0.1) * halo;
+            gl_FragColor = vec4(col, 1.0);
+          }
+        `
+      });
+      const dome = new THREE.Mesh(geo, mat);
+      dome.renderOrder = -1;
+      return dome;
+    }
+
     function createCastleSkyDome() {
       const geo = new THREE.SphereGeometry(900, 32, 16);
       const mat = new THREE.ShaderMaterial({
@@ -13446,6 +13507,7 @@
     function applyMapLighting(active) {
       clearGhostTownLighting();
       if (funlandSkyDome && funlandSkyDome.parent) scene.remove(funlandSkyDome);
+      if (beachMansionSkyDome && beachMansionSkyDome.parent) scene.remove(beachMansionSkyDome);
       renderer.shadowMap.enabled = false;
       if (active && active.ambient === 'rooftop') {
         scene.remove(ambientLight, keyLight, keyLight.target, hemiLight);
@@ -13604,37 +13666,48 @@
         ghostTownLights.forEach((obj) => scene.add(obj));
         return;
       }
+      if (active && active.ambient === 'beachmansion') {
+        scene.remove(ambientLight, keyLight, keyLight.target, hemiLight);
+        scene.background = null;
+        scene.fog = new THREE.Fog(0xff6633, 100, 420);
+        skyStatus = 'beachmansion-sunset';
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 0.85;
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        if (!beachMansionSkyDome) beachMansionSkyDome = createBeachMansionSkyDome();
+        if (!beachMansionSkyDome.parent) scene.add(beachMansionSkyDome);
+        const sunsetSun = new THREE.DirectionalLight(0xff6622, 2.8);
+        sunsetSun.position.set(-60, 30, -80);
+        sunsetSun.castShadow = true;
+        sunsetSun.shadow.mapSize.set(2048, 2048);
+        sunsetSun.shadow.camera.left = -55;
+        sunsetSun.shadow.camera.right = 55;
+        sunsetSun.shadow.camera.top = 45;
+        sunsetSun.shadow.camera.bottom = -45;
+        sunsetSun.shadow.camera.far = 200;
+        sunsetSun.shadow.bias = -0.0001;
+        sunsetSun.target.position.set(0, 0, 0);
+        const sunsetHemi = new THREE.HemisphereLight(0xff8844, 0x442233, 1.0);
+        const sunsetAmbient = new THREE.AmbientLight(0xff7733, 0.25);
+        const poolGlow = new THREE.PointLight(0x00aaff, 0.8, 8);
+        poolGlow.position.set(23, -0.3, 0);
+        const fireGlow = new THREE.PointLight(0xff6622, 1.0, 6);
+        fireGlow.position.set(16, 0.5, -8);
+        const intLight1 = new THREE.PointLight(0xffeecc, 0.5, 10);
+        intLight1.position.set(-8, 2.5, -6);
+        const intLight2 = new THREE.PointLight(0xffeecc, 0.5, 10);
+        intLight2.position.set(0, 2.5, 6);
+        const intLight3 = new THREE.PointLight(0xffeecc, 0.4, 8);
+        intLight3.position.set(-6, 7.5, 0);
+        ghostTownLights = [beachMansionSkyDome, sunsetSun, sunsetSun.target, sunsetHemi, sunsetAmbient, poolGlow, fireGlow, intLight1, intLight2, intLight3];
+        ghostTownLights.forEach((obj) => scene.add(obj));
+        return;
+      }
       restoreBaseLighting();
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 0.55;
       if (castleSkyDome && castleSkyDome.parent) scene.remove(castleSkyDome);
-      if (active && active.ambient === 'beachmansion') {
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        scene.background = new THREE.Color(0x72bfe8);
-        scene.fog = new THREE.Fog(0x72bfe8, 130, 380);
-        skyStatus = 'beachmansion-day';
-        renderer.toneMappingExposure = 1.05;
-        ambientLight.color.setHex(0xf0f8ff);
-        ambientLight.intensity = 0.75;
-        hemiLight.color.setHex(0x72bfe8);
-        hemiLight.groundColor.setHex(0x88cc90);
-        hemiLight.intensity = 1.1;
-        keyLight.color.setHex(0xffffff);
-        keyLight.intensity = 2.5;
-        keyLight.position.set(40, 80, 20);
-        keyLight.castShadow = true;
-        keyLight.shadow.mapSize.set(2048, 2048);
-        keyLight.shadow.camera.left = -50;
-        keyLight.shadow.camera.right = 50;
-        keyLight.shadow.camera.top = 40;
-        keyLight.shadow.camera.bottom = -40;
-        keyLight.shadow.camera.far = 180;
-        keyLight.shadow.bias = -0.0001;
-        keyLight.target.position.set(0, 0, 0);
-        keyLight.target.updateMatrixWorld();
-        return;
-      }
       if (active && active.ambient === 'castle') {
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
