@@ -5813,118 +5813,371 @@
     }
 
     function addBeachMansionLandscape(group, colliders, beach, waterMeshes) {
-      // ── OCEAN ──────────────────────────────────────────────────────────────
-      // Large wave-animated plane — starts at cliff base, extends to horizon
-      const oceanGeo = new THREE.PlaneGeometry(700, 500, 32, 32);
-      oceanGeo.rotateX(-Math.PI / 2);
-      const ocean = new THREE.Mesh(oceanGeo, beach.ocean);
-      ocean.position.set(320, -8, 0); // x: covers x=-30 to x=670, z: ±250
-      const origPos = new Float32Array(oceanGeo.attributes.position.array);
-      ocean.userData.oceanWave = true;
-      ocean.userData.origPositions = origPos;
+      let s = 23;
+      const rand = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+      const ARENA_HX = BEACH_MANSION_BOUNDS.halfX;
+      const ARENA_HZ = BEACH_MANSION_BOUNDS.halfZ;
+      const ISLAND_RADIUS = 60; // island extends ~60 units from center, then drops to ocean
+
+      // ─────────────────────────────────────────────────────────
+      // 1. MASSIVE OCEAN (everywhere — this is the world)
+      // ─────────────────────────────────────────────────────────
+      const ocean = new THREE.Mesh(new THREE.PlaneGeometry(1400, 1400, 1, 1), beach.ocean);
+      ocean.rotation.x = -Math.PI / 2;
+      ocean.position.set(0, -8.5, 0);
+      ocean.userData.beachWater = true;
+      ocean.userData.baseY = ocean.position.y;
       group.add(ocean);
       waterMeshes.push(ocean);
 
-      // ── SANDY BEACH at cliff base ───────────────────────────────────────────
-      const sandMat = new THREE.MeshBasicMaterial({ color: 0xe2c98a });
-      const sandGeo = new THREE.PlaneGeometry(80, 140, 1, 1);
-      sandGeo.rotateX(-Math.PI / 2);
-      const sand = new THREE.Mesh(sandGeo, sandMat);
-      sand.position.set(80, -7.75, 0);
-      group.add(sand);
+      // Slightly lighter shallow water ring around island for visual depth
+      const shallowMat = new THREE.MeshStandardMaterial({
+        color: 0x4cc8e8, roughness: 0.2, metalness: 0,
+        transparent: true, opacity: 0.55, side: THREE.DoubleSide
+      });
+      const shallow = new THREE.Mesh(new THREE.RingGeometry(ISLAND_RADIUS - 4, ISLAND_RADIUS + 28, 64), shallowMat);
+      shallow.rotation.x = -Math.PI / 2;
+      shallow.position.y = -8.1;
+      group.add(shallow);
 
-      // ── CLIFF FACE (east, x=38-65) — layered rocky drop ───────────────────
-      addBox(group, 43,  -5.5, 0,  12, 13, 82, beach.cliff, null, 0);       // main face
-      addBox(group, 51,  -9,   0,  16, 10, 72, beach.cliff, null, 0.04);    // second layer
-      addBox(group, 60,  -12,  0,  18,  8, 60, beach.cliff, null, -0.03);   // receding
-      // Cliff continues north/south beyond arena (headlands curving toward ocean)
-      addBox(group, 46,  -6,  -55, 20, 12, 52, beach.cliff, null,  0.08);
-      addBox(group, 46,  -6,   55, 20, 12, 52, beach.cliff, null, -0.08);
-      addBox(group, 58,  -9,  -80, 28,  9, 45, beach.cliff, null,  0.14);
-      addBox(group, 58,  -9,   80, 28,  9, 45, beach.cliff, null, -0.14);
-      addBox(group, 75, -12, -105, 35,  7, 40, beach.cliff, null,  0.18);
-      addBox(group, 75, -12,  105, 35,  7, 40, beach.cliff, null, -0.18);
-      // Cliff continues behind blue spawn (west edge drops too)
-      addBox(group, -43, -4, -35, 10, 10, 30, beach.cliff, null, -0.06);
-      addBox(group, -43, -4,  35, 10, 10, 30, beach.cliff, null,  0.06);
+      // ─────────────────────────────────────────────────────────
+      // 2. ISLAND TERRAIN — circular landmass with cliffs to ocean
+      //    Beyond ISLAND_RADIUS, terrain drops sharply into the sea
+      // ─────────────────────────────────────────────────────────
+      const islandMat = new THREE.MeshStandardMaterial({
+        color: 0xe8d6a6, roughness: 1, metalness: 0, vertexColors: true
+      });
+      const islandGeo = new THREE.PlaneGeometry(180, 180, 100, 100);
+      const sPos = islandGeo.attributes.position;
+      const sCol = [];
+      const tmpC = new THREE.Color();
+      for (let i = 0; i < sPos.count; i++) {
+        const x = sPos.getX(i);
+        const y = sPos.getY(i); // pre-rotation; this becomes z in world
+        const dist = Math.hypot(x, y);
+        const inArena = Math.abs(x) < ARENA_HX + 4 && Math.abs(y) < ARENA_HZ + 4;
 
-      // ── CLIFF GLASS BARRIER (gameplay boundary) ────────────────────────────
-      addBeachGlassBarrier(group, colliders, 38.3, 1.2, 0, 0.08, 2.4, 62, beach.glassRail);
-      for (let pz = -28; pz <= 28; pz += 5.5) {
-        addBox(group, 38.3, 1.2, pz, 0.08, 2.4, 0.08, beach.darkSteel, null, 0);
+        // Height profile: flat at arena, gentle hills mid-island, drops off at edge
+        let height;
+        if (inArena) {
+          height = 0;
+        } else if (dist < ISLAND_RADIUS - 6) {
+          // Inland — gentle rolling
+          height = (Math.sin(x * 0.05) * 0.6 + Math.cos(y * 0.06) * 0.7
+                   + Math.sin((x + y) * 0.03) * 1.2)
+                   * Math.min(1, (dist - 30) / 30);
+        } else if (dist < ISLAND_RADIUS) {
+          // Beach edge — slope down to water
+          const t = (ISLAND_RADIUS - dist) / 6; // 0 at edge, 1 just inside
+          height = -1.2 * (1 - t) + 0.4 * t;
+        } else {
+          // Underwater — drops away
+          const off = dist - ISLAND_RADIUS;
+          height = -1.5 - Math.min(8, off * 0.6);
+        }
+        sPos.setZ(i, height);
+
+        // Color zones
+        const noise = Math.sin(x * 0.13) * 0.04 + Math.cos(y * 0.17) * 0.04;
+        if (dist > ISLAND_RADIUS - 1) {
+          tmpC.setHex(0xebd8a4).offsetHSL(0, 0, noise); // sandy beach perimeter
+        } else if (dist > ISLAND_RADIUS - 8) {
+          tmpC.setHex(0xe2cd8e).offsetHSL(0, 0, noise); // wet sand
+        } else if (x > 36) {
+          tmpC.setHex(0xe8d3a0).offsetHSL(0, 0, noise); // east beach (cliff)
+        } else if (dist > 40 && !inArena) {
+          tmpC.setHex(0x6fa56a).offsetHSL(0, 0.05, noise); // grass middle ring
+        } else if (!inArena) {
+          tmpC.setHex(0x86b774).offsetHSL(0, 0.03, noise); // grass near arena
+        } else {
+          tmpC.setHex(0xc8b88a).offsetHSL(0, 0, noise);
+        }
+        sCol.push(tmpC.r, tmpC.g, tmpC.b);
       }
-
-      // ── COASTAL HEADLAND HILLS (north + south, curving to ocean) ──────────
-      for (let i = 0; i < 5; i++) {
-        const hw = 140 + i * 35, hh = 28 + i * 6;
-        const hs = new THREE.Mesh(createRooftopHillGeometry(hw, hh, 0.6 + i * 0.8), beach.hills);
-        hs.position.set(85 + i * 28, -4 + i * 3, -(110 + i * 32));
-        hs.rotation.y = 0.35;
-        group.add(hs);
-        const hn = new THREE.Mesh(createRooftopHillGeometry(hw, hh, 1.2 + i * 0.7), beach.hills);
-        hn.position.set(85 + i * 28, -4 + i * 3,  110 + i * 32);
-        hn.rotation.y = -0.35;
-        group.add(hn);
-      }
-
-      // ── WEST BACKGROUND — neighborhood down the hill ───────────────────────
-      for (let i = 0; i < 14; i++) {
-        const hx = -55 - (i % 4) * 9;
-        const hz = -42 + i * 6.5;
-        const hw = addBox(group, hx, 0.9, hz, 3.6, 1.9, 2.7, beach.suburbWall, null, 0.04 * ((i % 3) - 1));
-        hw.castShadow = false;
-        const hr = addBox(group, hx, 2.0, hz, 4.0, 0.3, 3.1, beach.suburbRoof, null, hw.rotation.y);
-        hr.castShadow = false;
-      }
-
-      // ── CALIFORNIA HILLS (west/northwest) ─────────────────────────────────
-      for (let i = 0; i < 4; i++) {
-        const h1 = new THREE.Mesh(createRooftopHillGeometry(200 + i * 40, 22 + i * 7, 0.4 + i * 1.2), beach.hills);
-        h1.position.set(-88 - i * 14, 5 + i * 4, -55 - i * 16);
-        h1.rotation.y = 0.14;
-        group.add(h1);
-        const h2 = new THREE.Mesh(createRooftopHillGeometry(180 + i * 35, 20 + i * 6, 0.8 + i), beach.hills);
-        h2.position.set(-85 - i * 12, 4 + i * 3,  55 + i * 14);
-        h2.rotation.y = -0.12;
-        group.add(h2);
-      }
-      // Far mountains (Santa Monica range profile)
-      for (let i = 0; i < 3; i++) {
-        const m = new THREE.Mesh(createRooftopHillGeometry(320 + i * 90, 55 + i * 18, 1.5 + i * 2), beach.hills);
-        m.position.set(-170 - i * 22, 10 + i * 6, -60 + i * 45);
-        m.rotation.y = 0.07;
-        group.add(m);
-      }
-
-      // ── CATALINA ISLAND silhouette on horizon ──────────────────────────────
-      const island = new THREE.Mesh(new THREE.PlaneGeometry(65, 10, 1, 1), beach.island);
-      island.position.set(390, 0, -120);
-      island.rotation.y = 0.22;
+      islandGeo.setAttribute('color', new THREE.Float32BufferAttribute(sCol, 3));
+      islandGeo.computeVertexNormals();
+      const island = new THREE.Mesh(islandGeo, islandMat);
+      island.rotation.x = -Math.PI / 2;
+      island.position.y = -0.1;
+      island.castShadow = false;
+      island.receiveShadow = false;
       group.add(island);
-      // Second island / sea stack
-      const stack = new THREE.Mesh(new THREE.PlaneGeometry(22, 6, 1, 1), beach.island);
-      stack.position.set(310, -1, -160);
-      stack.rotation.y = 0.18;
-      group.add(stack);
 
-      // ── SUN REFLECTION PATH on water ─────────────────────────────────────
-      const reflGeo = new THREE.PlaneGeometry(1, 1, 1, 1);
-      reflGeo.rotateX(-Math.PI / 2);
-      const refl = new THREE.Mesh(reflGeo, beach.sunRefl);
-      refl.position.set(200, -7.3, -40);
-      refl.scale.set(180, 1, 14);
-      refl.rotation.y = 0.28;
-      group.add(refl);
+      // Beach foam ring — thin lighter-color ring at the water's edge
+      const foamMat = new THREE.MeshBasicMaterial({ color: 0xf5f0e0, transparent: true, opacity: 0.7, side: THREE.DoubleSide });
+      const foam = new THREE.Mesh(new THREE.RingGeometry(ISLAND_RADIUS - 1, ISLAND_RADIUS + 0.5, 64), foamMat);
+      foam.rotation.x = -Math.PI / 2;
+      foam.position.y = -0.05;
+      group.add(foam);
 
-      // ── ATMOSPHERIC HAZE (horizon glow band) ──────────────────────────────
-      const haze1 = new THREE.Mesh(new THREE.PlaneGeometry(600, 90, 1, 1), beach.haze);
-      haze1.position.set(300, 8, -80);
-      haze1.rotation.y = -0.15;
-      group.add(haze1);
-      const haze2 = new THREE.Mesh(new THREE.PlaneGeometry(600, 90, 1, 1), beach.haze);
-      haze2.position.set(300, 8, 80);
-      haze2.rotation.y = 0.15;
-      group.add(haze2);
+      // ─────────────────────────────────────────────────────────
+      // 3. MOUNTAIN ISLANDS + VOLCANOES — distant landmasses
+      //    surrounding the main island in a 360° ring
+      // ─────────────────────────────────────────────────────────
+      const mountainBase = new THREE.MeshStandardMaterial({ color: 0x5a7a6c, roughness: 1, metalness: 0, flatShading: true });
+      const mountainDark = new THREE.MeshStandardMaterial({ color: 0x3e5a52, roughness: 1, metalness: 0, flatShading: true });
+      const mountainSnow = new THREE.MeshStandardMaterial({ color: 0xf2f6fa, roughness: 0.9, metalness: 0, flatShading: true });
+      const mountainFar = new THREE.MeshStandardMaterial({ color: 0x8aa0a8, roughness: 1, metalness: 0, flatShading: true });
+      const volcanoRock = new THREE.MeshStandardMaterial({ color: 0x2a201c, roughness: 1, metalness: 0, flatShading: true });
+      const volcanoLava = new THREE.MeshStandardMaterial({
+        color: 0xff5a18, emissive: 0xff3010, emissiveIntensity: 1.4,
+        roughness: 0.6, metalness: 0
+      });
+      const smokeMat = new THREE.MeshBasicMaterial({ color: 0x5a4a44, transparent: true, opacity: 0.55 });
+
+      function addMountain(x, z, height, baseRadius, snowy, mat) {
+        // Each mountain sits on a small underwater base island so they appear to rise from the sea
+        const baseIsland = new THREE.Mesh(new THREE.CylinderGeometry(baseRadius * 1.05, baseRadius * 1.3, 2, 8), mat || mountainBase);
+        baseIsland.position.set(x, -0.3, z);
+        baseIsland.castShadow = false;
+        group.add(baseIsland);
+        // Mountain cone
+        const m = new THREE.Mesh(new THREE.ConeGeometry(baseRadius, height, 7, 1, false), mat || mountainBase);
+        m.position.set(x, height * 0.5 + 0.5, z);
+        m.rotation.y = rand() * Math.PI;
+        m.castShadow = false;
+        group.add(m);
+        if (snowy && height > 22) {
+          const cap = new THREE.Mesh(new THREE.ConeGeometry(baseRadius * 0.4, height * 0.3, 7), mountainSnow);
+          cap.position.set(x, height * 0.85 + 0.5, z);
+          cap.rotation.y = m.rotation.y;
+          cap.castShadow = false;
+          group.add(cap);
+        }
+      }
+
+      function addVolcano(x, z, height, baseRadius) {
+        // Underwater foundation
+        const foundation = new THREE.Mesh(new THREE.CylinderGeometry(baseRadius * 1.1, baseRadius * 1.4, 2.4, 12), volcanoRock);
+        foundation.position.set(x, -0.6, z);
+        foundation.castShadow = false;
+        group.add(foundation);
+        // Main volcano cone (truncated — cut off the very top)
+        const vol = new THREE.Mesh(new THREE.CylinderGeometry(baseRadius * 0.18, baseRadius, height, 10, 1, false), volcanoRock);
+        vol.position.set(x, height * 0.5 + 0.6, z);
+        vol.castShadow = false;
+        group.add(vol);
+        // Lava crater glow on top
+        const crater = new THREE.Mesh(new THREE.CylinderGeometry(baseRadius * 0.16, baseRadius * 0.16, 0.4, 10), volcanoLava);
+        crater.position.set(x, height + 0.6, z);
+        group.add(crater);
+        // Lava streaks running down the sides
+        for (let k = 0; k < 4; k++) {
+          const ang = (k / 4) * Math.PI * 2 + rand() * 0.4;
+          const streak = new THREE.Mesh(new THREE.PlaneGeometry(baseRadius * 0.1, height * 0.65), volcanoLava);
+          streak.position.set(
+            x + Math.cos(ang) * baseRadius * 0.55,
+            height * 0.5 + 0.6,
+            z + Math.sin(ang) * baseRadius * 0.55
+          );
+          streak.lookAt(x, height + 0.6, z);
+          streak.rotation.z += Math.PI / 2;
+          group.add(streak);
+        }
+        // Smoke plume — stack of widening cones
+        for (let k = 0; k < 5; k++) {
+          const ofs = k * 4;
+          const sm = new THREE.Mesh(new THREE.ConeGeometry(baseRadius * (0.25 + k * 0.18), 5, 8), smokeMat);
+          sm.position.set(x + (rand() - 0.5) * 1.4, height + 2 + ofs, z + (rand() - 0.5) * 1.4);
+          group.add(sm);
+        }
+        // Glowing point light from the crater
+        const glow = new THREE.PointLight(0xff5510, 1.8, 60);
+        glow.position.set(x, height + 1, z);
+        group.add(glow);
+      }
+
+      // ── Outer ring of mountain islands at radius ~140 ──
+      const outerRingCount = 14;
+      for (let i = 0; i < outerRingCount; i++) {
+        // Skip the east arc so we have open sea facing east (where the main view goes)
+        const t = i / outerRingCount;
+        if (t > 0.8 && t < 0.98) continue;
+        const ang = t * Math.PI * 2;
+        const r = 145 + rand() * 25;
+        const x = Math.cos(ang) * r;
+        const z = Math.sin(ang) * r;
+        const h = 28 + rand() * 32;
+        const br = 16 + rand() * 12;
+        addMountain(x, z, h, br, rand() > 0.35, rand() > 0.5 ? mountainBase : mountainDark);
+      }
+
+      // ── Inner ring (closer mountain islets) ──
+      const innerCount = 7;
+      for (let i = 0; i < innerCount; i++) {
+        const ang = (i / innerCount) * Math.PI * 2 + Math.PI / innerCount;
+        if (Math.cos(ang) > 0.6) continue; // skip east
+        const r = 95 + rand() * 18;
+        const x = Math.cos(ang) * r;
+        const z = Math.sin(ang) * r;
+        addMountain(x, z, 18 + rand() * 12, 11 + rand() * 6, false, mountainBase);
+      }
+
+      // ── VOLCANOES — 4 distant, mostly to the south + west ──
+      addVolcano(-180, -110, 70, 28); // SW giant
+      addVolcano(-130,  170, 58, 24); // NW
+      addVolcano(  60, -200, 64, 26); // S far
+      addVolcano(-220,   40, 75, 30); // W far massive
+
+      // Far distant haze peaks (background depth)
+      for (let i = 0; i < 10; i++) {
+        const ang = (i / 10) * Math.PI * 2 + 0.4;
+        const r = 260 + rand() * 40;
+        const x = Math.cos(ang) * r;
+        const z = Math.sin(ang) * r;
+        addMountain(x, z, 50 + rand() * 30, 28 + rand() * 12, true, mountainFar);
+      }
+
+      // ─────────────────────────────────────────────────────────
+      // 5. NEIGHBORHOOD — modern white villas in 2 clusters with detail
+      // ─────────────────────────────────────────────────────────
+      // ─────────────────────────────────────────────────────────
+      // 5. DENSE 3D PALM TREE RINGS around the island perimeter
+      // ─────────────────────────────────────────────────────────
+      const palmRings = [
+        { r: 46, count: 18, hMin: 4.0, hMax: 5.5 },  // inner ring
+        { r: 54, count: 22, hMin: 4.5, hMax: 6.2 },  // outer ring (near beach)
+      ];
+      palmRings.forEach(({ r, count, hMin, hMax }) => {
+        for (let i = 0; i < count; i++) {
+          const ang = (i / count) * Math.PI * 2 + rand() * 0.3;
+          const rJit = r + (rand() - 0.5) * 5;
+          const px = Math.cos(ang) * rJit;
+          const pz = Math.sin(ang) * rJit;
+          // Skip if too close to arena/house play space
+          if (Math.abs(px) < ARENA_HX + 4 && Math.abs(pz) < ARENA_HZ + 4) continue;
+          const ph = hMin + rand() * (hMax - hMin);
+          addBeachPalm(group, beach, px, pz, ph);
+        }
+      });
+
+      // ─────────────────────────────────────────────────────────
+      // 6. PIER + LIGHTHOUSE + BOATS — east side, extends from island
+      // ─────────────────────────────────────────────────────────
+      const pierStart = ISLAND_RADIUS - 2;
+      const pierEnd = ISLAND_RADIUS + 18;
+      const pierZ = -22;
+      const pierDeck = addBox(group, (pierStart + pierEnd) / 2, -0.4, pierZ, pierEnd - pierStart, 0.25, 2.6, beach.travertine, null, 0);
+      pierDeck.castShadow = false;
+      for (let px = pierStart; px <= pierEnd; px += 3) {
+        [pierZ - 1, pierZ + 1].forEach(pz => {
+          const p = addCylinder(group, px, -3.5, pz, 0.16, 6.4, beach.darkWood, null, 0, false, 1);
+          p.castShadow = false;
+        });
+      }
+      // Lighthouse at end of pier
+      const lhX = pierEnd + 2.5;
+      const lhBase = addCylinder(group, lhX, 1.0, pierZ, 1.6, 3.0, beach.stucco, null, 0, false, 16);
+      lhBase.castShadow = false;
+      const lhMid = addCylinder(group, lhX, 4.0, pierZ, 1.2, 3.2, beach.suburbWall, null, 0, false, 16);
+      lhMid.castShadow = false;
+      const lhTop = addCylinder(group, lhX, 6.5, pierZ, 1.0, 1.5, beach.glass, null, 0, false, 16);
+      lhTop.castShadow = false;
+      const lhCap = new THREE.Mesh(new THREE.ConeGeometry(1.1, 1.4, 12), new THREE.MeshStandardMaterial({ color: 0xc62828, roughness: 0.7 }));
+      lhCap.position.set(lhX, 7.95, pierZ);
+      lhCap.castShadow = false;
+      group.add(lhCap);
+      // Lighthouse glow
+      const lhLight = new THREE.PointLight(0xfff8d8, 1.6, 50);
+      lhLight.position.set(lhX, 6.5, pierZ);
+      group.add(lhLight);
+
+      // Yachts in ocean — placed in the open eastern sea
+      [[105, -10, 0.06], [120, 30, -0.05], [110, -55, 0.12], [85, 55, -0.08]].forEach(([yx, yz, yaw]) => {
+        const yh = addBox(group, yx, -7.6, yz, 8, 1.1, 2.4, beach.suburbWall, null, yaw);
+        yh.castShadow = false;
+        const yc = addBox(group, yx, -6.8, yz, 4, 1.0, 1.7, beach.suburbWall, null, yaw);
+        yc.castShadow = false;
+        const ym = addCylinder(group, yx + 0.5, -4.5, yz, 0.08, 4.5, beach.blackIron, null, 0, false, 1);
+        ym.castShadow = false;
+        // Sail
+        const sail = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 3.6), new THREE.MeshStandardMaterial({ color: 0xffffff, side: THREE.DoubleSide, roughness: 0.6 }));
+        sail.position.set(yx + 0.5, -3.0, yz);
+        sail.castShadow = false;
+        group.add(sail);
+      });
+
+      // ─────────────────────────────────────────────────────────
+      // 7. BEACH UMBRELLAS + LOUNGERS scattered around the island
+      // ─────────────────────────────────────────────────────────
+      const umbColors = [0xff5566, 0x5fb8ff, 0xffd23f, 0xff7ad6, 0x6fe89a, 0xff9a4a];
+      const umbPositions = [
+        // Spread around island perimeter (not east/pier side)
+        [Math.cos(0.4) * 52,  Math.sin(0.4) * 52],
+        [Math.cos(1.0) * 52,  Math.sin(1.0) * 52],
+        [Math.cos(1.7) * 52,  Math.sin(1.7) * 52],
+        [Math.cos(2.4) * 52,  Math.sin(2.4) * 52],
+        [Math.cos(3.1) * 52,  Math.sin(3.1) * 52],
+        [Math.cos(4.0) * 52,  Math.sin(4.0) * 52],
+        [Math.cos(4.8) * 52,  Math.sin(4.8) * 52],
+        [Math.cos(5.5) * 52,  Math.sin(5.5) * 52],
+      ];
+      umbPositions.forEach(([ux, uz], idx) => {
+        if (Math.abs(ux) < ARENA_HX + 6 && Math.abs(uz) < ARENA_HZ + 6) return;
+        const post = addCylinder(group, ux, 0.55, uz, 0.05, 1.6, beach.blackIron, null, 0, false, 1);
+        post.castShadow = false;
+        const umbMat = new THREE.MeshStandardMaterial({ color: umbColors[idx % umbColors.length], roughness: 0.7, side: THREE.DoubleSide });
+        const top = new THREE.Mesh(new THREE.ConeGeometry(1.6, 0.7, 8), umbMat);
+        top.position.set(ux, 1.7, uz);
+        top.castShadow = false;
+        group.add(top);
+        // Loungers point toward beach (away from island center)
+        const dir = Math.atan2(uz, ux);
+        [-0.7, 0.7].forEach(dz => {
+          const offX = Math.cos(dir) * 1.6 + Math.cos(dir + Math.PI / 2) * dz;
+          const offZ = Math.sin(dir) * 1.6 + Math.sin(dir + Math.PI / 2) * dz;
+          const c = addBox(group, ux + offX, 0.06, uz + offZ, 2.0, 0.1, 0.65, beach.travertine, null, dir);
+          c.castShadow = false;
+        });
+      });
+
+      // ─────────────────────────────────────────────────────────
+      // 9. SCATTERED BEACH ROCKS for natural detail
+      // ─────────────────────────────────────────────────────────
+      const rockMat = new THREE.MeshStandardMaterial({ color: 0xa8a09a, roughness: 0.95, metalness: 0, flatShading: true });
+      // Rocks along the beach perimeter and just offshore
+      for (let i = 0; i < 36; i++) {
+        const ang = rand() * Math.PI * 2;
+        const r = ISLAND_RADIUS - 4 + rand() * 8; // around shoreline
+        const rx = Math.cos(ang) * r;
+        const rz = Math.sin(ang) * r;
+        if (Math.abs(rx) < ARENA_HX + 4 && Math.abs(rz) < ARENA_HZ + 4) continue;
+        const rockSize = 0.5 + rand() * 1.4;
+        const rock = new THREE.Mesh(new THREE.IcosahedronGeometry(rockSize, 0), rockMat);
+        const offshore = r > ISLAND_RADIUS;
+        rock.position.set(rx, offshore ? -7 + rockSize * 0.4 : rockSize * 0.3, rz);
+        rock.rotation.set(rand(), rand() * Math.PI * 2, rand());
+        rock.castShadow = false;
+        group.add(rock);
+      }
+
+      // ─────────────────────────────────────────────────────────
+      // 10. SEAGULLS / DISTANT BIRDS for life
+      // ─────────────────────────────────────────────────────────
+      const birdMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      for (let i = 0; i < 18; i++) {
+        const ang = rand() * Math.PI * 2;
+        const r = 70 + rand() * 80;
+        const bx = Math.cos(ang) * r;
+        const bz = Math.sin(ang) * r;
+        const by = 14 + rand() * 22;
+        const bird = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.05, 0.15), birdMat);
+        bird.position.set(bx, by, bz);
+        bird.rotation.y = rand() * Math.PI * 2;
+        bird.rotation.z = (rand() - 0.5) * 0.4;
+        group.add(bird);
+      }
+
+      // ─────────────────────────────────────────────────────────
+      // 11. ATMOSPHERIC HAZE
+      // ─────────────────────────────────────────────────────────
+      [[100, 10, 0, 0], [0, 8, 130, -Math.PI/2], [0, 8, -130, Math.PI/2], [-130, 8, 0, Math.PI/2]].forEach(([hx, hy, hz, ry]) => {
+        const haze = new THREE.Mesh(new THREE.PlaneGeometry(220, 60, 1, 1), beach.haze);
+        haze.position.set(hx, hy, hz);
+        haze.rotation.y = ry;
+        haze.rotation.x = -Math.PI * 0.06;
+        group.add(haze);
+      });
     }
 
     function addBeachMansionExterior(group, colliders, shootables, points, beach, waterMeshes) {
