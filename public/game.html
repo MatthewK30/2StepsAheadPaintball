@@ -5780,11 +5780,24 @@
         const x = pos.getX(i);
         const z = pos.getZ(i);
         const noise = Math.sin(x * 0.31 + z * 0.17) * 0.025 + Math.cos(z * 0.43) * 0.018;
-        if (x < -30) color.setHex(0x3c4040).offsetHSL(0, 0, noise);
-        else if (x < -20) color.setHex(0x4a9450).offsetHSL(0.02, 0.04, noise); // green lawn
-        else if (x < 12) color.setHex(0x5aaa60).offsetHSL(0.01, 0.03, noise * 0.7); // bright lawn
-        else if (x < 34) color.setHex(0x68b870).offsetHSL(0, 0.02, noise * 0.8); // lawn near pool
-        else color.setHex(0xdfd0a0).offsetHSL(0, -0.01, noise); // sand at far edge
+        const absZ = Math.abs(z);
+        const edgeSand = Math.max(0, (absZ - 22) / 18); // fade to sand near z edges
+        if (x > 34) {
+          color.setHex(0xdfd0a0).offsetHSL(0, -0.01, noise); // east sand
+        } else if (edgeSand > 0.6) {
+          color.setHex(0xe2d090).offsetHSL(0, 0, noise * 0.6); // north/south beach sand
+        } else if (edgeSand > 0.2) {
+          // blend lawn to sand
+          color.setHex(0x9aba80).offsetHSL(0, -edgeSand * 0.3, noise * 0.5);
+        } else if (x < -30) {
+          color.setHex(0x3c4040).offsetHSL(0, 0, noise);
+        } else if (x < -20) {
+          color.setHex(0x4a9450).offsetHSL(0.02, 0.04, noise);
+        } else if (x < 12) {
+          color.setHex(0x5aaa60).offsetHSL(0.01, 0.03, noise * 0.7);
+        } else {
+          color.setHex(0x68b870).offsetHSL(0, 0.02, noise * 0.8);
+        }
         colors.push(color.r, color.g, color.b);
       }
       geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
@@ -5907,11 +5920,80 @@
         });
       });
 
-      // ── Atmospheric haze over ocean ──
-      const haze = new THREE.Mesh(new THREE.PlaneGeometry(200, 60, 1, 1), beach.haze);
-      haze.position.set(90, 8, 0);
-      haze.rotation.x = -Math.PI * 0.08;
-      group.add(haze);
+      // ── North beach (positive Z side) ──
+      const northBeach = new THREE.Mesh(new THREE.PlaneGeometry(120, 40, 1, 1), beach.beach);
+      northBeach.rotation.x = -Math.PI / 2;
+      northBeach.position.set(0, -0.02, 62);
+      group.add(northBeach);
+      const northOcean = new THREE.Mesh(new THREE.PlaneGeometry(200, 80, 1, 1), beach.ocean);
+      northOcean.rotation.x = -Math.PI / 2;
+      northOcean.position.set(0, -6.5, 118);
+      northOcean.userData.beachWater = true;
+      northOcean.userData.baseY = northOcean.position.y;
+      group.add(northOcean);
+      waterMeshes.push(northOcean);
+
+      // ── South beach (negative Z side) ──
+      const southBeach = new THREE.Mesh(new THREE.PlaneGeometry(120, 40, 1, 1), beach.beach);
+      southBeach.rotation.x = -Math.PI / 2;
+      southBeach.position.set(0, -0.02, -62);
+      group.add(southBeach);
+      const southOcean = new THREE.Mesh(new THREE.PlaneGeometry(200, 80, 1, 1), beach.ocean);
+      southOcean.rotation.x = -Math.PI / 2;
+      southOcean.position.set(0, -6.5, -118);
+      southOcean.userData.beachWater = true;
+      southOcean.userData.baseY = southOcean.position.y;
+      group.add(southOcean);
+      waterMeshes.push(southOcean);
+
+      // ── Mountains on all three non-ocean sides ──
+      // Each layer: closer = greener/darker, further = lighter/hazier
+      // South mountains (facing north toward player) — z negative
+      [
+        { z: -160, w: 380, h: 52, seed: 1.2, baseY: -28 },
+        { z: -130, w: 340, h: 38, seed: 3.1, baseY: -18 },
+        { z: -108, w: 300, h: 28, seed: 5.5, baseY: -10 },
+      ].forEach(({ z, w, h, seed, baseY }) => {
+        const m = new THREE.Mesh(createRooftopHillGeometry(w, h, seed), beach.hills);
+        m.position.set(0, baseY, z);
+        m.castShadow = false;
+        group.add(m);
+      });
+
+      // North mountains (facing south, rotated 180°) — z positive
+      [
+        { z: 160, w: 360, h: 48, seed: 2.4, baseY: -26 },
+        { z: 132, w: 320, h: 35, seed: 4.6, baseY: -16 },
+        { z: 110, w: 280, h: 26, seed: 6.8, baseY: -9  },
+      ].forEach(({ z, w, h, seed, baseY }) => {
+        const m = new THREE.Mesh(createRooftopHillGeometry(w, h, seed), beach.hills);
+        m.position.set(0, baseY, z);
+        m.rotation.y = Math.PI;
+        m.castShadow = false;
+        group.add(m);
+      });
+
+      // West mountains (facing east, rotated -90°) — x negative
+      [
+        { x: -160, w: 380, h: 55, seed: 0.6, baseY: -30 },
+        { x: -130, w: 320, h: 40, seed: 2.8, baseY: -20 },
+        { x: -100, w: 260, h: 30, seed: 5.0, baseY: -12 },
+      ].forEach(({ x, w, h, seed, baseY }) => {
+        const m = new THREE.Mesh(createRooftopHillGeometry(w, h, seed), beach.hills);
+        m.position.set(x, baseY, 0);
+        m.rotation.y = -Math.PI / 2;
+        m.castShadow = false;
+        group.add(m);
+      });
+
+      // ── Atmospheric haze panels over water on all sides ──
+      [[90, 8, 0, 0], [0, 4, 110, -Math.PI/2], [0, 4, -110, Math.PI/2]].forEach(([hx, hy, hz, ry]) => {
+        const haze = new THREE.Mesh(new THREE.PlaneGeometry(200, 50, 1, 1), beach.haze);
+        haze.position.set(hx, hy, hz);
+        haze.rotation.y = ry;
+        haze.rotation.x = -Math.PI * 0.06;
+        group.add(haze);
+      });
     }
 
     function addBeachMansionExterior(group, colliders, shootables, points, beach, waterMeshes) {
