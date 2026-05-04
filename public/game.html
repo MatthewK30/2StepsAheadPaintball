@@ -5817,178 +5817,321 @@
     }
 
     function addBeachMansionLandscape(group, beach, waterMeshes) {
-      // ── Ocean ──
-      const ocean = new THREE.Mesh(new THREE.PlaneGeometry(200, 200, 1, 1), beach.ocean);
+      let s = 23;
+      const rand = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+      const ARENA_HX = BEACH_MANSION_BOUNDS.halfX;
+      const ARENA_HZ = BEACH_MANSION_BOUNDS.halfZ;
+
+      // ─────────────────────────────────────────────────────────
+      // 1. MASSIVE OCEAN (covers everything to the east and around)
+      // ─────────────────────────────────────────────────────────
+      const ocean = new THREE.Mesh(new THREE.PlaneGeometry(900, 900, 1, 1), beach.ocean);
       ocean.rotation.x = -Math.PI / 2;
-      ocean.position.set(90, -7.2, 0);
+      ocean.position.set(0, -7.4, 0);
       ocean.userData.beachWater = true;
       ocean.userData.baseY = ocean.position.y;
       group.add(ocean);
       waterMeshes.push(ocean);
 
-      // ── Beach strip + cliff ──
-      const beachStrip = new THREE.Mesh(new THREE.PlaneGeometry(42, 130, 1, 1), beach.beach);
-      beachStrip.rotation.x = -Math.PI / 2;
-      beachStrip.position.set(53, -6.9, 0);
-      group.add(beachStrip);
+      // ─────────────────────────────────────────────────────────
+      // 2. SURROUNDING TERRAIN — huge displaced sand/grass plane
+      //    (mimics Funland's surround with rolling hills)
+      // ─────────────────────────────────────────────────────────
+      const surroundMat = new THREE.MeshStandardMaterial({
+        color: 0xe8d6a6, roughness: 1, metalness: 0, vertexColors: true
+      });
+      const surroundGeo = new THREE.PlaneGeometry(800, 800, 96, 96);
+      const sPos = surroundGeo.attributes.position;
+      const sCol = [];
+      const tmpC = new THREE.Color();
+      for (let i = 0; i < sPos.count; i++) {
+        const x = sPos.getX(i);
+        const y = sPos.getY(i); // before rotation, this is "z" in world
+        const dist = Math.hypot(x, y);
+        const inArena = Math.abs(x) < ARENA_HX + 4 && Math.abs(y) < ARENA_HZ + 4;
+        // Rolling dunes — higher away from arena, max ~12 units
+        const roll = inArena ? 0
+          : (Math.sin(x * 0.038) * 1.2 + Math.cos(y * 0.041) * 1.4
+             + Math.sin((x - y) * 0.022) * 1.8 + Math.sin(x * 0.011 + y * 0.009) * 2.6)
+            * Math.min(1, (dist - 50) / 80);
+        sPos.setZ(i, roll);
+        // Vertex colors: sandy beach near water, green-ish further inland
+        const noise = Math.sin(x * 0.13) * 0.04 + Math.cos(y * 0.17) * 0.04;
+        if (x > 36) {
+          tmpC.setHex(0xe8d3a0).offsetHSL(0, 0, noise); // east beach
+        } else if (Math.abs(y) > 50) {
+          tmpC.setHex(0xe6d09a).offsetHSL(0, 0, noise); // north/south beaches
+        } else if (dist > 90) {
+          tmpC.setHex(0x6da06b).offsetHSL(0, 0.04, noise); // distant grass
+        } else if (dist > 60) {
+          tmpC.setHex(0x88b478).offsetHSL(0, 0.03, noise); // mid grass
+        } else {
+          tmpC.setHex(0xc8b88a).offsetHSL(0, 0, noise); // sandy near arena
+        }
+        sCol.push(tmpC.r, tmpC.g, tmpC.b);
+      }
+      surroundGeo.setAttribute('color', new THREE.Float32BufferAttribute(sCol, 3));
+      surroundGeo.computeVertexNormals();
+      const surround = new THREE.Mesh(surroundGeo, surroundMat);
+      surround.rotation.x = -Math.PI / 2;
+      surround.position.y = -0.15;
+      surround.castShadow = false;
+      surround.receiveShadow = false;
+      group.add(surround);
+
+      // ─────────────────────────────────────────────────────────
+      // 3. CLIFF + EAST RAIL
+      // ─────────────────────────────────────────────────────────
       addBox(group, 41.2, -3.1, 0, 2.4, 7.2, 80, beach.cliff, null, 0);
       addBox(group, 39.2, 0.42, 0, 0.36, 0.84, 76, beach.rail, null, 0);
       addBeachRailLine(group, null, beach, 38.6, -35, 38.6, 35, 0);
 
-      // ── Distant hill backdrop — vertical shape panels far behind arena, properly below horizon ──
-      // Facing east (toward player from west): rotation.y = -Math.PI/2
-      const hillConfigs = [
-        { z: -130, w: 260, h: 18, seed: 0.8,  baseY: -8 },
-        { z: -105, w: 240, h: 22, seed: 2.2,  baseY: -10 },
-        { z:  -88, w: 220, h: 16, seed: 4.4,  baseY: -6  },
-      ];
-      hillConfigs.forEach(({ z, w, h, seed, baseY }) => {
-        const m = new THREE.Mesh(createRooftopHillGeometry(w, h, seed), beach.hills);
-        m.position.set(0, baseY, z); // far behind in Z, base below ground
+      // ─────────────────────────────────────────────────────────
+      // 4. REAL 3D MOUNTAIN RANGES — actual cones/pyramids for depth
+      //    Three rings on north/south/west sides, varying heights
+      // ─────────────────────────────────────────────────────────
+      const mountainBase = new THREE.MeshStandardMaterial({ color: 0x6a8478, roughness: 1, metalness: 0, flatShading: true });
+      const mountainSnow = new THREE.MeshStandardMaterial({ color: 0xeef4f8, roughness: 0.9, metalness: 0, flatShading: true });
+      const mountainFar = new THREE.MeshStandardMaterial({ color: 0x9bb0b8, roughness: 1, metalness: 0, flatShading: true, transparent: true, opacity: 0.85 });
+
+      function addMountain(x, z, height, baseRadius, snowy, mat) {
+        const m = new THREE.Mesh(new THREE.ConeGeometry(baseRadius, height, 6, 1, false), mat || mountainBase);
+        m.position.set(x, height * 0.5 - 1.5, z);
+        m.rotation.y = rand() * Math.PI;
         m.castShadow = false;
         group.add(m);
-      });
+        if (snowy && height > 22) {
+          const cap = new THREE.Mesh(new THREE.ConeGeometry(baseRadius * 0.35, height * 0.28, 6), mountainSnow);
+          cap.position.set(x, height * 0.86 - 1.5, z);
+          cap.rotation.y = m.rotation.y;
+          cap.castShadow = false;
+          group.add(cap);
+        }
+      }
 
-      // ── Neighborhood: two rows of modern flat-roofed houses, pushed well back ──
-      // Row 1: x=-58 to -68, varied z
-      const row1 = [
-        [-60, -32, 6, 3.6, 5], [-64, -20, 7, 4.8, 5.5], [-58, -8, 5.5, 3.2, 4.5],
-        [-62,  4,  6.5, 5.2, 5], [-60, 16, 7, 3.8, 5.5], [-64, 28, 6, 4.4, 5],
+      // West mountain range — biggest and most prominent (behind the neighborhood)
+      const westMountains = [
+        { x: -130, z: -80, h: 38, r: 22, snow: true },
+        { x: -150, z: -50, h: 52, r: 28, snow: true },
+        { x: -160, z: -10, h: 68, r: 34, snow: true },
+        { x: -155, z:  30, h: 48, r: 26, snow: true },
+        { x: -140, z:  70, h: 42, r: 24, snow: true },
+        { x: -120, z:  95, h: 32, r: 20, snow: false },
+        { x: -110, z: -100, h: 30, r: 18, snow: false },
+        // closer foothills
+        { x: -100, z: -40, h: 22, r: 16, snow: false, mat: mountainBase },
+        { x:  -95, z:  20, h: 20, r: 14, snow: false, mat: mountainBase },
       ];
-      // Row 2: x=-72 to -84, varied z
-      const row2 = [
-        [-72, -28, 8, 6, 6.5], [-76, -14, 7, 4.2, 6], [-74, 0, 9, 7.5, 7],
-        [-72,  14, 7.5, 5, 6], [-78, 26, 8.5, 6.5, 7], [-80, -5, 7, 8, 6.5],
+      westMountains.forEach(({x, z, h, r, snow, mat}) => addMountain(x, z, h, r, snow, mat));
+
+      // North mountain range
+      const northMountains = [
+        { x: -60, z: 140, h: 36, r: 22, snow: true },
+        { x: -20, z: 155, h: 44, r: 26, snow: true },
+        { x:  20, z: 150, h: 38, r: 24, snow: true },
+        { x:  60, z: 145, h: 30, r: 20, snow: false },
+        { x:   0, z: 120, h: 24, r: 16, snow: false, mat: mountainBase },
+        { x: -40, z: 115, h: 22, r: 14, snow: false, mat: mountainBase },
+        { x:  40, z: 118, h: 26, r: 17, snow: false, mat: mountainBase },
       ];
-      [...row1, ...row2].forEach(([vx, vz, vw, vh, vd]) => {
+      northMountains.forEach(({x, z, h, r, snow, mat}) => addMountain(x, z, h, r, snow, mat));
+
+      // South mountain range
+      const southMountains = [
+        { x: -60, z: -140, h: 34, r: 22, snow: true },
+        { x: -20, z: -155, h: 42, r: 26, snow: true },
+        { x:  20, z: -150, h: 36, r: 24, snow: true },
+        { x:  60, z: -145, h: 28, r: 20, snow: false },
+        { x:   0, z: -120, h: 22, r: 16, snow: false, mat: mountainBase },
+        { x: -40, z: -115, h: 24, r: 14, snow: false, mat: mountainBase },
+        { x:  40, z: -118, h: 26, r: 17, snow: false, mat: mountainBase },
+      ];
+      southMountains.forEach(({x, z, h, r, snow, mat}) => addMountain(x, z, h, r, snow, mat));
+
+      // Far distant haze mountains (very subtle backdrop)
+      for (let i = 0; i < 12; i++) {
+        const ang = (i / 12) * Math.PI * 2;
+        const r = 220 + rand() * 30;
+        const fx = Math.cos(ang) * r;
+        const fz = Math.sin(ang) * r;
+        const fh = 40 + rand() * 30;
+        addMountain(fx, fz, fh, 28 + rand() * 10, true, mountainFar);
+      }
+
+      // ─────────────────────────────────────────────────────────
+      // 5. NEIGHBORHOOD — modern white villas in 2 clusters with detail
+      // ─────────────────────────────────────────────────────────
+      const villas = [
+        // [x, z, w, h, d, hasPool, hasGarage]
+        [-58, -32, 9, 4.2, 7, false, true],
+        [-62, -20, 7, 5.6, 5.5, true, false],
+        [-58,  -8, 8, 3.8, 6, false, true],
+        [-64,   4, 7.5, 6.4, 5.5, true, false],
+        [-58,  16, 9, 4.2, 7, false, true],
+        [-62,  28, 8, 5.4, 6, true, false],
+        [-78, -28, 10, 7.5, 7.5, true, true],
+        [-82, -14, 8, 5.2, 6.5, false, false],
+        [-80,   2, 9, 8.4, 7, true, true],
+        [-82,  16, 8.5, 6, 6.8, false, true],
+        [-78,  30, 10, 7, 7.5, true, false],
+      ];
+      villas.forEach(([vx, vz, vw, vh, vd, pool, garage]) => {
+        // Main wall
         const wall = addBox(group, vx, vh * 0.5, vz, vw, vh, vd, beach.suburbWall, null, 0);
         wall.castShadow = false;
-        const roof = addBox(group, vx, vh + 0.18, vz, vw + 0.5, 0.32, vd + 0.4, beach.suburbRoof, null, 0);
+        // Flat roof
+        const roof = addBox(group, vx, vh + 0.18, vz, vw + 0.6, 0.36, vd + 0.5, beach.suburbRoof, null, 0);
         roof.castShadow = false;
-        // Window slots (dark recessed boxes)
-        addBox(group, vx + 0.01, vh * 0.55, vz, 0.04, vh * 0.3, vd * 0.4, beach.blackIron, null, 0);
+        // Roof parapet
+        addBox(group, vx, vh + 0.5, vz, vw + 0.7, 0.25, 0.18, beach.suburbWall, null, 0).castShadow = false;
+        // Windows — strip of dark glass on front (east face)
+        addBox(group, vx + vw * 0.5 + 0.02, vh * 0.6, vz, 0.04, vh * 0.45, vd * 0.7, beach.glass, null, 0);
+        // Garage door (if applicable)
+        if (garage) {
+          addBox(group, vx + vw * 0.5 + 0.02, vh * 0.25, vz - vd * 0.3, 0.04, vh * 0.4, vd * 0.3, beach.darkWood, null, 0);
+        }
+        // Pool in the yard
+        if (pool) {
+          const py = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 1.6, 1, 1), beach.poolWater);
+          py.rotation.x = -Math.PI / 2;
+          py.position.set(vx + vw * 0.5 + 2.5, 0.05, vz);
+          py.userData.beachWater = true;
+          py.userData.baseY = py.position.y;
+          group.add(py);
+          waterMeshes.push(py);
+          // Pool surround
+          addBox(group, vx + vw * 0.5 + 2.5, 0.03, vz, 3.4, 0.06, 2.2, beach.marble, null, 0).castShadow = false;
+        }
       });
 
-      // ── Clifftop palms along east edge ──
-      [[-28, 6.2], [-14, 5.6], [-2, 6.0], [10, 5.8], [24, 6.2], [32, 5.4], [-34, 5.2]].forEach(([pz, ph]) => {
+      // ─────────────────────────────────────────────────────────
+      // 6. DENSE 3D PALM TREE RINGS — three concentric rings
+      // ─────────────────────────────────────────────────────────
+      const palmRings = [
+        { r: 50, count: 16, hMin: 4.0, hMax: 5.5 },  // close ring
+        { r: 75, count: 22, hMin: 4.5, hMax: 6.5 },  // mid ring
+        { r: 105, count: 28, hMin: 5.5, hMax: 7.8 }, // far ring
+      ];
+      palmRings.forEach(({ r, count, hMin, hMax }) => {
+        for (let i = 0; i < count; i++) {
+          const ang = (i / count) * Math.PI * 2 + rand() * 0.3;
+          const rJit = r + (rand() - 0.5) * 12;
+          const px = Math.cos(ang) * rJit;
+          const pz = Math.sin(ang) * rJit;
+          // Skip if inside arena bounds
+          if (Math.abs(px) < ARENA_HX + 6 && Math.abs(pz) < ARENA_HZ + 6) continue;
+          // Skip if in ocean (east) or on top of villas
+          if (px > 38) continue;
+          const ph = hMin + rand() * (hMax - hMin);
+          addBeachPalm(group, beach, px, pz, ph);
+        }
+      });
+
+      // Clifftop palms (existing east edge)
+      [[-30, 6.4], [-16, 5.8], [-3, 6.1], [11, 5.9], [25, 6.3], [33, 5.5], [-35, 5.2]].forEach(([pz, ph]) => {
         addBeachPalm(group, beach, 37.5 + (pz % 3) * 0.4, pz, ph);
       });
 
-      // ── Background palms between arena and neighborhood ──
-      [[-50,-30,4.4],[-52,-18,4.0],[-54,-4,4.6],[-50,10,4.2],[-56,22,4.4],
-       [-52,34,4.0],[-46,-24,3.8],[-48,6,4.2],[-46,18,3.6]].forEach(([px, pz, ph]) => {
-        addBeachPalm(group, beach, px, pz, ph);
-      });
-
-      // ── Dock / pier ──
+      // ─────────────────────────────────────────────────────────
+      // 7. PIER + BOATS
+      // ─────────────────────────────────────────────────────────
       const pierDeck = addBox(group, 54, -6.55, -24, 24, 0.22, 2.6, beach.travertine, null, 0);
       pierDeck.castShadow = false;
       for (let px = 43; px <= 65; px += 4) {
-        [22, 24].forEach(pz => { // two rows of posts
-          const p = addCylinder(group, px, -7.3, -pz, 0.14, 1.5, beach.cliff, null, 0, false, 1);
+        [22, 24].forEach(pz => {
+          const p = addCylinder(group, px, -7.3, -pz, 0.14, 1.5, beach.darkWood, null, 0, false, 1);
           p.castShadow = false;
         });
       }
-      // Boat at pier end
-      const bHull = addBox(group, 67, -6.6, -24, 5, 0.8, 2, beach.suburbWall, null, 0);
-      bHull.castShadow = false;
-      const bCabin = addBox(group, 67, -5.95, -24, 2.2, 0.65, 1.4, beach.suburbRoof, null, 0);
-      bCabin.castShadow = false;
-      const bMast = addCylinder(group, 67.5, -4.5, -24, 0.07, 2.8, beach.blackIron, null, 0, false, 1);
-      bMast.castShadow = false;
+      // Lighthouse at end of pier
+      const lhBase = addCylinder(group, 67, -5.2, -24, 1.4, 2.8, beach.stucco, null, 0, false, 16);
+      lhBase.castShadow = false;
+      const lhMid = addCylinder(group, 67, -2.8, -24, 1.0, 2.0, beach.suburbWall, null, 0, false, 16);
+      lhMid.castShadow = false;
+      const lhTop = addCylinder(group, 67, -1.0, -24, 0.9, 1.4, beach.glass, null, 0, false, 16);
+      lhTop.castShadow = false;
+      const lhCap = new THREE.Mesh(new THREE.ConeGeometry(1.0, 1.0, 12), beach.terracotta);
+      lhCap.position.set(67, 0.2, -24);
+      lhCap.castShadow = false;
+      group.add(lhCap);
+      // Lighthouse glow
+      const lhLight = new THREE.PointLight(0xfff8d8, 1.2, 35);
+      lhLight.position.set(67, -1, -24);
+      group.add(lhLight);
 
-      // ── Two yachts in ocean ──
-      [[80, -20, 0.06], [90, 28, -0.05]].forEach(([yx, yz, yaw]) => {
+      // Two yachts in ocean
+      [[80, -20, 0.06], [90, 28, -0.05], [95, -45, 0.12]].forEach(([yx, yz, yaw]) => {
         const yh = addBox(group, yx, -6.2, yz, 8, 1.1, 2.4, beach.suburbWall, null, yaw);
         yh.castShadow = false;
-        const yc = addBox(group, yx, -5.3, yz, 4, 1.0, 1.7, beach.suburbRoof, null, yaw);
+        const yc = addBox(group, yx, -5.3, yz, 4, 1.0, 1.7, beach.suburbWall, null, yaw);
         yc.castShadow = false;
         const ym = addCylinder(group, yx + 0.5, -3.5, yz, 0.08, 3.5, beach.blackIron, null, 0, false, 1);
         ym.castShadow = false;
+        // Sail
+        const sail = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 3.0), new THREE.MeshStandardMaterial({ color: 0xffffff, side: THREE.DoubleSide, roughness: 0.6 }));
+        sail.position.set(yx + 0.5, -2.0, yz);
+        sail.castShadow = false;
+        group.add(sail);
       });
 
-      // ── Beach umbrellas + loungers ──
-      [-24, -12, 0, 14, 26].forEach(uz => {
-        const ux = 52 + Math.sin(uz) * 0.8;
-        const post = addCylinder(group, ux, -6.1, uz, 0.055, 1.5, beach.blackIron, null, 0, false, 1);
+      // ─────────────────────────────────────────────────────────
+      // 8. BEACH UMBRELLAS + LOUNGERS along east beach
+      // ─────────────────────────────────────────────────────────
+      const umbColors = [0xff5566, 0x5fb8ff, 0xffd23f, 0xff7ad6, 0x6fe89a];
+      [-26, -14, 0, 14, 26].forEach((uz, idx) => {
+        const ux = 52 + Math.sin(uz * 0.3) * 1.2;
+        const post = addCylinder(group, ux, -6.1, uz, 0.05, 1.5, beach.blackIron, null, 0, false, 1);
         post.castShadow = false;
-        const top = addCylinder(group, ux, -5.3, uz, 1.5, 0.07, beach.ocean, null, 0, false, 8);
+        const umbMat = new THREE.MeshStandardMaterial({ color: umbColors[idx % umbColors.length], roughness: 0.7, side: THREE.DoubleSide });
+        const top = new THREE.Mesh(new THREE.ConeGeometry(1.6, 0.6, 8), umbMat);
+        top.position.set(ux, -5.0, uz);
         top.castShadow = false;
+        group.add(top);
         [-0.7, 0.7].forEach(dz => {
           const c = addBox(group, ux + 1.6, -6.6, uz + dz, 2.0, 0.1, 0.65, beach.travertine, null, 0);
           c.castShadow = false;
         });
       });
 
-      // ── North beach (positive Z side) ──
-      const northBeach = new THREE.Mesh(new THREE.PlaneGeometry(120, 40, 1, 1), beach.beach);
-      northBeach.rotation.x = -Math.PI / 2;
-      northBeach.position.set(0, -0.02, 62);
-      group.add(northBeach);
-      const northOcean = new THREE.Mesh(new THREE.PlaneGeometry(200, 80, 1, 1), beach.ocean);
-      northOcean.rotation.x = -Math.PI / 2;
-      northOcean.position.set(0, -6.5, 118);
-      northOcean.userData.beachWater = true;
-      northOcean.userData.baseY = northOcean.position.y;
-      group.add(northOcean);
-      waterMeshes.push(northOcean);
+      // ─────────────────────────────────────────────────────────
+      // 9. SCATTERED BEACH ROCKS for natural detail
+      // ─────────────────────────────────────────────────────────
+      const rockMat = new THREE.MeshStandardMaterial({ color: 0xa8a09a, roughness: 0.95, metalness: 0, flatShading: true });
+      for (let i = 0; i < 24; i++) {
+        const ang = rand() * Math.PI * 2;
+        const r = 50 + rand() * 60;
+        const rx = Math.cos(ang) * r;
+        const rz = Math.sin(ang) * r;
+        if (Math.abs(rx) < ARENA_HX + 5 && Math.abs(rz) < ARENA_HZ + 5) continue;
+        if (rx > 38) continue;
+        const rockSize = 0.6 + rand() * 1.4;
+        const rock = new THREE.Mesh(new THREE.IcosahedronGeometry(rockSize, 0), rockMat);
+        rock.position.set(rx, rockSize * 0.4 - 0.1, rz);
+        rock.rotation.set(rand(), rand() * Math.PI * 2, rand());
+        rock.castShadow = false;
+        group.add(rock);
+      }
 
-      // ── South beach (negative Z side) ──
-      const southBeach = new THREE.Mesh(new THREE.PlaneGeometry(120, 40, 1, 1), beach.beach);
-      southBeach.rotation.x = -Math.PI / 2;
-      southBeach.position.set(0, -0.02, -62);
-      group.add(southBeach);
-      const southOcean = new THREE.Mesh(new THREE.PlaneGeometry(200, 80, 1, 1), beach.ocean);
-      southOcean.rotation.x = -Math.PI / 2;
-      southOcean.position.set(0, -6.5, -118);
-      southOcean.userData.beachWater = true;
-      southOcean.userData.baseY = southOcean.position.y;
-      group.add(southOcean);
-      waterMeshes.push(southOcean);
+      // ─────────────────────────────────────────────────────────
+      // 10. SEAGULLS / DISTANT BIRDS for life
+      // ─────────────────────────────────────────────────────────
+      const birdMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      for (let i = 0; i < 12; i++) {
+        const bx = 40 + rand() * 80;
+        const bz = (rand() - 0.5) * 120;
+        const by = 12 + rand() * 18;
+        const bird = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.05, 0.15), birdMat);
+        bird.position.set(bx, by, bz);
+        bird.rotation.y = rand() * Math.PI * 2;
+        bird.rotation.z = (rand() - 0.5) * 0.4;
+        group.add(bird);
+      }
 
-      // ── Mountains on all three non-ocean sides ──
-      // Each layer: closer = greener/darker, further = lighter/hazier
-      // South mountains (facing north toward player) — z negative
-      [
-        { z: -160, w: 380, h: 52, seed: 1.2, baseY: -28 },
-        { z: -130, w: 340, h: 38, seed: 3.1, baseY: -18 },
-        { z: -108, w: 300, h: 28, seed: 5.5, baseY: -10 },
-      ].forEach(({ z, w, h, seed, baseY }) => {
-        const m = new THREE.Mesh(createRooftopHillGeometry(w, h, seed), beach.hills);
-        m.position.set(0, baseY, z);
-        m.castShadow = false;
-        group.add(m);
-      });
-
-      // North mountains (facing south, rotated 180°) — z positive
-      [
-        { z: 160, w: 360, h: 48, seed: 2.4, baseY: -26 },
-        { z: 132, w: 320, h: 35, seed: 4.6, baseY: -16 },
-        { z: 110, w: 280, h: 26, seed: 6.8, baseY: -9  },
-      ].forEach(({ z, w, h, seed, baseY }) => {
-        const m = new THREE.Mesh(createRooftopHillGeometry(w, h, seed), beach.hills);
-        m.position.set(0, baseY, z);
-        m.rotation.y = Math.PI;
-        m.castShadow = false;
-        group.add(m);
-      });
-
-      // West mountains (facing east, rotated -90°) — x negative
-      [
-        { x: -160, w: 380, h: 55, seed: 0.6, baseY: -30 },
-        { x: -130, w: 320, h: 40, seed: 2.8, baseY: -20 },
-        { x: -100, w: 260, h: 30, seed: 5.0, baseY: -12 },
-      ].forEach(({ x, w, h, seed, baseY }) => {
-        const m = new THREE.Mesh(createRooftopHillGeometry(w, h, seed), beach.hills);
-        m.position.set(x, baseY, 0);
-        m.rotation.y = -Math.PI / 2;
-        m.castShadow = false;
-        group.add(m);
-      });
-
-      // ── Atmospheric haze panels over water on all sides ──
-      [[90, 8, 0, 0], [0, 4, 110, -Math.PI/2], [0, 4, -110, Math.PI/2]].forEach(([hx, hy, hz, ry]) => {
-        const haze = new THREE.Mesh(new THREE.PlaneGeometry(200, 50, 1, 1), beach.haze);
+      // ─────────────────────────────────────────────────────────
+      // 11. ATMOSPHERIC HAZE
+      // ─────────────────────────────────────────────────────────
+      [[100, 10, 0, 0], [0, 8, 130, -Math.PI/2], [0, 8, -130, Math.PI/2], [-130, 8, 0, Math.PI/2]].forEach(([hx, hy, hz, ry]) => {
+        const haze = new THREE.Mesh(new THREE.PlaneGeometry(220, 60, 1, 1), beach.haze);
         haze.position.set(hx, hy, hz);
         haze.rotation.y = ry;
         haze.rotation.x = -Math.PI * 0.06;
