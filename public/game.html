@@ -5709,6 +5709,8 @@
       addBeachMansionHouse(group, colliders, shootables, coverPoints, beach);
       addSpawnMark(group, -34, 0, BLUE, false);
       addSpawnMark(group, 34, 0, RED, false);
+      addBeachSpawnFlag(group, -34, 0, BLUE);
+      addBeachSpawnFlag(group, 34, 0, RED);
       finalizeMapShadows(group);
       beachWater.forEach((mesh) => { mesh.castShadow = false; mesh.receiveShadow = false; });
       return {
@@ -5883,10 +5885,11 @@
       addBox(group, -39.5, 1.0, 4.5, 0.6, 2.0, 0.6, beach.stucco, colliders, 0);
       addBox(group, -39.5, 2.08, -4.5, 0.7, 0.08, 0.7, beach.darkSteel, null, 0);
       addBox(group, -39.5, 2.08, 4.5, 0.7, 0.08, 0.7, beach.darkSteel, null, 0);
-      addBox(group, -22, 1.0, -14.55, 36, 2.0, 0.4, beach.stucco, colliders, 0);
-      addBox(group, -22, 1.0, 14.55, 36, 2.0, 0.4, beach.stucco, colliders, 0);
-      addBox(group, -22, 2.08, -14.55, 36, 0.08, 0.45, beach.darkSteel, null, 0);
-      addBox(group, -22, 2.08, 14.55, 36, 0.08, 0.45, beach.darkSteel, null, 0);
+      [-14.55, 14.55].forEach((z) => {
+        addBox(group, -34, 0.34, z, 6.0, 0.68, 0.42, beach.hedge, colliders, 0);
+        addBox(group, -23, 0.34, z, 6.5, 0.68, 0.42, beach.hedge, colliders, 0);
+        addBox(group, -10, 0.34, z, 5.0, 0.68, 0.42, beach.hedge, colliders, 0);
+      });
       addCoverPoints(points, -38, -9.5, 3, 1.0, 'blue', 1.2);
       addCoverPoints(points, -38, 9.5, 3, 1.0, 'blue', 1.2);
 
@@ -6036,26 +6039,30 @@
       addCylinder(group, -15.5, 2.1, -1.6, 0.07, 4.2, beach.darkSteel, null, 0, false, 1);
       addCylinder(group, -15.5, 2.1, 1.6, 0.07, 4.2, beach.darkSteel, null, 0, false, 1);
       // Dark door frame
-      addBox(group, -12, 1.78, 0, wt + 0.06, 3.6, 2.6, beach.darkSteel, null, 0);
+      addBox(group, -12, 1.78, -1.35, wt + 0.06, 3.6, 0.12, beach.darkSteel, null, 0);
+      addBox(group, -12, 1.78, 1.35, wt + 0.06, 3.6, 0.12, beach.darkSteel, null, 0);
+      addBox(group, -12, 3.58, 0, wt + 0.06, 0.12, 2.8, beach.darkSteel, null, 0);
 
-      // Ground floor back wall (x=6) — pilasters + large glass barriers
+      // Ground floor back wall (x=6) — pilasters + large glass barriers with patio door
       addBox(group, 6, gfh * 0.5, -14, wt, gfh, 1.0, beach.stucco, colliders, 0);
       addBox(group, 6, gfh * 0.5, 14, wt, gfh, 1.0, beach.stucco, colliders, 0);
-      addBox(group, 6, gfh * 0.5, 0, wt, gfh, 0.7, beach.stucco, colliders, 0);
-      addBeachGlassBarrier(group, colliders, 6, gfh * 0.5, -7.2, wt, gfh, 12.6, beach.glass);
-      addBeachGlassBarrier(group, colliders, 6, gfh * 0.5, 7.2, wt, gfh, 12.6, beach.glass);
+      addBeachGlassBarrier(group, colliders, 6, gfh * 0.5, -8.4, wt, gfh, 10.8, beach.glass);
+      addBeachGlassBarrier(group, colliders, 6, gfh * 0.5, 8.4, wt, gfh, 10.8, beach.glass);
+      addBox(group, 6, 1.6, -1.55, wt + 0.08, 3.2, 0.12, beach.darkSteel, null, 0);
+      addBox(group, 6, 1.6, 1.55, wt + 0.08, 3.2, 0.12, beach.darkSteel, null, 0);
+      addBox(group, 6, 3.25, 0, wt + 0.08, 0.12, 3.2, beach.darkSteel, null, 0);
       // Glass frame rails
       [-14, 0, 14].forEach((z) => {
         addBox(group, 6, gfh + 0.02, z, wt + 0.04, 0.08, 14, beach.darkSteel, null, 0);
       });
 
       // Ground floor south wall (z=-14) — solid stucco + glass overlay
-      addBeachWallZ(group, colliders, -14, -12, 6, 0, gfh, beach.stucco, [], wt);
+      addBeachWallZ(group, colliders, -14, -12, 6, 0, gfh, beach.stucco, [{ from: -6.0, to: -2.8, height: 3.2 }, { from: 1.8, to: 4.8, height: 3.2 }], wt);
       addBox(group, -3, 2.75, -14, 5.5, 3.0, wt + 0.05, beach.glass, null, 0);
       addBox(group, 3.5, 2.75, -14, 4.0, 3.0, wt + 0.05, beach.glass, null, 0);
 
       // Ground floor north wall (z=14) — solid stucco + glass overlay
-      addBeachWallZ(group, colliders, 14, -12, 6, 0, gfh, beach.stucco, [], wt);
+      addBeachWallZ(group, colliders, 14, -12, 6, 0, gfh, beach.stucco, [{ from: -6.0, to: -2.8, height: 3.2 }, { from: 1.8, to: 4.8, height: 3.2 }], wt);
       addBox(group, -3, 2.75, 14, 5.5, 3.0, wt + 0.05, beach.glass, null, 0);
       addBox(group, 3.5, 2.75, 14, 4.0, 3.0, wt + 0.05, beach.glass, null, 0);
 
@@ -6409,6 +6416,14 @@
         group.add(leaf);
       }
       addCylinder(group, x, 1.0, z, 0.06, 2.0, beach.lawn, null, 0, false, 1);
+    }
+
+    function addBeachSpawnFlag(group, x, z, color) {
+      const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.48, metalness: 0.02, envMap: environmentMap, envMapIntensity: 0.3 });
+      addCylinder(group, x, 1.0, z, 0.055, 2.0, materials.darkGrey, null, 0, false, 1);
+      addBox(group, x, 1.7, z + 0.48, 0.07, 0.62, 1.0, mat, null, 0);
+      addBox(group, x, 0.035, z, 4.4, 0.018, 0.18, mat, null, 0);
+      addBox(group, x, 0.036, z, 0.18, 0.018, 4.4, mat, null, 0);
     }
 
     function createRooftopMaterials() {
@@ -13260,18 +13275,25 @@
 
     function buildBeachMansionMiniMap() {
       let html = '<rect width="180" height="120" fill="rgba(219,199,153,0.92)"/>';
+      html += miniRect(39, 0, 2.2, 60, 'rgba(40,122,164,0.55)', 'rgba(188,236,255,0.65)', 0, 0.9);
+      html += miniRect(36.5, 0, 2.1, 56, 'rgba(86,78,64,0.62)', 'rgba(255,241,208,0.5)', 0, 0.85);
       html += miniRect(-36, 0, 8, 60, 'rgba(49,54,58,0.82)', '#f8f1d4', 0, 1);
-      html += miniRect(-28, 0, 14, 8, 'rgba(216,195,154,0.9)', '#fff1d0', 0, 0.95);
-      html += miniRect(-5, 0, 30, 34, 'rgba(255,251,240,0.92)', '#9d7f55', 0, 1);
-      html += miniRect(-6.6, 0, 7.2, 10.0, 'rgba(25,25,25,0.28)', '#222222', 0, 0.9);
-      html += miniRect(13.7, 0, 9.4, 24.0, 'rgba(216,195,154,0.88)', '#fff1d0', 0, 0.95);
-      html += miniRect(25.2, -10.5, 11.6, 5.4, 'rgba(43,183,212,0.9)', '#bff5ff', 0, 0.98);
-      html += miniRect(25.2, 7.8, 8.2, 1.2, '#fffaf0', '#9d7f55', 0.12, 0.95);
-      html += miniRect(30.8, -2.0, 1.2, 8.2, '#fffaf0', '#9d7f55', -0.08, 0.95);
-      html += miniRect(-11.3, 8.3, 9.8, 4.6, 'rgba(194,164,112,0.92)', '#fff1d0', 0, 0.95);
-      html += miniRect(10.5, -11.3, 6.6, 3.8, 'rgba(194,164,112,0.92)', '#fff1d0', 0, 0.95);
+      html += miniRect(-26, 0, 28, 7.5, 'rgba(212,206,200,0.9)', '#fff1d0', 0, 0.95);
+      html += miniRect(-3, 0, 18, 28, 'rgba(250,248,245,0.92)', '#9d7f55', 0, 1);
+      html += miniRect(8, 0, 4, 10, 'rgba(240,232,216,0.86)', '#fff1d0', 0, 0.95);
+      html += miniRect(-4, 11.5, 10, 2.2, 'rgba(92,58,18,0.8)', '#fff1d0', 0, 0.9);
+      html += miniRect(23, 0, 13.6, 7.6, 'rgba(0,170,204,0.86)', '#bff5ff', 0, 0.98);
+      html += miniRect(16, -10.8, 18, 7.4, 'rgba(58,122,42,0.58)', '#6ea85b', 0, 0.8);
+      html += miniRect(16, 10.8, 18, 7.4, 'rgba(58,122,42,0.58)', '#6ea85b', 0, 0.8);
+      [[-34,-14.55,6,0.42],[-23,-14.55,6.5,0.42],[-10,-14.55,5,0.42],[-34,14.55,6,0.42],[-23,14.55,6.5,0.42],[-10,14.55,5,0.42],[-22,-3.8,16,0.5],[-22,3.8,16,0.5]].forEach((p) => { html += miniRect(p[0], p[1], p[2], p[3], 'rgba(26,58,26,0.82)', 'rgba(255,241,208,0.55)', 0, 0.92); });
+      [[-6.5,-2.5,6,1.2],[-5,-2.5,2.5,1.2],[1.5,10.5,4.5,2.0],[1.5,5,3.0,1.4],[16,-8.5,4.5,4.5],[8.5,10.2,4.5,3.5],[8.8,-1.5,2.0,0.72],[8.8,1.5,2.0,0.72]].forEach((p) => { html += miniRect(p[0], p[1], p[2], p[3], 'rgba(70,45,24,0.72)', '#f7efe0', 0, 0.78); });
+      [[-12,0,1.4,2.7],[6,0,1.4,3.4],[-4.4,-14,3.2,1.4],[3.3,-14,3.0,1.4],[-4.4,14,3.2,1.4],[3.3,14,3.0,1.4]].forEach((p) => { html += miniRect(p[0], p[1], p[2], p[3], 'rgba(255,255,255,0.44)', 'rgba(255,255,255,0.88)', 0, 0.9); });
       html += miniCircle(-34, 0, 4.5, 'rgba(35,100,222,0.26)', '#2364de', 1);
       html += miniCircle(34, 0, 4.5, 'rgba(192,21,26,0.26)', '#c0151a', 1);
+      html += miniRect(-34, 0, 4.4, 0.2, '#2364de', '#2364de', 0, 0.9);
+      html += miniRect(-34, 0, 0.2, 4.4, '#2364de', '#2364de', 0, 0.9);
+      html += miniRect(34, 0, 4.4, 0.2, '#c0151a', '#c0151a', 0, 0.9);
+      html += miniRect(34, 0, 0.2, 4.4, '#c0151a', '#c0151a', 0, 0.9);
       html += '<path d="M' + miniX(38.5).toFixed(1) + ',0 L' + miniX(38.5).toFixed(1) + ',120" stroke="rgba(130,92,54,0.9)" stroke-width="2" stroke-dasharray="5 4"/>';
       html += '<rect x="1" y="1" width="178" height="118" fill="none" stroke="rgba(255,255,255,0.88)" stroke-width="2"/>';
       return html;
