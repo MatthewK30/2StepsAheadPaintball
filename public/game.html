@@ -5994,20 +5994,37 @@
         addBox(group, 8.5, 5.8, z, 5.5, 0.18, 0.2, beach.darkSteel, null, 0);
       });
 
-      // Palm trees
+      // Palm trees — backyard cluster (original)
       addBeachPalm(group, beach, 34, -17, 6.5);
       addBeachPalm(group, beach, 34, 17, 6.2);
       addBeachPalm(group, beach, 28, -22, 5.8);
       addBeachPalm(group, beach, 28, 22, 5.5);
       addBeachPalm(group, beach, 36, 2, 7.0);
+      // Palm trees — perimeter: south side wall (z≈-13, inside of wall)
+      addBeachPalm(group, beach, -8,  -13, 5.2);
+      addBeachPalm(group, beach,  0,  -13, 5.5);
+      addBeachPalm(group, beach,  8,  -13, 5.8);
+      addBeachPalm(group, beach, 16,  -13, 5.6);
+      addBeachPalm(group, beach, 24,  -13, 6.0);
+      // Palm trees — perimeter: north side wall (z≈13, inside of wall)
+      addBeachPalm(group, beach, -8,   13, 5.3);
+      addBeachPalm(group, beach,  0,   13, 5.6);
+      addBeachPalm(group, beach,  8,   13, 5.8);
+      addBeachPalm(group, beach, 16,   13, 5.5);
+      addBeachPalm(group, beach, 24,   13, 6.1);
+      // Palm trees — perimeter: front corners flanking gate
+      addBeachPalm(group, beach, -38, -11, 5.0);
+      addBeachPalm(group, beach, -38,  11, 5.0);
 
       // Tropical plant clusters at boundary
       for (let ti = 0; ti < 5; ti++) {
         addBeachTropicalCluster(group, beach, 35 + (ti % 2) * 2, -14 + ti * 7);
       }
 
-      // Palm uplights
-      [[34, -17], [34, 17], [36, 2]].forEach(([px, pz]) => {
+      // Palm uplights — backyard + perimeter
+      [[-8,-13],[0,-13],[8,-13],[16,-13],[24,-13],
+       [-8, 13],[0, 13],[8, 13],[16, 13],[24, 13],
+       [34,-17],[34,17],[36,2],[-38,-11],[-38,11]].forEach(([px, pz]) => {
         const ul = new THREE.Mesh(geometries.cylinderLow, beach.emissiveWarm);
         ul.position.set(px, 0.06, pz);
         ul.scale.set(0.1, 0.1, 0.1);
