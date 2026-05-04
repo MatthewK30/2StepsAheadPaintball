@@ -5735,35 +5735,36 @@
     function createBeachMansionMaterials() {
       const standard = (color, opts = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.82, metalness: 0.02, envMap: environmentMap, envMapIntensity: 0.28, ...opts });
       const basic = (color, opts = {}) => new THREE.MeshBasicMaterial({ color, ...opts });
-      const stucco = standard(0xfffbf0, { roughness: 0.92, metalness: 0, envMapIntensity: 0.18 });
-      const travertine = standard(0xd8c39a, { roughness: 0.88, metalness: 0.02, envMapIntensity: 0.22 });
-      const terracotta = standard(0xb85a2b, { roughness: 0.78, metalness: 0.02, envMapIntensity: 0.18 });
+      // Modern white mansion: clean white walls, light grey concrete, flat white roof
+      const stucco = standard(0xf8f8f6, { roughness: 0.88, metalness: 0.01, envMapIntensity: 0.28 });
+      const travertine = standard(0xd4d4ce, { roughness: 0.82, metalness: 0.02, envMapIntensity: 0.26 });
+      const terracotta = standard(0xe2e2de, { roughness: 0.85, metalness: 0.01, envMapIntensity: 0.22 }); // flat grey modern roof
       textureLibrary.apply(stucco, 'concrete', 3.6, 2.8);
       textureLibrary.apply(travertine, 'concrete', 5, 4);
       textureLibrary.apply(terracotta, 'concrete', 2.4, 2.4);
       return {
-        ground: standard(0xf5e6c8, { roughness: 1, metalness: 0, vertexColors: true, envMapIntensity: 0.12 }),
+        ground: standard(0xd8e8d0, { roughness: 1, metalness: 0, vertexColors: true, envMapIntensity: 0.12 }),
         stucco,
         travertine,
         terracotta,
-        marble: standard(0xf7efe0, { roughness: 0.6, metalness: 0.03, envMapIntensity: 0.34 }),
-        wood: standard(0x7a573a, { roughness: 0.86, metalness: 0.02, envMapIntensity: 0.2 }),
-        darkWood: standard(0x3d2819, { roughness: 0.9, metalness: 0.02, envMapIntensity: 0.16 }),
-        glass: new THREE.MeshPhysicalMaterial({ color: 0xbfe6ff, roughness: 0.08, metalness: 0, transmission: 0.55, thickness: 0.16, transparent: true, opacity: 0.45, envMap: environmentMap, envMapIntensity: 0.8 }),
-        hedge: standard(0x2f7f3a, { roughness: 1, metalness: 0, envMapIntensity: 0.08 }),
-        flower: standard(0xd45672, { roughness: 0.86, metalness: 0, envMapIntensity: 0.12 }),
-        asphalt: standard(0x32363a, { roughness: 0.95, metalness: 0.01, envMapIntensity: 0.12 }),
-        line: standard(0xf8f1d4, { roughness: 0.5, metalness: 0, transparent: true, opacity: 0.72, depthWrite: false }),
-        poolWater: standard(0x2bb7d4, { roughness: 0.18, metalness: 0, transparent: true, opacity: 0.72, emissive: 0x0b5f78, emissiveIntensity: 0.18, side: THREE.DoubleSide }),
-        ocean: basic(0x1d88bd, { transparent: true, opacity: 0.72, side: THREE.DoubleSide }),
-        beach: basic(0xe8d39a, { side: THREE.DoubleSide }),
-        cliff: basic(0x9b7a57),
-        suburbWall: basic(0xf1e6d0),
-        suburbRoof: basic(0xb85a2b),
-        hills: basic(0x7ca172, { transparent: true, opacity: 0.48, side: THREE.DoubleSide, depthWrite: false }),
-        haze: basic(0xccefff, { transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide }),
-        rail: standard(0xfaf6e8, { roughness: 0.72, metalness: 0.02, envMapIntensity: 0.24 }),
-        blackIron: standard(0x1b1a18, { roughness: 0.5, metalness: 0.72, envMapIntensity: 0.45 }),
+        marble: standard(0xf2f2f0, { roughness: 0.45, metalness: 0.04, envMapIntensity: 0.42 }),
+        wood: standard(0x5a4030, { roughness: 0.82, metalness: 0.02, envMapIntensity: 0.2 }),
+        darkWood: standard(0x28201a, { roughness: 0.88, metalness: 0.02, envMapIntensity: 0.16 }),
+        glass: new THREE.MeshPhysicalMaterial({ color: 0xa8d8f0, roughness: 0.04, metalness: 0.1, transmission: 0.65, thickness: 0.12, transparent: true, opacity: 0.38, envMap: environmentMap, envMapIntensity: 1.2 }),
+        hedge: standard(0x3a8c42, { roughness: 0.98, metalness: 0, envMapIntensity: 0.1 }),
+        flower: standard(0x58a8e8, { roughness: 0.82, metalness: 0, envMapIntensity: 0.14 }), // modern blue accents
+        asphalt: standard(0x3a3e42, { roughness: 0.92, metalness: 0.02, envMapIntensity: 0.14 }),
+        line: standard(0xffffff, { roughness: 0.45, metalness: 0, transparent: true, opacity: 0.8, depthWrite: false }),
+        poolWater: standard(0x22c4e8, { roughness: 0.12, metalness: 0, transparent: true, opacity: 0.78, emissive: 0x0880a0, emissiveIntensity: 0.22, side: THREE.DoubleSide }),
+        ocean: basic(0x1a9ad4, { transparent: true, opacity: 0.76, side: THREE.DoubleSide }),
+        beach: basic(0xecd9a8, { side: THREE.DoubleSide }),
+        cliff: basic(0xb8c4c0),
+        suburbWall: basic(0xf0f0ee), // modern white background houses
+        suburbRoof: basic(0xb8baba), // flat grey roofs
+        hills: basic(0x5a9e6a, { transparent: true, opacity: 0.52, side: THREE.DoubleSide, depthWrite: false }),
+        haze: basic(0xd0eeff, { transparent: true, opacity: 0.26, depthWrite: false, side: THREE.DoubleSide }),
+        rail: standard(0xd8d8d4, { roughness: 0.42, metalness: 0.28, envMapIntensity: 0.6 }), // steel rail
+        blackIron: standard(0x222222, { roughness: 0.38, metalness: 0.82, envMapIntensity: 0.7 }),
         invisible: new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0, depthWrite: false })
       };
     }
@@ -5778,11 +5779,11 @@
         const x = pos.getX(i);
         const z = pos.getZ(i);
         const noise = Math.sin(x * 0.31 + z * 0.17) * 0.025 + Math.cos(z * 0.43) * 0.018;
-        if (x < -30) color.setHex(0x34383c).offsetHSL(0, 0, noise);
-        else if (x < -20) color.setHex(0x5f9f4a).offsetHSL(0.02, 0.03, noise);
-        else if (x < 12) color.setHex(0xd8c39a).offsetHSL(0, 0, noise * 0.7);
-        else if (x < 34) color.setHex(0xc9b083).offsetHSL(0, 0, noise * 0.8);
-        else color.setHex(0xa98960).offsetHSL(0, -0.02, noise);
+        if (x < -30) color.setHex(0x3c4040).offsetHSL(0, 0, noise);
+        else if (x < -20) color.setHex(0x4a9450).offsetHSL(0.02, 0.04, noise); // green lawn
+        else if (x < 12) color.setHex(0x5aaa60).offsetHSL(0.01, 0.03, noise * 0.7); // bright lawn
+        else if (x < 34) color.setHex(0x68b870).offsetHSL(0, 0.02, noise * 0.8); // lawn near pool
+        else color.setHex(0xdfd0a0).offsetHSL(0, -0.01, noise); // sand at far edge
         colors.push(color.r, color.g, color.b);
       }
       geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
@@ -5925,7 +5926,7 @@
 
       const lightPositions = [[-12, 2.45, -10], [-12, 2.45, 10], [1.5, 2.45, -10], [1.5, 2.45, 10], [-9, 5.35, 0], [4.5, 5.35, 0]];
       lightPositions.forEach((p) => {
-        const light = new THREE.PointLight(0xfff1d0, 0.42, 12);
+        const light = new THREE.PointLight(0xf0f8ff, 0.48, 14);
         light.position.set(p[0], p[1], p[2]);
         light.castShadow = false;
         group.add(light);
@@ -13238,16 +13239,16 @@
       if (active && active.ambient === 'beachmansion') {
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        scene.background = new THREE.Color(0x87CEEB);
-        scene.fog = new THREE.Fog(0x87CEEB, 120, 360);
+        scene.background = new THREE.Color(0x72bfe8);
+        scene.fog = new THREE.Fog(0x72bfe8, 130, 380);
         skyStatus = 'beachmansion-day';
-        renderer.toneMappingExposure = 0.95;
-        ambientLight.color.setHex(0xfff5e0);
-        ambientLight.intensity = 0.6;
-        hemiLight.color.setHex(0x87CEEB);
-        hemiLight.groundColor.setHex(0xf5e6c8);
-        hemiLight.intensity = 1.0;
-        keyLight.color.setHex(0xfff5e0);
+        renderer.toneMappingExposure = 1.05;
+        ambientLight.color.setHex(0xf0f8ff);
+        ambientLight.intensity = 0.75;
+        hemiLight.color.setHex(0x72bfe8);
+        hemiLight.groundColor.setHex(0x88cc90);
+        hemiLight.intensity = 1.1;
+        keyLight.color.setHex(0xffffff);
         keyLight.intensity = 2.5;
         keyLight.position.set(40, 80, 20);
         keyLight.castShadow = true;
