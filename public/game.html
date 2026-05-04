@@ -5813,68 +5813,118 @@
     }
 
     function addBeachMansionLandscape(group, colliders, beach, waterMeshes) {
-      // Ocean with wave-animated vertices
-      const oceanGeo = new THREE.PlaneGeometry(220, 90, 32, 32);
+      // ── OCEAN ──────────────────────────────────────────────────────────────
+      // Large wave-animated plane — starts at cliff base, extends to horizon
+      const oceanGeo = new THREE.PlaneGeometry(700, 500, 32, 32);
       oceanGeo.rotateX(-Math.PI / 2);
       const ocean = new THREE.Mesh(oceanGeo, beach.ocean);
-      ocean.position.set(90, -6.5, 0);
+      ocean.position.set(320, -8, 0); // x: covers x=-30 to x=670, z: ±250
       const origPos = new Float32Array(oceanGeo.attributes.position.array);
       ocean.userData.oceanWave = true;
       ocean.userData.origPositions = origPos;
       group.add(ocean);
       waterMeshes.push(ocean);
 
-      // Sun reflection path on water
+      // ── SANDY BEACH at cliff base ───────────────────────────────────────────
+      const sandMat = new THREE.MeshBasicMaterial({ color: 0xe2c98a });
+      const sandGeo = new THREE.PlaneGeometry(80, 140, 1, 1);
+      sandGeo.rotateX(-Math.PI / 2);
+      const sand = new THREE.Mesh(sandGeo, sandMat);
+      sand.position.set(80, -7.75, 0);
+      group.add(sand);
+
+      // ── CLIFF FACE (east, x=38-65) — layered rocky drop ───────────────────
+      addBox(group, 43,  -5.5, 0,  12, 13, 82, beach.cliff, null, 0);       // main face
+      addBox(group, 51,  -9,   0,  16, 10, 72, beach.cliff, null, 0.04);    // second layer
+      addBox(group, 60,  -12,  0,  18,  8, 60, beach.cliff, null, -0.03);   // receding
+      // Cliff continues north/south beyond arena (headlands curving toward ocean)
+      addBox(group, 46,  -6,  -55, 20, 12, 52, beach.cliff, null,  0.08);
+      addBox(group, 46,  -6,   55, 20, 12, 52, beach.cliff, null, -0.08);
+      addBox(group, 58,  -9,  -80, 28,  9, 45, beach.cliff, null,  0.14);
+      addBox(group, 58,  -9,   80, 28,  9, 45, beach.cliff, null, -0.14);
+      addBox(group, 75, -12, -105, 35,  7, 40, beach.cliff, null,  0.18);
+      addBox(group, 75, -12,  105, 35,  7, 40, beach.cliff, null, -0.18);
+      // Cliff continues behind blue spawn (west edge drops too)
+      addBox(group, -43, -4, -35, 10, 10, 30, beach.cliff, null, -0.06);
+      addBox(group, -43, -4,  35, 10, 10, 30, beach.cliff, null,  0.06);
+
+      // ── CLIFF GLASS BARRIER (gameplay boundary) ────────────────────────────
+      addBeachGlassBarrier(group, colliders, 38.3, 1.2, 0, 0.08, 2.4, 62, beach.glassRail);
+      for (let pz = -28; pz <= 28; pz += 5.5) {
+        addBox(group, 38.3, 1.2, pz, 0.08, 2.4, 0.08, beach.darkSteel, null, 0);
+      }
+
+      // ── COASTAL HEADLAND HILLS (north + south, curving to ocean) ──────────
+      for (let i = 0; i < 5; i++) {
+        const hw = 140 + i * 35, hh = 28 + i * 6;
+        const hs = new THREE.Mesh(createRooftopHillGeometry(hw, hh, 0.6 + i * 0.8), beach.hills);
+        hs.position.set(85 + i * 28, -4 + i * 3, -(110 + i * 32));
+        hs.rotation.y = 0.35;
+        group.add(hs);
+        const hn = new THREE.Mesh(createRooftopHillGeometry(hw, hh, 1.2 + i * 0.7), beach.hills);
+        hn.position.set(85 + i * 28, -4 + i * 3,  110 + i * 32);
+        hn.rotation.y = -0.35;
+        group.add(hn);
+      }
+
+      // ── WEST BACKGROUND — neighborhood down the hill ───────────────────────
+      for (let i = 0; i < 14; i++) {
+        const hx = -55 - (i % 4) * 9;
+        const hz = -42 + i * 6.5;
+        const hw = addBox(group, hx, 0.9, hz, 3.6, 1.9, 2.7, beach.suburbWall, null, 0.04 * ((i % 3) - 1));
+        hw.castShadow = false;
+        const hr = addBox(group, hx, 2.0, hz, 4.0, 0.3, 3.1, beach.suburbRoof, null, hw.rotation.y);
+        hr.castShadow = false;
+      }
+
+      // ── CALIFORNIA HILLS (west/northwest) ─────────────────────────────────
+      for (let i = 0; i < 4; i++) {
+        const h1 = new THREE.Mesh(createRooftopHillGeometry(200 + i * 40, 22 + i * 7, 0.4 + i * 1.2), beach.hills);
+        h1.position.set(-88 - i * 14, 5 + i * 4, -55 - i * 16);
+        h1.rotation.y = 0.14;
+        group.add(h1);
+        const h2 = new THREE.Mesh(createRooftopHillGeometry(180 + i * 35, 20 + i * 6, 0.8 + i), beach.hills);
+        h2.position.set(-85 - i * 12, 4 + i * 3,  55 + i * 14);
+        h2.rotation.y = -0.12;
+        group.add(h2);
+      }
+      // Far mountains (Santa Monica range profile)
+      for (let i = 0; i < 3; i++) {
+        const m = new THREE.Mesh(createRooftopHillGeometry(320 + i * 90, 55 + i * 18, 1.5 + i * 2), beach.hills);
+        m.position.set(-170 - i * 22, 10 + i * 6, -60 + i * 45);
+        m.rotation.y = 0.07;
+        group.add(m);
+      }
+
+      // ── CATALINA ISLAND silhouette on horizon ──────────────────────────────
+      const island = new THREE.Mesh(new THREE.PlaneGeometry(65, 10, 1, 1), beach.island);
+      island.position.set(390, 0, -120);
+      island.rotation.y = 0.22;
+      group.add(island);
+      // Second island / sea stack
+      const stack = new THREE.Mesh(new THREE.PlaneGeometry(22, 6, 1, 1), beach.island);
+      stack.position.set(310, -1, -160);
+      stack.rotation.y = 0.18;
+      group.add(stack);
+
+      // ── SUN REFLECTION PATH on water ─────────────────────────────────────
       const reflGeo = new THREE.PlaneGeometry(1, 1, 1, 1);
       reflGeo.rotateX(-Math.PI / 2);
-      const reflection = new THREE.Mesh(reflGeo, beach.sunRefl);
-      reflection.position.set(75, -6.2, -18);
-      reflection.scale.set(80, 1, 8);
-      reflection.rotation.y = 0.22;
-      group.add(reflection);
+      const refl = new THREE.Mesh(reflGeo, beach.sunRefl);
+      refl.position.set(200, -7.3, -40);
+      refl.scale.set(180, 1, 14);
+      refl.rotation.y = 0.28;
+      group.add(refl);
 
-      // Catalina Island silhouette on horizon
-      const islandGeo = new THREE.PlaneGeometry(30, 4, 1, 1);
-      const island = new THREE.Mesh(islandGeo, beach.island);
-      island.position.set(155, -4.5, -55);
-      island.rotation.y = 0.15;
-      group.add(island);
-
-      // Cliff face — series of irregular rock boxes dropping to ocean
-      addBox(group, 40.5, -3.5, 0, 4.5, 9.5, 68, beach.cliff, null, 0);
-      addBox(group, 38.5, -1.2, -26, 3.5, 5.0, 16, beach.cliff, null, 0.04);
-      addBox(group, 38.5, -1.2, 26, 3.5, 5.0, 16, beach.cliff, null, -0.04);
-      addBox(group, 42.5, -5, 0, 3.5, 8, 65, beach.cliff, null, 0);
-
-      // Cliff glass barrier — players stopped, paintballs pass through
-      addBeachGlassBarrier(group, colliders, 38.3, 1.2, 0, 0.08, 2.4, 62, beach.glassRail);
-      // Steel posts at intervals
-      for (let z = -28; z <= 28; z += 5.5) {
-        addBox(group, 38.3, 1.2, z, 0.08, 2.4, 0.08, beach.darkSteel, null, 0);
-      }
-
-      // California dry hills background
-      for (let i = 0; i < 3; i++) {
-        const hills = new THREE.Mesh(createRooftopHillGeometry(160 + i * 25, 14 + i * 4, 0.7 + i * 1.5), beach.hills);
-        hills.position.set(-68 - i * 8, 3 + i * 2, -40 - i * 10);
-        hills.rotation.y = 0.18;
-        group.add(hills);
-      }
-      // Small coastal houses on hills
-      for (let i = 0; i < 10; i++) {
-        const x = -58 - (i % 3) * 7;
-        const z = -35 + i * 7;
-        const h = addBox(group, x, 1.0, z, 3.8, 2.0, 2.8, beach.suburbWall, null, 0.04 * ((i % 3) - 1));
-        h.castShadow = false;
-        const r = addBox(group, x, 2.15, z, 4.2, 0.38, 3.2, beach.suburbRoof, null, h.rotation.y);
-        r.castShadow = false;
-      }
-
-      // Atmospheric sunset haze near horizon
-      const haze = new THREE.Mesh(new THREE.PlaneGeometry(200, 50, 1, 1), beach.haze);
-      haze.position.set(70, 14, -30);
-      haze.rotation.y = -0.2;
-      group.add(haze);
+      // ── ATMOSPHERIC HAZE (horizon glow band) ──────────────────────────────
+      const haze1 = new THREE.Mesh(new THREE.PlaneGeometry(600, 90, 1, 1), beach.haze);
+      haze1.position.set(300, 8, -80);
+      haze1.rotation.y = -0.15;
+      group.add(haze1);
+      const haze2 = new THREE.Mesh(new THREE.PlaneGeometry(600, 90, 1, 1), beach.haze);
+      haze2.position.set(300, 8, 80);
+      haze2.rotation.y = 0.15;
+      group.add(haze2);
     }
 
     function addBeachMansionExterior(group, colliders, shootables, points, beach, waterMeshes) {
@@ -13707,8 +13757,8 @@
       }
       if (active && active.ambient === 'beachmansion') {
         scene.remove(ambientLight, keyLight, keyLight.target, hemiLight);
-        scene.background = null;
-        scene.fog = new THREE.Fog(0xff6633, 100, 420);
+        scene.background = new THREE.Color(0xff5511); // horizon fallback if sky dome stalls
+        scene.fog = new THREE.Fog(0xff5511, 180, 750);
         skyStatus = 'beachmansion-sunset';
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.toneMappingExposure = 0.85;
