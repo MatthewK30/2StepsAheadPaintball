@@ -5840,34 +5840,106 @@
     }
 
     function addBeachMansionExterior(group, colliders, shootables, points, beach, waterMeshes) {
+      // ── Driveway ──
       addBox(group, -36, 0.035, 0, 8.0, 0.035, 60, beach.asphalt, null, 0);
       for (let z = -24; z <= 24; z += 8) addBox(group, -36, 0.065, z, 0.16, 0.018, 4.8, beach.line, null, 0);
-      addBox(group, -27.2, 0.045, 0, 15.0, 0.035, 8.0, beach.travertine, null, 0);
-      addBox(group, -28.2, 0.6, -9.6, 10.5, 1.2, 1.1, beach.hedge, colliders, 0);
-      addBox(group, -28.2, 0.6, 9.6, 10.5, 1.2, 1.1, beach.hedge, colliders, 0);
-      addBeachCar(group, colliders, points, beach, -33.4, -10.5, 0.05, materials.blue);
-      addBeachCar(group, colliders, points, beach, -34.2, 11.2, -0.08, materials.white);
-      addBeachPalm(group, beach, -23.5, -18.6, 5.2);
-      addBeachPalm(group, beach, -23.5, 18.6, 5.0);
 
-      addBox(group, 23.5, 0.04, 0, 25, 0.035, 27, beach.travertine, null, 0);
-      addBox(group, 25.2, 0.055, -10.5, 13.4, 0.08, 7.2, beach.marble, null, 0);
-      const pool = new THREE.Mesh(new THREE.PlaneGeometry(11.6, 5.4, 1, 1), beach.poolWater);
+      // Front entrance plaza — white concrete pad with centre feature strip
+      addBox(group, -27.2, 0.045, 0, 15.0, 0.035, 12.0, beach.marble, null, 0);
+      addBox(group, -27.2, 0.065, 0, 0.22, 0.04, 10.0, beach.travertine, null, 0); // centre line
+
+      // Gate pillars flanking driveway entrance
+      addBox(group, -32.8, 1.4, -4.5, 0.7, 2.8, 0.7, beach.stucco, colliders, 0);
+      addBox(group, -32.8, 1.4,  4.5, 0.7, 2.8, 0.7, beach.stucco, colliders, 0);
+      // Pillar cap
+      addBox(group, -32.8, 2.95, -4.5, 0.9, 0.18, 0.9, beach.marble, null, 0);
+      addBox(group, -32.8, 2.95,  4.5, 0.9, 0.18, 0.9, beach.marble, null, 0);
+      // Gate crossbar (decorative)
+      addBox(group, -32.8, 2.65, 0, 0.08, 0.12, 8.6, beach.blackIron, null, 0);
+
+      // Geometric hedge border along driveway
+      addBox(group, -28.2, 0.55, -6.8, 10.5, 1.1, 0.65, beach.hedge, colliders, 0);
+      addBox(group, -28.2, 0.55,  6.8, 10.5, 1.1, 0.65, beach.hedge, colliders, 0);
+      // Hedge corner blocks
+      addBox(group, -22.8, 0.55, -9.0, 0.65, 1.1, 4.0, beach.hedge, colliders, 0);
+      addBox(group, -22.8, 0.55,  9.0, 0.65, 1.1, 4.0, beach.hedge, colliders, 0);
+
+      // Cars
+      addBeachCar(group, colliders, points, beach, -33.4, -10.5, 0.05, materials.blue);
+      addBeachCar(group, colliders, points, beach, -34.2,  11.2, -0.08, materials.white);
+
+      // Tall modern palms flanking entrance
+      addBeachPalm(group, beach, -23.5, -18.6, 5.8);
+      addBeachPalm(group, beach, -23.5,  18.6, 5.6);
+      // Extra palms along driveway edge
+      addBeachPalm(group, beach, -30.5, -17.0, 4.2);
+      addBeachPalm(group, beach, -30.5,  17.0, 4.0);
+
+      // Exterior wall light sconces on gate pillars
+      const sconceMat = beach.blackIron;
+      [-4.5, 4.5].forEach(z => {
+        addBox(group, -33.3, 2.1, z, 0.18, 0.14, 0.14, sconceMat, null, 0);
+        const sl = new THREE.PointLight(0xfff8e8, 0.55, 6);
+        sl.position.set(-33.5, 2.1, z);
+        group.add(sl);
+      });
+
+      // ── Pool terrace ──
+      // Large white marble terrace deck
+      addBox(group, 23.5, 0.04, 0, 28, 0.05, 30, beach.marble, null, 0);
+
+      // Pool coping — raised white border around pool
+      addBox(group, 25.2, 0.055, -10.5, 13.4, 0.10, 7.8, beach.marble, null, 0);
+      addBox(group, 25.2, 0.30, -14.65, 14.2, 0.55, 0.55, beach.stucco, null, 0); // far edge
+      addBox(group, 25.2, 0.30,  -6.35, 14.2, 0.55, 0.55, beach.stucco, null, 0); // near edge
+      addBox(group, 18.35, 0.30, -10.5, 0.55, 0.55, 8.6, beach.stucco, null, 0); // left
+      addBox(group, 32.05, 0.30, -10.5, 0.55, 0.55, 8.6, beach.stucco, null, 0); // right
+
+      // Pool water
+      const pool = new THREE.Mesh(new THREE.PlaneGeometry(12.8, 7.4, 1, 1), beach.poolWater);
       pool.rotation.x = -Math.PI / 2;
-      pool.position.set(25.2, 0.115, -10.5);
+      pool.position.set(25.2, 0.155, -10.5);
       pool.userData.beachWater = true;
       pool.userData.baseY = pool.position.y;
       group.add(pool);
       waterMeshes.push(pool);
       shootables.push(pool);
-      addBox(group, 25.2, 0.62, 7.8, 8.2, 1.15, 0.5, beach.stucco, colliders, 0.12);
-      addBox(group, 30.8, 0.62, -2.0, 0.5, 1.15, 8.2, beach.stucco, colliders, -0.08);
-      addBox(group, 19.2, 0.62, 14.5, 8.0, 1.15, 0.5, beach.hedge, colliders, 0);
-      addBox(group, 30.8, 0.62, 14.5, 8.0, 1.15, 0.5, beach.hedge, colliders, 0);
+
+      // Sun loungers (simple flat boxes with headrest) beside pool
+      const loungerMat = beach.marble;
+      [[-5.6, 5.2], [-5.6, 7.2], [36.0, 5.2], [36.0, 7.2]].forEach(([x, z]) => {
+        addBox(group, x, 0.16, z, 2.2, 0.18, 0.68, loungerMat, null, 0);
+        addBox(group, x - 0.85, 0.36, z, 0.28, 0.36, 0.6, loungerMat, null, 0.38);
+      });
+
+      // Modern outdoor wall — white low boundary around terrace garden
+      addBox(group, 23.5, 0.55, 15.5, 24.0, 1.05, 0.45, beach.stucco, colliders, 0);
+      addBox(group, 23.5, 0.55, -21.0, 24.0, 1.05, 0.45, beach.stucco, colliders, 0);
+      addBox(group, 36.5, 0.55, -3.0, 0.45, 1.05, 36.0, beach.stucco, colliders, 0);
+
+      // Geometric hedges along terrace boundary
+      addBox(group, 14.5, 0.55, 14.5, 0.65, 1.05, 4.0, beach.hedge, colliders, 0);
+      addBox(group, 14.5, 0.55, -14.5, 0.65, 1.05, 4.0, beach.hedge, colliders, 0);
+      addBox(group, 35.5, 0.55,  14.5, 4.0, 1.05, 0.65, beach.hedge, colliders, 0);
+      addBox(group, 35.5, 0.55, -14.5, 4.0, 1.05, 0.65, beach.hedge, colliders, 0);
+
+      // Outdoor terrace light posts
+      [[20.0, 14.0], [20.0, -14.0], [32.0, 14.0], [32.0, -14.0]].forEach(([x, z]) => {
+        addCylinder(group, x, 1.5, z, 0.06, 3.0, beach.blackIron, null, 0, false, 1);
+        addBox(group, x, 3.08, z, 0.28, 0.12, 0.28, beach.marble, null, 0);
+        const pl = new THREE.PointLight(0xfff5e0, 0.38, 10);
+        pl.position.set(x, 3.0, z);
+        group.add(pl);
+      });
+
       addCoverPoints(points, 25.2, 7.8, 8.4, 1.2, 'red', 1.2);
       addCoverPoints(points, 30.8, -2.0, 1.2, 8.4, 'red', 1.2);
-      addBeachPalm(group, beach, 33.0, -18.5, 5.4);
-      addBeachPalm(group, beach, 33.5, 19.0, 5.1);
+
+      // Tall palms around terrace
+      addBeachPalm(group, beach, 33.0, -20.0, 6.2);
+      addBeachPalm(group, beach, 33.5,  20.5, 5.8);
+      addBeachPalm(group, beach, 14.5, -20.0, 5.0);
+      addBeachPalm(group, beach, 14.5,  20.5, 5.2);
     }
 
     function addBeachMansionHouse(group, colliders, shootables, points, beach) {
