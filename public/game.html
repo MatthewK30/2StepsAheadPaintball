@@ -5696,7 +5696,7 @@
       const beachWater = [];
       const walkSurfaces = [
         { x1: -BEACH_MANSION_BOUNDS.halfX, x2: BEACH_MANSION_BOUNDS.halfX, z1: -BEACH_MANSION_BOUNDS.halfZ, z2: BEACH_MANSION_BOUNDS.halfZ, y: 0 },
-        { type: 'ramp', axis: 'x', x1: -9, x2: 1, z1: 10, z2: 13, y1: 0, y2: 5.5 },
+        { type: 'ramp', axis: 'z', x1: -9, x2: -2, z1: 9, z2: 14, y1: 0, y2: 5.5 },
         { x1: -12, x2: 6, z1: -14, z2: 10, y: 5.5 },
         { x1: -12, x2: 6, z1: 10, z2: 14, y: 5.5 },
         { x1: 6, x2: 10, z1: -5, z2: 5, y: 5.5 }
@@ -6168,8 +6168,8 @@
       addBox(group, -3, 0.02, -2, 17.5, 0.02, 24, beach.marble, null, 0);
       addBox(group, 3.5, 0.03, 8.5, 5.5, 0.02, 10, beach.concrete, null, 0);
 
-      // === STAIRCASE (x=-9 to x=1, z=11.5 centre, width=2.2) ===
-      addBeachStaircase(group, colliders, shootables, beach, -9, 1, 11.5, 2.2);
+      // === STAIRCASE — runs north (z=9→14), centered at x=-5.5, 7 units wide ===
+      addBeachStaircase(group, colliders, shootables, beach, 9, 14, -5.5, 7);
 
       // === FOYER ===
       addBox(group, -11.3, 0.47, -3.5, 0.38, 0.94, 2.0, beach.darkSteel, colliders, 0);
@@ -6271,12 +6271,14 @@
     function addBeachMansionSecondFloor(group, colliders, beach) {
       // Second floor slab — split to leave stairwell void (x=-9 to 1, z=10 to 14)
       addBeachWalkableBox(group, colliders, -3, 5.39, -2, 18, 0.22, 24, beach.marble, 0);         // main
-      addBeachWalkableBox(group, colliders, -10.75, 5.39, 12, 2.5, 0.22, 4, beach.marble, 0);     // NW of stairs
-      addBeachWalkableBox(group, colliders, 3.5, 5.39, 12, 5, 0.22, 4, beach.marble, 0);          // landing NE
+      // Stairwell void on second floor: x=-9 to -2, z=10 to 14
+      // Landing pieces cover the rest of z=10-14
+      addBeachWalkableBox(group, colliders, -10.75, 5.39, 12, 2.5, 0.22, 4, beach.marble, 0);  // west of stairs (x=-12 to -9.5)
+      addBeachWalkableBox(group, colliders, 2, 5.39, 12, 8, 0.22, 4, beach.marble, 0);         // east of stairs (x=-2 to 6)
 
-      // Safety railing at south edge of stairwell void (x=-9 to 1 only — leaves both sides open)
-      addBeachGlassBarrier(group, colliders, -4, 6.15, 10.0, 10, 1.4, 0.08, beach.glassRail);
-      for (let gp = -9; gp <= 1; gp += 2.5) addBox(group, gp, 6.12, 10.0, 0.06, 1.4, 0.06, beach.darkSteel, null, 0);
+      // Safety railing along east edge of stairwell void (x=-2, z=10-14)
+      addBeachGlassBarrier(group, colliders, -2, 6.15, 12, 0.08, 1.4, 4, beach.glassRail);
+      for (let gz = 10; gz <= 14; gz += 1.5) addBox(group, -2, 6.12, gz, 0.06, 1.4, 0.06, beach.darkSteel, null, 0);
       // Hallway ceiling strip light
       addBox(group, -7, 9.85, 0, 9.5, 0.08, 0.35, beach.emissiveWarm, null, 0);
 
@@ -6412,42 +6414,39 @@
       return mesh;
     }
 
-    function addBeachStaircase(group, colliders, shootables, beach, x1, x2, z, width) {
+    // zBottom/zTop define the travel direction; xCenter/xWidth define the step surface width.
+    // Player walks north (z increasing) and rises from y=0 to y=5.5.
+    function addBeachStaircase(group, colliders, shootables, beach, zBottom, zTop, xCenter, xWidth) {
       const steps = 12, rise = 5.5;
-      const stepW = Math.abs(x2 - x1) / steps; // x-depth of each step
-
-      // Solid diagonal stringer (visual undercarriage)
-      const stringer = addBox(group, (x1 + x2) * 0.5, rise * 0.5, z, Math.abs(x2 - x1), rise, width * 0.18, beach.darkSteel, null, 0);
-      const sc = addMeshCollider(colliders, stringer, 'box');
-      if (sc) sc.walkable = true;
+      const zSpan = zTop - zBottom;
+      const stepDepth = zSpan / steps;   // z depth of each tread
+      const stepH     = rise / steps;    // height of each riser
 
       for (let i = 0; i < steps; i++) {
-        const t1 = (i + 1) / steps;
-        const xc = x1 + (x2 - x1) * (i + 0.5) / steps;
-        const stepTop = rise * t1;          // top surface of this step
-        const stepH   = rise / steps;       // riser height (each step same)
+        const zc     = zBottom + (i + 0.5) * stepDepth;
+        const treadY = (i + 1) * stepH;
 
-        // Tread — full-width slab, sits on top of the riser
-        const tread = addBox(group, xc, stepTop - stepH * 0.08, z, stepW + 0.04, stepH * 0.18, width, beach.wood, null, 0);
+        // Tread — walnut slab the player walks on
+        const tread = addBox(group, xCenter, treadY - stepH * 0.1, zc, xWidth, stepH * 0.22, stepDepth + 0.04, beach.wood, null, 0);
         const ct = addMeshCollider(colliders, tread, 'box');
         if (ct) ct.walkable = true;
         shootables.push(tread);
 
-        // Riser — vertical face filling the gap below the tread
-        const riserMid = stepTop - stepH * 0.58;
-        const riserH   = stepH * 0.82;
-        const riser = addBox(group, xc - stepW * 0.42, riserMid, z, stepW * 0.16, riserH, width, beach.darkSteel, null, 0);
+        // Riser — dark steel vertical face
+        const riserY = treadY - stepH * 0.62;
+        const riser  = addBox(group, xCenter, riserY, zc - stepDepth * 0.44, xWidth, stepH * 0.78, stepDepth * 0.12, beach.darkSteel, null, 0);
         const cr = addMeshCollider(colliders, riser, 'box');
         if (cr) cr.walkable = true;
       }
 
-      // Glass side railing (living-room-facing open side)
-      addBeachGlassBarrier(group, colliders, (x1 + x2) * 0.5, rise * 0.5 + 0.65, z - width * 0.55, Math.abs(x2 - x1), 1.3, 0.07, beach.glassRail);
-      const numPosts = Math.ceil(Math.abs(x2 - x1) / 1.5) + 1;
+      // Glass railing along east side (x = xCenter + xWidth/2)
+      const railX = xCenter + xWidth * 0.5 + 0.04;
+      addBeachGlassBarrier(group, colliders, railX, rise * 0.5 + 0.65, (zBottom + zTop) * 0.5, 0.07, 1.3, zSpan, beach.glassRail);
+      const numPosts = Math.ceil(zSpan / 1.5) + 1;
       for (let i = 0; i <= numPosts; i++) {
-        const px = x1 + (x2 - x1) * i / numPosts;
+        const pz = zBottom + zSpan * i / numPosts;
         const py = rise * i / numPosts;
-        addBox(group, px, py + 0.65, z - width * 0.55, 0.06, 1.3, 0.06, beach.darkSteel, null, 0);
+        addBox(group, railX, py + 0.65, pz, 0.06, 1.3, 0.06, beach.darkSteel, null, 0);
       }
     }
 
