@@ -6274,9 +6274,9 @@
       addBeachWalkableBox(group, colliders, -10.75, 5.39, 12, 2.5, 0.22, 4, beach.marble, 0);     // NW of stairs
       addBeachWalkableBox(group, colliders, 3.5, 5.39, 12, 5, 0.22, 4, beach.marble, 0);          // landing NE
 
-      // Open landing glass railing at stairwell edge (z=9.8 on second floor)
-      addBeachGlassBarrier(group, colliders, -3, 6.15, 9.85, 18, 1.4, 0.08, beach.glassRail);
-      for (let gp = -11.5; gp <= 5.5; gp += 2.5) addBox(group, gp, 6.12, 9.85, 0.06, 1.4, 0.06, beach.darkSteel, null, 0);
+      // Safety railing at south edge of stairwell void (x=-9 to 1 only — leaves both sides open)
+      addBeachGlassBarrier(group, colliders, -4, 6.15, 10.0, 10, 1.4, 0.08, beach.glassRail);
+      for (let gp = -9; gp <= 1; gp += 2.5) addBox(group, gp, 6.12, 10.0, 0.06, 1.4, 0.06, beach.darkSteel, null, 0);
       // Hallway ceiling strip light
       addBox(group, -7, 9.85, 0, 9.5, 0.08, 0.35, beach.emissiveWarm, null, 0);
 
