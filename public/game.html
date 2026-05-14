@@ -2168,7 +2168,7 @@
       touch-action: none;
     }
   </style>
-  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
 </head>
 <body>
   <div id="menu">
@@ -4003,7 +4003,7 @@
     }
 
     function skinImageUrl(skin) {
-      return '/skins/' + encodeURIComponent((skin || DEFAULT_SKIN).file);
+      return 'skins/' + encodeURIComponent((skin || DEFAULT_SKIN).file);
     }
 
     function configureSkinTexture(texture) {

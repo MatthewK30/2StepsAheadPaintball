@@ -2171,7 +2171,7 @@
     // socket.io is only available when the game server is running
     window.__socketIoMissing = false;
   </script>
-  <script src="/socket.io/socket.io.js" onerror="window.__socketIoMissing=true"></script>
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js" onerror="window.__socketIoMissing=true"></script>
   <script>
   (() => {
     'use strict';
@@ -2327,7 +2327,7 @@
     const DEFAULT_SKIN = SKINS[0];
 
     function skinImageUrl(skin) {
-      return '/skins/' + encodeURIComponent((skin || DEFAULT_SKIN).file);
+      return 'skins/' + encodeURIComponent((skin || DEFAULT_SKIN).file);
     }
 
     // Load selected skin from storage
@@ -2590,7 +2590,7 @@
       const skin = getSelectedSkin();
       const facePos = skin.facePos || 'center 30%';
       const avatarEl = $('#configCharAvatar');
-      avatarEl.src = '/skins/' + encodeURIComponent(skin.file);
+      avatarEl.src = 'skins/' + encodeURIComponent(skin.file);
       avatarEl.style.objectPosition = facePos;
       $('#configCharName').textContent = skin.name;
     }
